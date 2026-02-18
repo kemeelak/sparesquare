@@ -139,6 +139,20 @@ export default function Home() {
 
       <GridLegend />
 
+      {/* Talk to Partner CTA */}
+      <div className="mt-4 mb-2">
+        <button
+          onClick={() => window.location.href = createPageUrl("Partner") + "?context=grid"}
+          className="w-full flex items-center justify-between bg-[#1A1A1A] hover:bg-[#333] text-white rounded-2xl px-5 py-4 transition-colors group"
+        >
+          <div className="text-left">
+            <p className="font-semibold text-sm">Tell your Partner more about your life</p>
+            <p className="text-xs text-white/60 mt-0.5">Share your goals, constraints & what you want to work on</p>
+          </div>
+          <MessageCircle className="w-5 h-5 text-white/60 group-hover:text-white flex-shrink-0 ml-3" />
+        </button>
+      </div>
+
       {/* Calendar Sync */}
       <AnimatePresence>
         {showCalendarSync && (
