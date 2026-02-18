@@ -69,7 +69,7 @@ export default function PluginCard({ source, queryClient }) {
           </div>
         </div>
 
-        <div className="flex gap-3 mt-3">
+        <div className="flex gap-3 mt-3 items-center justify-between">
           {source.habits_extracted?.length > 0 && (
             <button
               onClick={() => setExpandedHabits(!expandedHabits)}
