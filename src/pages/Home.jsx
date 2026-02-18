@@ -202,19 +202,38 @@ export default function Home() {
 
       <GridLegend />
 
-      {/* Talk to Partner CTA */}
-      <div className="mt-4 mb-2">
-        <button
-          onClick={() => window.location.href = createPageUrl("Partner") + "?context=grid"}
-          className="w-full flex items-center justify-between bg-[#1A1A1A] hover:bg-[#333] text-white rounded-2xl px-5 py-4 transition-colors group"
-        >
-          <div className="text-left">
-            <p className="font-semibold text-sm">Tell your Partner more about your life</p>
-            <p className="text-xs text-white/60 mt-0.5">Share your goals, constraints & what you want to work on</p>
-          </div>
-          <MessageCircle className="w-5 h-5 text-white/60 group-hover:text-white flex-shrink-0 ml-3" />
-        </button>
-      </div>
+      {/* Global Add Event Modal */}
+          <AnimatePresence>
+            {showAddEvent && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-end lg:items-center justify-center"
+                onClick={() => setShowAddEvent(false)}
+              >
+                <motion.div
+                  initial={{ y: 80 }}
+                  animate={{ y: 0 }}
+                  exit={{ y: 80 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-white rounded-t-3xl lg:rounded-3xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="font-bold text-[#1A1A1A] text-lg">Add Event</p>
+                    <button onClick={() => setShowAddEvent(false)} className="p-2 rounded-xl hover:bg-[#F5F0EB]">
+                      <Plus className="w-5 h-5 text-[#8A8580] rotate-45" />
+                    </button>
+                  </div>
+                  <AddEventForm
+                    onSave={handleSaveNewEvent}
+                    onCancel={() => setShowAddEvent(false)}
+                    isPending={createEventMutation.isPending}
+                  />
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
       {/* Calendar Sync */}
       <AnimatePresence>
