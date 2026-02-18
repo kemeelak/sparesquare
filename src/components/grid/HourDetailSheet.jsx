@@ -126,43 +126,13 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, sleepH
 
         {/* Add Event Form */}
         {showAddEvent && (
-          <div className="bg-[#F5F0EB] rounded-2xl p-4 mb-4">
-            <p className="text-sm font-semibold text-[#1A1A1A] mb-3">Add Event / Block</p>
-            <input
-              autoFocus
-              value={eventTitle}
-              onChange={(e) => setEventTitle(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddEvent()}
-              placeholder="Event name..."
-              className="w-full rounded-xl border border-[#E8E4DF] bg-white px-4 py-2.5 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10"
-            />
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs text-[#8A8580]">Duration:</span>
-              {[1, 2, 3].map((h) => (
-                <button
-                  key={h}
-                  onClick={() => setEventDuration(h)}
-                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                    eventDuration === h ? "bg-[#1A1A1A] text-white" : "bg-white border border-[#E8E4DF] text-[#4A5568]"
-                  }`}
-                >
-                  {h}h
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowAddEvent(false)} className="flex-1 rounded-xl text-sm border-[#E8E4DF]">
-                Cancel
-              </Button>
-              <Button
-                onClick={handleAddEvent}
-                disabled={!eventTitle.trim() || createEventMutation.isPending}
-                className="flex-1 bg-[#1A1A1A] hover:bg-[#333] text-white rounded-xl text-sm"
-              >
-                {createEventMutation.isPending ? "Saving..." : "Save"}
-              </Button>
-            </div>
-          </div>
+          <AddEventForm
+            hour={hour}
+            dateStr={dateStr}
+            onSave={handleSaveEvent}
+            onCancel={() => setShowAddEvent(false)}
+            isPending={createEventMutation.isPending}
+          />
         )}
 
         {unmovable && (
