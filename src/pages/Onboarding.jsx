@@ -115,24 +115,61 @@ function parseWakeHour(label) {
   return map[label] ?? 7;
 }
 
-function buildUnmovables(workAnswer, otherAnswers) {
+function buildUnmovables(workAnswer, commuteAnswer, otherAnswers) {
   const blocks = [];
+  const allDays = ["monday","tuesday","wednesday","thursday","friday"];
+
   const workMap = {
-    "9am–5pm Mon–Fri": { start: 9, end: 17, days: ["monday","tuesday","wednesday","thursday","friday"], label: "Work" },
-    "8am–4pm Mon–Fri": { start: 8, end: 16, days: ["monday","tuesday","wednesday","thursday","friday"], label: "Work" },
-    "8am–3pm Mon–Fri": { start: 8, end: 15, days: ["monday","tuesday","wednesday","thursday","friday"], label: "School" },
-    "10am–6pm Mon–Fri": { start: 10, end: 18, days: ["monday","tuesday","wednesday","thursday","friday"], label: "Work" },
+    "9am–5pm Mon–Fri":     { start: 9,  end: 17, days: allDays, label: "Work" },
+    "8am–4pm Mon–Fri":     { start: 8,  end: 16, days: allDays, label: "Work" },
+    "8am–3pm Mon–Fri":     { start: 8,  end: 15, days: allDays, label: "School" },
+    "10am–6pm Mon–Fri":    { start: 10, end: 18, days: allDays, label: "Work" },
+    "7am–3pm (early shift)":  { start: 7,  end: 15, days: allDays, label: "Work (early shift)" },
+    "3pm–11pm (late shift)":  { start: 15, end: 23, days: allDays, label: "Work (late shift)" },
+    "11pm–7am (night shift)": { start: 23, end: 7,  days: allDays, label: "Work (night shift)" },
+    "Rotating shifts":     null, // can't auto-map
   };
+
   if (workMap[workAnswer]) {
     const w = workMap[workAnswer];
     blocks.push({ label: w.label, start_hour: w.start, end_hour: w.end, days: w.days });
+  } else if (workAnswer && workAnswer !== "Flexible / WFH" && workAnswer !== "None" && workAnswer !== "Rotating shifts") {
+    // Try to parse custom input like "6am–2pm Tue–Sat"
+    const timeMatch = workAnswer.match(/(\d+)(?::(\d+))?\s*(am|pm)?\s*[–\-to]+\s*(\d+)(?::(\d+))?\s*(am|pm)?/i);
+    if (timeMatch) {
+      let start = parseInt(timeMatch[1]);
+      let end = parseInt(timeMatch[4]);
+      const startAmPm = timeMatch[3]?.toLowerCase();
+      const endAmPm = timeMatch[6]?.toLowerCase();
+      if (startAmPm === "pm" && start !== 12) start += 12;
+      if (startAmPm === "am" && start === 12) start = 0;
+      if (endAmPm === "pm" && end !== 12) end += 12;
+      if (endAmPm === "am" && end === 12) end = 0;
+      blocks.push({ label: "Work", start_hour: start, end_hour: end, days: allDays });
+    }
   }
+
+  // Commute blocks — add before/after work if commute time is significant
+  const commuteMinMap = {
+    "15–30 min": 1, "30–45 min": 1, "45–60 min": 1, "Over 1 hour": 1,
+  };
+  if (commuteAnswer && commuteMinMap[commuteAnswer] && blocks.length > 0) {
+    const workBlock = blocks[0];
+    if (workBlock.start_hour > 0) {
+      blocks.push({ label: "Commute (morning)", start_hour: workBlock.start_hour - 1, end_hour: workBlock.start_hour, days: workBlock.days });
+    }
+    if (workBlock.end_hour < 23) {
+      blocks.push({ label: "Commute (evening)", start_hour: workBlock.end_hour, end_hour: workBlock.end_hour + 1, days: workBlock.days });
+    }
+  }
+
   if (otherAnswers?.includes("School run / childcare")) {
-    blocks.push({ label: "School run", start_hour: 7, end_hour: 9, days: ["monday","tuesday","wednesday","thursday","friday"] });
+    blocks.push({ label: "School run", start_hour: 7, end_hour: 9, days: allDays });
   }
-  if (otherAnswers?.includes("Commute (30+ min each way)")) {
-    blocks.push({ label: "Commute", start_hour: 8, end_hour: 9, days: ["monday","tuesday","wednesday","thursday","friday"] });
+  if (otherAnswers?.includes("Caring for a family member")) {
+    blocks.push({ label: "Caring duties", start_hour: 7, end_hour: 9, days: allDays });
   }
+
   return blocks;
 }
 
