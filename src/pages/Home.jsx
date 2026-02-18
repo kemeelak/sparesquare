@@ -11,6 +11,7 @@ import SpareCounter from "../components/grid/SpareCounter";
 import StatsRow from "../components/grid/StatsRow";
 import HourDetailSheet from "../components/grid/HourDetailSheet";
 import CalendarSync from "../components/calendar/CalendarSync";
+import AddEventForm from "../components/grid/AddEventForm";
 
 export default function Home() {
   const [selectedDate, setSelectedDate] = useState(new Date());
