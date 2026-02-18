@@ -43,7 +43,65 @@ export default function Backlog() {
   });
 
   const scheduleMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.HabitBlock.update(id, data),
+    mutationFn: async ({ id, habit, hour, date, repeat }) => {
+      if (repeat === "none") {
+        await base44.entities.HabitBlock.update(id, {
+          scheduled_hour: hour,
+          scheduled_date: format(date, "yyyy-MM-dd"),
+          status: "suggested",
+        });
+      } else {
+        // For repeating habits: generate dates based on repeat type
+        const dates = [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const end = new Date(today);
+        end.setDate(end.getDate() + 28); // 4 weeks ahead
+
+        if (repeat === "daily") {
+          for (let d = new Date(today); d <= end; d.setDate(d.getDate() + 1)) {
+            dates.push(new Date(d));
+          }
+        } else if (repeat === "weekdays") {
+          for (let d = new Date(today); d <= end; d.setDate(d.getDate() + 1)) {
+            const day = d.getDay();
+            if (day >= 1 && day <= 5) dates.push(new Date(d));
+          }
+        } else if (repeat === "weekly") {
+          for (let d = new Date(date); d <= end; d.setDate(d.getDate() + 7)) {
+            dates.push(new Date(d));
+          }
+        } else if (repeat === "monthly") {
+          const firstDate = new Date(date);
+          dates.push(new Date(firstDate));
+          const nextMonth = new Date(firstDate);
+          nextMonth.setMonth(nextMonth.getMonth() + 1);
+          if (nextMonth <= end) dates.push(nextMonth);
+        }
+
+        // Update the first date as the original, bulk create the rest
+        await base44.entities.HabitBlock.update(id, {
+          scheduled_hour: hour,
+          scheduled_date: format(dates[0] || date, "yyyy-MM-dd"),
+          status: "suggested",
+        });
+        if (dates.length > 1) {
+          await base44.entities.HabitBlock.bulkCreate(
+            dates.slice(1).map(d => ({
+              title: habit.title,
+              description: habit.description,
+              source: habit.source,
+              duration_minutes: habit.duration_minutes,
+              energy_level: habit.energy_level,
+              category: habit.category,
+              scheduled_hour: hour,
+              scheduled_date: format(d, "yyyy-MM-dd"),
+              status: "suggested",
+            }))
+          );
+        }
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["habits"] });
       setScheduling(null);
