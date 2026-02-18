@@ -166,7 +166,7 @@ ${pluginKnowledge ? `\nPLUGIN KNOWLEDGE BASE (apply these principles when releva
               <div className="w-16 h-16 rounded-2xl bg-[#F5F0EB] flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl">💬</span>
               </div>
-              <h2 className="text-lg font-semibold text-[#1A1A1A] mb-1">Start a conversation</h2>
+              <h2 className="text-lg font-semibold text-[#1A1A1A] mb-1">Hey, I'm {partnerName}</h2>
               <p className="text-sm text-[#8A8580] max-w-xs mx-auto">
                 Tell me about your day, a book you're reading, or ask me to fill a spare square.
               </p>
