@@ -55,7 +55,7 @@ export default function StatsDetailSheet({ type, habits, date, onClose }) {
 
         {items.length === 0 ? (
           <div className="text-center py-10 text-[#B0AAA4] text-sm">
-            {type === "completed" ? "Nothing completed yet — go get it! 💪" : "Nothing scheduled for this time slot."}
+            {type === "completed" ? "Nothing completed yet — go get it! 💪" : "Nothing scheduled for today."}
           </div>
         ) : (
           <div className="space-y-3">
