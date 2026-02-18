@@ -195,14 +195,13 @@ export default function Backlog() {
           <ScheduleSheet
             habit={scheduling}
             onClose={() => setScheduling(null)}
-            onSchedule={(hour, date) => {
+            onSchedule={(hour, date, repeat) => {
               scheduleMutation.mutate({
                 id: scheduling.id,
-                data: {
-                  scheduled_hour: hour,
-                  scheduled_date: format(date, "yyyy-MM-dd"),
-                  status: "suggested",
-                },
+                habit: scheduling,
+                hour,
+                date,
+                repeat,
               });
             }}
           />
