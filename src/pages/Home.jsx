@@ -273,6 +273,7 @@ export default function Home() {
             habits={habits}
             unmovables={unmovables}
             sleepHours={sleepHours}
+            profile={profile}
             onClose={() => setSelectedHour(null)}
             onConfirm={(habit) => {
               updateHabitMutation.mutate({ id: habit.id, data: { status: "confirmed" } });
@@ -280,6 +281,28 @@ export default function Home() {
             onComplete={(habit) => {
               updateHabitMutation.mutate({ id: habit.id, data: { status: "completed" } });
             }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Stats Detail Sheet */}
+      <AnimatePresence>
+        {statsSheet && (
+          <StatsDetailSheet
+            type={statsSheet}
+            habits={todayHabits}
+            date={selectedDate}
+            onClose={() => setStatsSheet(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Goals Onboarding prompt */}
+      <AnimatePresence>
+        {showGoalsOnboarding && profile && (
+          <GoalsOnboarding
+            profile={profile}
+            onClose={() => setShowGoalsOnboarding(false)}
           />
         )}
       </AnimatePresence>
