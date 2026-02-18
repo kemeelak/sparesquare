@@ -120,7 +120,7 @@ ${pluginKnowledge ? `\nPLUGIN KNOWLEDGE BASE (apply these principles when releva
       .join("\n");
 
     const response = await base44.integrations.Core.InvokeLLM({
-      prompt: `${PARTNER_PROMPT}\n\n${buildContext()}\n\nConversation:\n${recentHistory}\n\nRespond as the SpareSquare Partner.`,
+      prompt: `${buildPrompt(partnerName)}\n\n${buildContext()}\n\nConversation:\n${recentHistory}\n\nRespond as ${partnerName}.`,
       add_context_from_internet: text.toLowerCase().includes("book") || text.toLowerCase().includes("podcast") || text.toLowerCase().includes("habit"),
     });
 
