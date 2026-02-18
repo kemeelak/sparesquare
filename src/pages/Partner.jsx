@@ -69,6 +69,23 @@ export default function Partner() {
     }
   }, [chatHistory]);
 
+  // Auto-send prompt if coming from hour detail sheet
+  useEffect(() => {
+    if (!profile || loading) return;
+    const params = new URLSearchParams(window.location.search);
+    const autoPrompt = params.get("autoPrompt");
+    if (autoPrompt && messages.length === chatHistory.length && chatHistory.length === 0) {
+      // Only auto-send once on first load with no prior chat
+      const decoded = decodeURIComponent(autoPrompt);
+      setTimeout(() => handleSend(decoded), 600);
+    } else if (autoPrompt && chatHistory.length > 0) {
+      // Has history — still send the auto prompt so user gets fresh suggestions
+      const decoded = decodeURIComponent(autoPrompt);
+      setTimeout(() => handleSend(decoded), 600);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
