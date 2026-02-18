@@ -6,7 +6,7 @@ import ChatBubble from "../components/chat/ChatBubble";
 import ChatInput from "../components/chat/ChatInput";
 import LoadingDots from "../components/shared/LoadingDots";
 
-const PARTNER_PROMPT = `You are the SpareSquare Partner — a supportive, insightful AI growth coach.
+const buildPrompt = (partnerName) => `You are ${partnerName} — a supportive, insightful AI growth coach.
 
 YOUR PERSONALITY:
 - Warm but not fluffy. Direct but not cold.
