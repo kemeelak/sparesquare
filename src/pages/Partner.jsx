@@ -152,7 +152,7 @@ ${pluginKnowledge ? `\nPLUGIN KNOWLEDGE BASE (apply these principles when releva
             <span className="text-white font-bold text-sm">S²</span>
           </div>
           <div>
-            <h1 className="text-lg font-bold text-[#1A1A1A]">Your Partner</h1>
+            <h1 className="text-lg font-bold text-[#1A1A1A]">{partnerName}</h1>
             <p className="text-xs text-[#8A8580]">AI Growth Coach · Always available</p>
           </div>
         </div>
