@@ -134,22 +134,18 @@ export default function Home() {
   return (
     <div className="p-4 lg:p-8 max-w-2xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">Your Grid</h1>
-          <p className="text-sm text-[#8A8580]">Map your day, find your growth</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowCalendarSync(true)}
-            className="p-2.5 rounded-xl bg-white border border-[#E8E4DF] text-[#8A8580] hover:bg-[#F5F0EB] transition-colors"
-            title="Sync Calendar"
-          >
-            <Calendar className="w-4 h-4" />
-          </button>
-          <SpareCounter count={getSpareCount()} />
-        </div>
-      </div>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">Your Grid</h1>
+              <p className="text-sm text-[#8A8580]">Map your day, find your growth</p>
+            </div>
+            <button
+              onClick={() => setShowAddEvent(true)}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#1A1A1A] text-white text-sm font-medium hover:bg-[#333] transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Add Event
+            </button>
+          </div>
 
       {/* Date Navigator */}
       <div className="flex items-center justify-between bg-white rounded-2xl p-3 border border-[#E8E4DF] mb-4">
