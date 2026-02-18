@@ -25,15 +25,31 @@ export default function AddSourceSheet({ onClose, onAdded }) {
     const result = await base44.integrations.Core.InvokeLLM({
       prompt: `You are extracting structured knowledge from "${title}" (${type}) to train an AI life coach called SpareSquare Partner.
 
-Extract THREE things:
+    Extract THREE things:
 
-1. SCHEDULABLE HABITS (habits array): Only include things the user can literally schedule and DO — recurring actions with a time commitment. Examples: "Review financial progress" (monthly, 30min), "Write in journal" (daily, 10min), "Create monthly zero-based budget" (monthly, 45min). Be selective — only 3-6 truly schedulable, repeatable habits. Include a "frequency" field (daily / weekly / monthly).
+    1. SCHEDULABLE HABITS (habits array): These MUST be concrete, specific actions that take a fixed amount of time and can literally appear in a calendar. NOT vague values or abstract ideas. 
 
-2. PARTNER PRINCIPLES (learnings array): The core IDEAS, philosophies, frameworks this source teaches — things that should shape how the Partner gives advice, NOT things you schedule. Examples from Dave Ramsey: "Avoid all credit card debt", "Live below your means", "Build a 3-6 month emergency fund before investing", "Use the debt snowball method". Examples from the Bible: "Serve others before yourself", "Practice forgiveness", "Do not worry about tomorrow". Extract 8-15 principles. The Partner will reference these when advising the user.
+    BAD examples (too vague — these are principles, not habits):
+    - "Live below your means"
+    - "Practice generosity" 
+    - "Be disciplined"
+    - "Value relationships"
 
-3. SUMMARY: One paragraph capturing the core philosophy.
+    GOOD examples (specific, timed, actionable):
+    - "Track every expense in a spreadsheet" (weekly, 15min) 
+    - "Give $X to charity this month" (monthly, 10min)
+    - "Call a friend or family member" (weekly, 20min)
+    - "Write 3 things you're grateful for" (daily, 5min)
+    - "Review monthly budget vs actuals" (monthly, 30min)
+    - "Meal prep for the week" (weekly, 60min)
+    - "Read 10 pages" (daily, 15min)
+    - "30-minute walk" (daily, 30min)
 
-Key distinction: A habit = something you PUT IN A CALENDAR. A principle = something that SHAPES DECISIONS AND MINDSET.`,
+    Extract 4-7 specific habits. Include "frequency" (daily / weekly / monthly) and realistic duration_minutes.
+
+    2. PARTNER PRINCIPLES (learnings array): Core IDEAS and philosophies from this source — mindset shifts, frameworks, values. The Partner AI will draw on these when giving advice. Examples: "Avoid all debt", "Your network is your net worth", "Delayed gratification leads to long-term success". Extract 6-12 principles.
+
+    3. SUMMARY: One paragraph capturing the core philosophy.`,
       add_context_from_internet: true,
       response_json_schema: {
         type: "object",
