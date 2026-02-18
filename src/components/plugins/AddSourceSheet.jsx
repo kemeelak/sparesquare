@@ -23,17 +23,17 @@ export default function AddSourceSheet({ onClose, onAdded }) {
     setLoading(true);
 
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are extracting structured knowledge from "${title}" (${type}) to train an AI life coach.
+      prompt: `You are extracting structured knowledge from "${title}" (${type}) to train an AI life coach called SpareSquare Partner.
 
-Do TWO things:
+Extract THREE things:
 
-1. HABITS: Extract specific, actionable habits or daily protocols from this source that a person can schedule (e.g. "10-min cold shower", "zero-based budget review weekly").
+1. SCHEDULABLE HABITS (habits array): Only include things the user can literally schedule and DO — recurring actions with a time commitment. Examples: "Review financial progress" (monthly, 30min), "Write in journal" (daily, 10min), "Create monthly zero-based budget" (monthly, 45min). Be selective — only 3-6 truly schedulable, repeatable habits. Include a "frequency" field (daily / weekly / monthly).
 
-2. LEARNINGS: Extract the core principles, philosophies, frameworks, and methodologies the author teaches. These are NOT habits — they are IDEAS the coach should KNOW and APPLY when advising users. For example, from Dave Ramsey: "Baby Steps (pay off debt smallest to largest)", "Avoid debt at all costs", "Emergency fund before investing". From Atomic Habits: "Identity-based change", "Habit stacking", "Make it obvious/attractive/easy/satisfying". Be thorough — extract 8-15 learnings.
+2. PARTNER PRINCIPLES (learnings array): The core IDEAS, philosophies, frameworks this source teaches — things that should shape how the Partner gives advice, NOT things you schedule. Examples from Dave Ramsey: "Avoid all credit card debt", "Live below your means", "Build a 3-6 month emergency fund before investing", "Use the debt snowball method". Examples from the Bible: "Serve others before yourself", "Practice forgiveness", "Do not worry about tomorrow". Extract 8-15 principles. The Partner will reference these when advising the user.
 
-3. SUMMARY: A one-paragraph summary of the core philosophy of this source.
+3. SUMMARY: One paragraph capturing the core philosophy.
 
-Return all this as structured JSON.`,
+Key distinction: A habit = something you PUT IN A CALENDAR. A principle = something that SHAPES DECISIONS AND MINDSET.`,
       add_context_from_internet: true,
       response_json_schema: {
         type: "object",
