@@ -8,7 +8,7 @@ import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "../../utils";
 import AddEventForm from "./AddEventForm";
 
-export default function HourDetailSheet({ hour, date, habits, unmovables, sleepHours, onClose, onConfirm, onComplete }) {
+export default function HourDetailSheet({ hour, date, habits, unmovables, sleepHours, profile, onClose, onConfirm, onComplete }) {
   const [showAddEvent, setShowAddEvent] = useState(false);
   const queryClient = useQueryClient();
 
@@ -84,8 +84,13 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, sleepH
     onClose();
   };
 
+  const partnerName = profile?.partner_name || "Partner";
+
   const goToPartner = () => {
-    window.location.href = createPageUrl("Partner") + `?hour=${hour}&date=${dateStr}`;
+    const prompt = encodeURIComponent(
+      `I have a spare hour at ${formatHour(hour)}. Based on my goals and what you know about me, what are 2–3 things I could do right now?`
+    );
+    window.location.href = createPageUrl("Partner") + `?hour=${hour}&date=${dateStr}&autoPrompt=${prompt}`;
   };
 
   return (
@@ -214,7 +219,7 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, sleepH
               className="w-full bg-[#1A1A1A] hover:bg-[#333] text-white rounded-xl h-11"
             >
               <Sparkles className="w-4 h-4 mr-2" />
-              Ask Partner what to do here
+              Ask {partnerName} what to do here
             </Button>
           </div>
         )}
