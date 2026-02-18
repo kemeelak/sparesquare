@@ -6,8 +6,8 @@ import { Grid3X3, MessageCircle, BookOpen, Layers, Menu, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Layout({ children, currentPageName }) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profile, setProfile] = useState(null);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -16,15 +16,16 @@ export default function Layout({ children, currentPageName }) {
   const loadProfile = async () => {
     const profiles = await base44.entities.UserProfile.list();
     if (profiles.length > 0) setProfile(profiles[0]);
+    setProfileLoaded(true);
   };
 
-  const showOnboarding = !profile?.onboarding_complete && currentPageName !== "Onboarding";
-
   useEffect(() => {
-    if (showOnboarding && currentPageName !== "Onboarding") {
+    if (!profileLoaded) return;
+    if (currentPageName === "Onboarding") return;
+    if (!profile?.onboarding_complete) {
       window.location.href = createPageUrl("Onboarding");
     }
-  }, [showOnboarding, currentPageName]);
+  }, [profileLoaded, profile, currentPageName]);
 
   if (currentPageName === "Onboarding") {
     return (
