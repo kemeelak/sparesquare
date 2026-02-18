@@ -154,6 +154,8 @@ Return all this as structured JSON.`,
           ) : (
             <HabitSelector
               habits={extractedHabits.habits || []}
+              learnings={extractedHabits.learnings || []}
+              summary={extractedHabits.summary}
               sourceName={extractedHabits.title || title}
               author={extractedHabits.author}
               onSave={handleSave}
