@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, addDays, subDays } from "date-fns";
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import DayGrid from "../components/grid/DayGrid";
 import GridLegend from "../components/grid/GridLegend";
