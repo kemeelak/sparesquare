@@ -321,15 +321,18 @@ export default function Onboarding() {
               </div>
 
               {/* Custom text input */}
-              <div className="flex gap-2 mb-4">
-                <input
-                  value={customInput}
-                  onChange={(e) => setCustomInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && canProceed && handleNext()}
-                  placeholder={step.customPlaceholder || "Or type your own..."}
-                  className="flex-1 rounded-xl border border-[#E8E4DF] bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 placeholder:text-[#B0AAA4]"
-                />
-              </div>
+                              <div className="flex gap-2 mb-4">
+                                <input
+                                  value={customInput}
+                                  onChange={(e) => setCustomInput(step.maxLength ? e.target.value.slice(0, step.maxLength) : e.target.value)}
+                                  onKeyDown={(e) => e.key === "Enter" && canProceed && handleNext()}
+                                  placeholder={step.customPlaceholder || "Or type your own..."}
+                                  className="flex-1 rounded-xl border border-[#E8E4DF] bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 placeholder:text-[#B0AAA4]"
+                                />
+                                {step.maxLength && customInput.length > 0 && (
+                                  <span className="flex items-center text-xs text-[#B0AAA4] flex-shrink-0">{customInput.length}/{step.maxLength}</span>
+                                )}
+                              </div>
 
               <div className="flex justify-between items-center">
                 <button
