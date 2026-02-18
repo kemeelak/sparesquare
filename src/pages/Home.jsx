@@ -16,6 +16,7 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedHour, setSelectedHour] = useState(null);
   const [showCalendarSync, setShowCalendarSync] = useState(false);
+  const [showAddEvent, setShowAddEvent] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: profiles } = useQuery({
