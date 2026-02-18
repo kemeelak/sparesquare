@@ -167,10 +167,27 @@ export default function Home() {
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="mb-4">
-        <StatsRow completed={completedCount} total={todayHabits.length} streak={3} />
-      </div>
+      {/* Spare / Calendar / Partner row */}
+          <div className="flex items-center gap-2 mb-4 flex-wrap">
+            <SpareCounter count={getSpareCount()} />
+            <button
+              onClick={() => setShowCalendarSync(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#E8E4DF] text-[#8A8580] text-xs font-medium hover:bg-[#F5F0EB] transition-colors"
+            >
+              <Calendar className="w-3.5 h-3.5" /> Sync Calendar
+            </button>
+            <button
+              onClick={() => window.location.href = createPageUrl("Partner") + "?context=grid"}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#E8E4DF] text-[#8A8580] text-xs font-medium hover:bg-[#F5F0EB] transition-colors"
+            >
+              <MessageCircle className="w-3.5 h-3.5" /> Ask Partner
+            </button>
+          </div>
+
+          {/* Stats */}
+          <div className="mb-4">
+            <StatsRow completed={completedCount} total={todayHabits.length} streak={3} />
+          </div>
 
       {/* Grid */}
       <div className="bg-white rounded-2xl p-4 border border-[#E8E4DF] mb-4">
