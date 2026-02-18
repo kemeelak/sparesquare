@@ -1,12 +1,21 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, RefreshCw, CalendarDays } from "lucide-react";
 import { format, addDays, subDays } from "date-fns";
 import { Button } from "@/components/ui/button";
+
+const REPEAT_OPTIONS = [
+  { value: "none", label: "One-time" },
+  { value: "daily", label: "Daily" },
+  { value: "weekdays", label: "Weekdays" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+];
 
 export default function ScheduleSheet({ habit, onClose, onSchedule }) {
   const [date, setDate] = useState(new Date());
   const [selectedHour, setSelectedHour] = useState(null);
+  const [repeat, setRepeat] = useState("none");
 
   const hours = Array.from({ length: 24 }, (_, i) => i);
 
@@ -30,50 +39,91 @@ export default function ScheduleSheet({ habit, onClose, onSchedule }) {
         animate={{ y: 0 }}
         exit={{ y: 100 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-t-3xl lg:rounded-3xl w-full max-w-md max-h-[80vh] overflow-y-auto"
+        className="bg-white rounded-t-3xl lg:rounded-3xl w-full max-w-md max-h-[85vh] overflow-y-auto"
       >
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-[#1A1A1A]">Schedule: {habit.title}</h2>
+            <div>
+              <h2 className="text-lg font-bold text-[#1A1A1A]">{habit.title}</h2>
+              <p className="text-xs text-[#8A8580] mt-0.5">{habit.duration_minutes || 15}min · {habit.energy_level || "medium"} energy</p>
+            </div>
             <button onClick={onClose} className="p-2 rounded-xl hover:bg-[#F5F0EB]">
               <X className="w-5 h-5 text-[#8A8580]" />
             </button>
           </div>
 
-          {/* Date selector */}
-          <div className="flex items-center justify-between bg-[#F5F0EB] rounded-xl p-3 mb-4">
-            <button onClick={() => setDate(subDays(date, 1))} className="p-1">
-              <ChevronLeft className="w-4 h-4 text-[#8A8580]" />
-            </button>
-            <p className="text-sm font-medium text-[#1A1A1A]">{format(date, "EEEE, MMM d")}</p>
-            <button onClick={() => setDate(addDays(date, 1))} className="p-1">
-              <ChevronRight className="w-4 h-4 text-[#8A8580]" />
-            </button>
+          {/* Repeat toggle */}
+          <div className="mb-4">
+            <div className="flex items-center gap-1.5 mb-2">
+              <RefreshCw className="w-3.5 h-3.5 text-[#8A8580]" />
+              <p className="text-xs font-semibold text-[#4A5568] uppercase tracking-wide">Repeat</p>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {REPEAT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setRepeat(opt.value)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border
+                    ${repeat === opt.value
+                      ? "bg-[#1A1A1A] text-white border-[#1A1A1A]"
+                      : "bg-white text-[#4A5568] border-[#E8E4DF] hover:border-[#1A1A1A]"
+                    }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
+          {/* Date selector — only show for non-daily repeats */}
+          {repeat !== "daily" && repeat !== "weekdays" && (
+            <div className="mb-4">
+              <div className="flex items-center gap-1.5 mb-2">
+                <CalendarDays className="w-3.5 h-3.5 text-[#8A8580]" />
+                <p className="text-xs font-semibold text-[#4A5568] uppercase tracking-wide">
+                  {repeat === "weekly" ? "Starting week of" : repeat === "monthly" ? "Starting month" : "Date"}
+                </p>
+              </div>
+              <div className="flex items-center justify-between bg-[#F5F0EB] rounded-xl p-3">
+                <button onClick={() => setDate(subDays(date, repeat === "weekly" ? 7 : 1))} className="p-1">
+                  <ChevronLeft className="w-4 h-4 text-[#8A8580]" />
+                </button>
+                <p className="text-sm font-medium text-[#1A1A1A]">{format(date, "EEEE, MMM d")}</p>
+                <button onClick={() => setDate(addDays(date, repeat === "weekly" ? 7 : 1))} className="p-1">
+                  <ChevronRight className="w-4 h-4 text-[#8A8580]" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Hour picker */}
-          <div className="grid grid-cols-4 gap-2 mb-6">
-            {hours.map((h) => (
-              <button
-                key={h}
-                onClick={() => setSelectedHour(h)}
-                className={`py-2 px-3 rounded-xl text-sm font-medium transition-all
-                  ${selectedHour === h
-                    ? "bg-[#7C9A82] text-white"
-                    : "bg-[#F5F0EB] text-[#8A8580] hover:bg-[#E8E4DF]"
-                  }`}
-              >
-                {formatHour(h)}
-              </button>
-            ))}
+          <div className="mb-2">
+            <p className="text-xs font-semibold text-[#4A5568] uppercase tracking-wide mb-2">Time</p>
+            <div className="grid grid-cols-4 gap-2 mb-6">
+              {hours.map((h) => (
+                <button
+                  key={h}
+                  onClick={() => setSelectedHour(h)}
+                  className={`py-2 px-3 rounded-xl text-sm font-medium transition-all
+                    ${selectedHour === h
+                      ? "bg-[#7C9A82] text-white"
+                      : "bg-[#F5F0EB] text-[#8A8580] hover:bg-[#E8E4DF]"
+                    }`}
+                >
+                  {formatHour(h)}
+                </button>
+              ))}
+            </div>
           </div>
 
           <Button
-            onClick={() => onSchedule(selectedHour, date)}
+            onClick={() => onSchedule(selectedHour, date, repeat)}
             disabled={selectedHour === null}
             className="w-full h-12 rounded-xl bg-[#7C9A82] hover:bg-[#6B8A71] text-white"
           >
-            Schedule at {selectedHour !== null ? formatHour(selectedHour) : "..."}
+            {repeat === "none"
+              ? `Schedule at ${selectedHour !== null ? formatHour(selectedHour) : "..."}`
+              : `Add as ${REPEAT_OPTIONS.find(r => r.value === repeat)?.label} habit at ${selectedHour !== null ? formatHour(selectedHour) : "..."}`}
           </Button>
         </div>
       </motion.div>
