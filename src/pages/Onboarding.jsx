@@ -369,7 +369,8 @@ export default function Onboarding() {
                     { label: "Sleep goal", value: answers.sleep_goal },
                     { label: "Growth focus", value: Array.isArray(answers.growth_focus) ? answers.growth_focus.join(", ") : answers.growth_focus },
                     { label: "Peak energy", value: answers.energy_pattern },
-                  ].map(({ label, value }) => (
+                    { label: "Partner name", value: answers.partner_name },
+                    ].map(({ label, value }) => (
                     <div key={label} className="flex justify-between items-start gap-4 text-sm">
                       <span className="text-[#8A8580] flex-shrink-0">{label}</span>
                       <span className="text-[#1A1A1A] font-medium text-right">{value || "—"}</span>
