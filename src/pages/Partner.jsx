@@ -130,17 +130,30 @@ ${pluginKnowledge ? `\nPLUGIN KNOWLEDGE BASE (apply these principles when releva
     setLoading(false);
 
     // Parse habit suggestions
-    const habitMatch = response.match(/```habit\s*([\s\S]*?)\s*```/);
-    if (habitMatch) {
-      const habitData = JSON.parse(habitMatch[1]);
-      await base44.entities.HabitBlock.create({
-        ...habitData,
-        scheduled_date: format(new Date(), "yyyy-MM-dd"),
-        status: "suggested",
-        source: "Partner suggestion",
-      });
-      queryClient.invalidateQueries({ queryKey: ["habits"] });
-    }
+      const habitMatch = response.match(/```habit\s*([\s\S]*?)\s*```/);
+      if (habitMatch) {
+        try {
+          const habitData = JSON.parse(habitMatch[1]);
+          // Ensure scheduled_hour is a valid number, default to next reasonable hour
+          const scheduledHour = typeof habitData.scheduled_hour === "number"
+            ? habitData.scheduled_hour
+            : new Date().getHours() + 1;
+          await base44.entities.HabitBlock.create({
+            title: habitData.title,
+            description: habitData.description || "",
+            duration_minutes: habitData.duration_minutes || 30,
+            category: habitData.category || "fitness",
+            energy_level: habitData.energy_level || "medium",
+            scheduled_hour: scheduledHour,
+            scheduled_date: format(new Date(), "yyyy-MM-dd"),
+            status: "confirmed",
+            source: "Partner suggestion",
+          });
+          queryClient.invalidateQueries({ queryKey: ["habits"] });
+        } catch (e) {
+          console.error("Failed to parse habit block:", e);
+        }
+      }
   };
 
   return (
