@@ -33,7 +33,6 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, sleepH
     mutationFn: (data) => base44.entities.HabitBlock.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["habits"] });
-      onClose();
     },
   });
 
@@ -49,15 +48,40 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, sleepH
     },
   });
 
-  const handleAddEvent = () => {
-    if (!eventTitle.trim()) return;
-    createEventMutation.mutate({
-      title: eventTitle.trim(),
-      status: "confirmed",
-      scheduled_date: dateStr,
-      scheduled_hour: hour,
-      duration_minutes: eventDuration * 60,
-    });
+  const DAY_MAP = { mon: "monday", tue: "tuesday", wed: "wednesday", thu: "thursday", fri: "friday", sat: "saturday", sun: "sunday" };
+  const WEEKDAYS = ["monday","tuesday","wednesday","thursday","friday"];
+
+  const getDatesToSchedule = (repeat) => {
+    if (repeat === "none") return [dateStr];
+    const dates = [];
+    const start = new Date(date);
+    for (let i = 0; i < 60; i++) {
+      const d = addDays(start, i);
+      const dayName = format(d, "EEEE").toLowerCase();
+      const dStr = format(d, "yyyy-MM-dd");
+      if (repeat === "daily") dates.push(dStr);
+      else if (repeat === "weekdays" && WEEKDAYS.includes(dayName)) dates.push(dStr);
+      else if (repeat === "weekly" && i % 7 === 0) dates.push(dStr);
+      else if (DAY_MAP[repeat] === dayName) dates.push(dStr);
+    }
+    return dates;
+  };
+
+  const handleSaveEvent = async ({ title, duration, category, energy, repeat }) => {
+    const dates = getDatesToSchedule(repeat);
+    await Promise.all(dates.map(d =>
+      createEventMutation.mutateAsync({
+        title,
+        status: "confirmed",
+        scheduled_date: d,
+        scheduled_hour: hour,
+        duration_minutes: duration,
+        category,
+        energy_level: energy,
+      })
+    ));
+    setShowAddEvent(false);
+    onClose();
   };
 
   const goToPartner = () => {
