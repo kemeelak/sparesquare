@@ -49,6 +49,7 @@ Key distinction: A habit = something you PUT IN A CALENDAR. A principle = someth
                 title: { type: "string" },
                 description: { type: "string" },
                 duration_minutes: { type: "number" },
+                frequency: { type: "string" },
                 energy_level: { type: "string", enum: ["low", "medium", "high"] },
                 category: { type: "string", enum: ["fitness", "mindfulness", "learning", "nutrition", "sleep", "productivity", "social", "creative"] }
               }
