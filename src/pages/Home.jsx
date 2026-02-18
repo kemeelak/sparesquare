@@ -14,6 +14,7 @@ import CalendarSync from "../components/calendar/CalendarSync";
 export default function Home() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedHour, setSelectedHour] = useState(null);
+  const [showCalendarSync, setShowCalendarSync] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: profiles } = useQuery({
