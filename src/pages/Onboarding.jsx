@@ -37,6 +37,12 @@ export default function Onboarding() {
   }, [messages, loading]);
 
   const startChat = async () => {
+    // Load existing history first
+    const existing = await base44.entities.ChatMessage.filter({ context: "onboarding" }, "created_date", 50);
+    if (existing && existing.length > 0) {
+      setMessages(existing);
+      return;
+    }
     setLoading(true);
     const greeting = await base44.integrations.Core.InvokeLLM({
       prompt: `${SYSTEM_PROMPT}\n\nStart the onboarding by warmly greeting the user and asking about their work/school rhythm. Keep it to 2-3 sentences.`,
