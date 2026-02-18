@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { X, Check, Sparkles, Lock, Moon, Plus, ArrowRight } from "lucide-react";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "../../utils";
+import AddEventForm from "./AddEventForm";
 
 export default function HourDetailSheet({ hour, date, habits, unmovables, sleepHours, onClose, onConfirm, onComplete }) {
   const [showAddEvent, setShowAddEvent] = useState(false);
