@@ -36,7 +36,7 @@ export default function PluginCard({ source, queryClient }) {
       status: "backlog",
     });
     setAddedIds(prev => ({ ...prev, [index]: true }));
-    queryClient.invalidateQueries({ queryKey: ["habits"] });
+    if (queryClient) queryClient.invalidateQueries({ queryKey: ["habits"] });
   };
 
   return (
