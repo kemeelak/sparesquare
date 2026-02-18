@@ -77,6 +77,16 @@ export default function Partner() {
     const todayHabits = habits.filter(h => h.scheduled_date === today);
     const backlogHabits = habits.filter(h => h.status === "backlog");
 
+    // Build plugin knowledge base
+    const pluginKnowledge = pluginSources.length > 0
+      ? pluginSources.map(src => {
+          const learningLines = (src.learnings || [])
+            .map(l => `  • [${l.domain || "general"}] ${l.principle}: ${l.explanation}`)
+            .join("\n");
+          return `📚 ${src.title}${src.author ? ` by ${src.author}` : ""}${src.summary ? `\n  Summary: ${src.summary}` : ""}${learningLines ? `\n  Principles:\n${learningLines}` : ""}`;
+        }).join("\n\n")
+      : null;
+
     return `
 USER PROFILE:
 - Rhythm: ${profile?.rhythm_type || "unknown"}
@@ -88,6 +98,7 @@ USER PROFILE:
 TODAY'S SCHEDULE (${today}):
 - Habits: ${todayHabits.map(h => `${h.scheduled_hour}:00 - ${h.title} (${h.status})`).join(", ") || "None"}
 - Backlog: ${backlogHabits.map(h => h.title).join(", ") || "Empty"}
+${pluginKnowledge ? `\nPLUGIN KNOWLEDGE BASE (apply these principles when relevant — this is the user's personal curriculum):\n${pluginKnowledge}` : ""}
 `;
   };
 
