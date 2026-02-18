@@ -2,8 +2,17 @@ import React from "react";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 
+// Strip code blocks (habit JSON, etc.) from display
+function cleanContent(content) {
+  return content
+    .replace(/```habit[\s\S]*?```/g, "")
+    .replace(/```json[\s\S]*?```/g, "")
+    .trim();
+}
+
 export default function ChatBubble({ message }) {
   const isUser = message.role === "user";
+  const displayContent = cleanContent(message.content);
 
   return (
     <motion.div
@@ -24,7 +33,7 @@ export default function ChatBubble({ message }) {
         }`}
       >
         <div className="text-sm leading-relaxed prose prose-sm max-w-none prose-p:my-1">
-          <ReactMarkdown>{message.content}</ReactMarkdown>
+          <ReactMarkdown>{displayContent}</ReactMarkdown>
         </div>
       </div>
     </motion.div>

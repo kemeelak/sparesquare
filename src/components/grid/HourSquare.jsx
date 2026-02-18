@@ -33,9 +33,9 @@ export default function HourSquare({ hour, unmovable, habit, isSpare, isSleep, o
     bgClass = "bg-[#4A5568] border-[#4A5568]";
     textClass = "text-white";
     content = (
-      <div className="flex flex-col items-center gap-0.5">
-        <Lock className="w-3 h-3 opacity-60" />
-        <span className="text-[9px] font-medium leading-tight text-center truncate max-w-full px-0.5">
+      <div className="flex flex-col items-center gap-0.5 w-full overflow-hidden">
+        <Lock className="w-3 h-3 opacity-60 flex-shrink-0" />
+        <span className="text-[8px] font-medium leading-tight text-center w-full overflow-hidden" style={{display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>
           {unmovable.label}
         </span>
       </div>
@@ -48,13 +48,13 @@ export default function HourSquare({ hour, unmovable, habit, isSpare, isSleep, o
       : "bg-transparent border-[#7C9A82] border-dashed border-2";
     textClass = isConfirmed ? "text-white" : "text-[#7C9A82]";
     content = (
-      <div className="flex flex-col items-center gap-0.5">
+      <div className="flex flex-col items-center gap-0.5 w-full overflow-hidden">
         {isCompleted ? (
-          <Check className="w-3.5 h-3.5" />
+          <Check className="w-3.5 h-3.5 flex-shrink-0" />
         ) : (
-          <span className="text-xs">{categoryIcons[habit.category] || "✨"}</span>
+          <span className="text-xs leading-none">{categoryIcons[habit.category] || "✨"}</span>
         )}
-        <span className="text-[9px] font-medium leading-tight text-center truncate max-w-full px-0.5">
+        <span className="text-[8px] font-medium leading-tight text-center w-full overflow-hidden" style={{display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>
           {habit.title}
         </span>
       </div>
