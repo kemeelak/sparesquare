@@ -247,6 +247,7 @@ export default function Onboarding() {
       growth_focus: primaryGrowth,
       onboarding_complete: true,
       timezone_offset: new Date().getTimezoneOffset() / -60,
+      partner_name: answers.partner_name || "Partner",
     });
 
     window.location.href = createPageUrl("Home");
