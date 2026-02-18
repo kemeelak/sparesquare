@@ -16,14 +16,21 @@ const STEPS = [
   },
   {
     field: "unmovables_work",
-    question: "Got it. Now let's map your **Unmovables** — the blocks that are completely non-negotiable.\n\n**Work / School hours?**",
-    chips: ["9am–5pm Mon–Fri", "8am–4pm Mon–Fri", "8am–3pm Mon–Fri", "10am–6pm Mon–Fri", "Shift work / irregular", "I work from home / flexible", "None"],
+    question: "Got it. Now let's map your **Unmovables** — blocks that are completely non-negotiable.\n\n**Work / School hours?**\n\nIf you do shift work, pick the closest pattern or type your exact hours below.",
+    chips: ["9am–5pm Mon–Fri", "8am–4pm Mon–Fri", "8am–3pm Mon–Fri", "10am–6pm Mon–Fri", "7am–3pm (early shift)", "3pm–11pm (late shift)", "11pm–7am (night shift)", "Rotating shifts", "Flexible / WFH", "None"],
+    multi: false,
+    customPlaceholder: "e.g. 6am–2pm Tue–Sat, or 12pm–8pm Mon/Wed/Fri",
+  },
+  {
+    field: "commute",
+    question: "Do you commute to work or school? How long is your commute one way?",
+    chips: ["No commute (WFH)", "Under 15 min", "15–30 min", "30–45 min", "45–60 min", "Over 1 hour"],
     multi: false,
   },
   {
     field: "unmovables_other",
     question: "Any other regular commitments? (Select all that apply)",
-    chips: ["School run / childcare", "Gym class / PT session", "Commute (30+ min each way)", "Medical appointments", "Religious practice", "Evening class", "None of the above"],
+    chips: ["School run / childcare", "Gym class / PT session", "Medical appointments", "Religious practice", "Evening class / course", "Caring for a family member", "None of the above"],
     multi: true,
   },
   {
