@@ -166,7 +166,7 @@ Return all this as structured JSON.`,
   );
 }
 
-function HabitSelector({ habits, sourceName, author, onSave, onBack }) {
+function HabitSelector({ habits, learnings, summary, sourceName, author, onSave, onBack }) {
   const [selected, setSelected] = useState(habits.map((_, i) => i));
   const [saving, setSaving] = useState(false);
 
@@ -185,7 +185,28 @@ function HabitSelector({ habits, sourceName, author, onSave, onBack }) {
   return (
     <div>
       <p className="text-sm text-[#8A8580] mb-1">Found from <span className="font-semibold text-[#1A1A1A]">{sourceName}</span></p>
-      {author && <p className="text-xs text-[#B0AAA4] mb-4">by {author}</p>}
+      {author && <p className="text-xs text-[#B0AAA4] mb-3">by {author}</p>}
+
+      {/* Learnings preview */}
+      {learnings?.length > 0 && (
+        <div className="bg-[#F5EDE4] rounded-2xl p-4 mb-5 border border-[#E8D5C0]">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-sm">🧠</span>
+            <p className="text-xs font-semibold text-[#D4A574] uppercase tracking-wide">Partner will learn {learnings.length} principles</p>
+          </div>
+          {summary && <p className="text-xs text-[#8A8580] mb-2 italic">"{summary}"</p>}
+          <div className="flex flex-wrap gap-1.5">
+            {learnings.slice(0, 6).map((l, i) => (
+              <span key={i} className="text-[10px] px-2 py-1 rounded-full bg-white/80 text-[#4A5568] border border-[#E8D5C0]">
+                {l.principle}
+              </span>
+            ))}
+            {learnings.length > 6 && (
+              <span className="text-[10px] px-2 py-1 rounded-full bg-white/80 text-[#8A8580]">+{learnings.length - 6} more</span>
+            )}
+          </div>
+        </div>
+      )}
 
       <p className="text-sm font-medium text-[#1A1A1A] mb-3">
         Select habits to add ({selected.length}/{habits.length}):
