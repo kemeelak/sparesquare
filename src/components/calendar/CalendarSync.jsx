@@ -1,29 +1,70 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Calendar, X, ExternalLink, CheckCircle, Smartphone, Globe } from "lucide-react";
+import { Calendar, X, CheckCircle, Loader2, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
+
+function groupEventsByBlock(events) {
+  // Ask LLM to turn events list into unmovable blocks
+  return events;
+}
 
 export default function CalendarSync({ onClose }) {
-  const [tab, setTab] = useState("google"); // google | apple | ical
-  const [icalUrl, setIcalUrl] = useState("");
-  const [importing, setImporting] = useState(false);
-  const [imported, setImported] = useState(null);
+  const [status, setStatus] = useState("idle"); // idle | requesting | parsing | done | error | unsupported
+  const [imported, setImported] = useState(0);
+  const [errorMsg, setErrorMsg] = useState("");
   const queryClient = useQueryClient();
 
-  const handleICalImport = async () => {
-    if (!icalUrl.trim()) return;
-    setImporting(true);
+  const isSupported = typeof window !== "undefined" && "navigator" in window;
 
-    // Use LLM to parse the intent and create unmovable blocks from the URL info
+  const handleSync = async () => {
+    // Try Web Calendar API (Chrome on Android/some browsers)
+    if (navigator.permissions && window.CalendarManager) {
+      // Native calendar path — not widely available yet, fall through
+    }
+
+    // Use device calendar via getUserMedia-style permission — not available in browsers.
+    // Best available approach: use the Temporal/Calendar web API where available,
+    // or fall back to the LLM-based extraction using event titles the user describes.
+    
+    // Most practical approach for a PWA: read from navigator.calendar if available
+    setStatus("requesting");
+
+    // Check for experimental Calendar API (Chrome Origin Trial / Chromium)
+    if ("calendar" in navigator) {
+      try {
+        const permission = await navigator.calendar.requestPermission();
+        if (permission === "granted") {
+          const today = new Date();
+          const end = addDays(today, 30);
+          const events = await navigator.calendar.getEvents({ startDate: today, endDate: end });
+          await processEvents(events.map(e => ({
+            title: e.title || e.summary,
+            start: e.startDate,
+            end: e.endDate,
+            recurring: !!e.recurrenceRule,
+          })));
+          return;
+        }
+      } catch (e) {
+        // fall through to manual
+      }
+    }
+
+    // Fallback: use screen prompt to let user describe their schedule
+    setStatus("unsupported");
+  };
+
+  const handleManualDescribe = async (text) => {
+    setStatus("parsing");
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `A user wants to sync their calendar with SpareSquare. They provided this iCal/calendar URL: "${icalUrl}"
+      prompt: `A user described their weekly schedule: "${text}"
       
-Based on common calendar patterns, generate 2-3 realistic unmovable blocks that someone might have (work, school, recurring appointments).
-Return structured JSON only.`,
+Extract all recurring time blocks from this description and convert them into structured unmovable schedule blocks. Be precise about start/end hours (24h format integers) and which days of the week.
+
+Only extract recurring, fixed commitments — not one-off events.`,
       response_json_schema: {
         type: "object",
         properties: {
@@ -42,23 +83,49 @@ Return structured JSON only.`,
         }
       }
     });
+    await saveBlocks(result.blocks || []);
+  };
 
-    // Update profile with new unmovable blocks
+  const processEvents = async (events) => {
+    setStatus("parsing");
+    const result = await base44.integrations.Core.InvokeLLM({
+      prompt: `Given these calendar events, extract recurring unmovable schedule blocks:
+${JSON.stringify(events.slice(0, 50), null, 2)}
+
+Group recurring events into schedule blocks with start_hour and end_hour (integers, 24h) and which days they occur.`,
+      response_json_schema: {
+        type: "object",
+        properties: {
+          blocks: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                label: { type: "string" },
+                start_hour: { type: "number" },
+                end_hour: { type: "number" },
+                days: { type: "array", items: { type: "string" } }
+              }
+            }
+          }
+        }
+      }
+    });
+    await saveBlocks(result.blocks || []);
+  };
+
+  const saveBlocks = async (blocks) => {
     const profiles = await base44.entities.UserProfile.list();
     if (profiles.length > 0) {
       const existing = profiles[0].unmovables || [];
       await base44.entities.UserProfile.update(profiles[0].id, {
-        unmovables: [...existing, ...(result.blocks || [])]
+        unmovables: [...existing, ...blocks]
       });
       queryClient.invalidateQueries({ queryKey: ["userProfile"] });
     }
-
-    setImported(result.blocks?.length || 0);
-    setImporting(false);
+    setImported(blocks.length);
+    setStatus("done");
   };
-
-  const googleCalendarUrl = "https://calendar.google.com/calendar/r/settings/export";
-  const appleCalendarUrl = "https://support.apple.com/guide/calendar/share-calendars-icl1022/mac";
 
   return (
     <motion.div
@@ -78,106 +145,95 @@ Return structured JSON only.`,
         <div className="flex justify-between items-center mb-5">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-[#7C9A82]" />
-            <h2 className="text-lg font-bold text-[#1A1A1A]">Calendar Sync</h2>
+            <h2 className="text-lg font-bold text-[#1A1A1A]">Sync Calendar</h2>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-[#F5F0EB]">
             <X className="w-5 h-5 text-[#8A8580]" />
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-5">
-          {[
-            { id: "google", label: "Google" },
-            { id: "apple", label: "Apple" },
-            { id: "ical", label: "iCal URL" },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all
-                ${tab === t.id ? "bg-[#1A1A1A] text-white" : "bg-[#F5F0EB] text-[#8A8580] hover:bg-[#E8E4DF]"}`}
+        {status === "idle" && (
+          <div className="space-y-4">
+            <div className="bg-[#F5F0EB] rounded-2xl p-4 text-sm text-[#4A5568]">
+              <Smartphone className="w-5 h-5 text-[#7C9A82] mb-2" />
+              <p className="font-medium mb-1">Sync your device calendar</p>
+              <p className="text-[#8A8580] text-xs">SpareSquare will read your recurring events to map Unmovable blocks on your grid — so it knows exactly when you're free to grow.</p>
+            </div>
+            <Button
+              onClick={handleSync}
+              className="w-full h-12 rounded-xl bg-[#1A1A1A] hover:bg-[#333] text-white"
             >
-              {t.label}
-            </button>
-          ))}
-        </div>
+              <Calendar className="w-4 h-4 mr-2" /> Connect Calendar
+            </Button>
+          </div>
+        )}
 
-        {imported !== null ? (
-          <div className="text-center py-6">
+        {(status === "requesting" || status === "parsing") && (
+          <div className="text-center py-10">
+            <Loader2 className="w-10 h-10 text-[#7C9A82] animate-spin mx-auto mb-3" />
+            <p className="text-sm font-medium text-[#1A1A1A]">
+              {status === "requesting" ? "Requesting calendar access..." : "Reading your schedule..."}
+            </p>
+            <p className="text-xs text-[#8A8580] mt-1">This will only take a moment</p>
+          </div>
+        )}
+
+        {status === "done" && (
+          <div className="text-center py-8">
             <CheckCircle className="w-12 h-12 text-[#7C9A82] mx-auto mb-3" />
             <p className="text-lg font-semibold text-[#1A1A1A]">Calendar Synced!</p>
-            <p className="text-sm text-[#8A8580] mt-1">{imported} blocks added to your grid.</p>
-            <Button onClick={onClose} className="mt-4 bg-[#7C9A82] hover:bg-[#6B8A71] text-white rounded-xl">
+            <p className="text-sm text-[#8A8580] mt-1">{imported} recurring blocks added to your grid.</p>
+            <Button onClick={onClose} className="mt-5 bg-[#7C9A82] hover:bg-[#6B8A71] text-white rounded-xl px-8">
               View Grid
             </Button>
           </div>
-        ) : (
-          <>
-            {tab === "google" && (
-              <div className="space-y-3">
-                <div className="bg-[#F5F0EB] rounded-xl p-4">
-                  <p className="text-sm text-[#4A5568] font-medium mb-2">How to export from Google Calendar:</p>
-                  <ol className="text-sm text-[#8A8580] space-y-1.5 list-decimal list-inside">
-                    <li>Go to Google Calendar Settings</li>
-                    <li>Click "Import & Export" → Export</li>
-                    <li>Copy the iCal/ICS link for your calendar</li>
-                    <li>Paste it in the "iCal URL" tab above</li>
-                  </ol>
-                </div>
-                <a href={googleCalendarUrl} target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline" className="w-full rounded-xl border-[#E8E4DF]">
-                    <ExternalLink className="w-4 h-4 mr-2" /> Open Google Calendar Settings
-                  </Button>
-                </a>
-                <div className="bg-[#E8F0EA] rounded-xl p-3 text-sm text-[#7C9A82]">
-                  <strong>Quick tip:</strong> In Google Calendar, you can also get a shareable iCal link from each calendar's settings (three-dot menu → Settings → "Secret address in iCal format").
-                </div>
-              </div>
-            )}
+        )}
 
-            {tab === "apple" && (
-              <div className="space-y-3">
-                <div className="bg-[#F5F0EB] rounded-xl p-4">
-                  <p className="text-sm text-[#4A5568] font-medium mb-2">How to export from Apple Calendar:</p>
-                  <ol className="text-sm text-[#8A8580] space-y-1.5 list-decimal list-inside">
-                    <li>Open the Calendar app on your iPhone</li>
-                    <li>Tap Calendar (bottom) → tap ⓘ next to a calendar</li>
-                    <li>Tap "Share Calendar" and copy the link</li>
-                    <li>Paste it in the "iCal URL" tab above</li>
-                  </ol>
-                </div>
-                <div className="bg-[#E8F0EA] rounded-xl p-3 text-sm text-[#7C9A82]">
-                  <Smartphone className="w-4 h-4 inline mr-1" />
-                  <strong>iOS tip:</strong> Shared Apple Calendar links end in .ics and work perfectly as iCal URLs.
-                </div>
-              </div>
-            )}
+        {status === "unsupported" && (
+          <ManualScheduleEntry onSubmit={handleManualDescribe} />
+        )}
 
-            {tab === "ical" && (
-              <div className="space-y-3">
-                <p className="text-sm text-[#8A8580]">Paste your iCal URL (from Google, Apple, Outlook, or any calendar app).</p>
-                <Input
-                  value={icalUrl}
-                  onChange={(e) => setIcalUrl(e.target.value)}
-                  placeholder="https://calendar.google.com/calendar/ical/..."
-                  className="rounded-xl border-[#E8E4DF] h-11"
-                />
-                <Button
-                  onClick={handleICalImport}
-                  disabled={!icalUrl.trim() || importing}
-                  className="w-full h-11 rounded-xl bg-[#7C9A82] hover:bg-[#6B8A71] text-white"
-                >
-                  {importing ? "Importing..." : "Import Calendar Events"}
-                </Button>
-                <p className="text-xs text-[#B0AAA4] text-center">
-                  SpareSquare reads your recurring events to map Unmovable blocks.
-                </p>
-              </div>
-            )}
-          </>
+        {status === "error" && (
+          <div className="text-center py-8">
+            <p className="text-sm text-red-500 mb-4">{errorMsg || "Something went wrong. Please try again."}</p>
+            <Button onClick={() => setStatus("idle")} variant="outline" className="rounded-xl">Try Again</Button>
+          </div>
         )}
       </motion.div>
     </motion.div>
+  );
+}
+
+function ManualScheduleEntry({ onSubmit }) {
+  const [text, setText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!text.trim()) return;
+    setSubmitting(true);
+    await onSubmit(text);
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-[#FEF3C7] rounded-2xl p-4 text-sm text-[#92400E]">
+        <p className="font-medium mb-1">Direct calendar access isn't available in this browser</p>
+        <p className="text-xs text-[#B45309]">Describe your weekly schedule below and we'll map it automatically.</p>
+      </div>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="e.g. I work 9am to 5pm Monday to Friday, gym every Tuesday and Thursday 6-7pm, school run 8-9am weekdays..."
+        className="w-full rounded-xl border border-[#E8E4DF] p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 resize-none h-28 placeholder:text-[#B0AAA4]"
+      />
+      <Button
+        onClick={handleSubmit}
+        disabled={!text.trim() || submitting}
+        className="w-full h-12 rounded-xl bg-[#7C9A82] hover:bg-[#6B8A71] text-white"
+      >
+        {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Map My Schedule"}
+      </Button>
+    </div>
   );
 }
