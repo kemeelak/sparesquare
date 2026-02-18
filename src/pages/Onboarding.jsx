@@ -228,7 +228,7 @@ export default function Onboarding() {
 
     const growthFocuses = Array.isArray(answers.growth_focus) ? answers.growth_focus : [answers.growth_focus];
     const primaryGrowth = GROWTH_MAP[growthFocuses[0]] || "learning";
-    const unmovables = buildUnmovables(answers.unmovables_work, answers.unmovables_other);
+    const unmovables = buildUnmovables(answers.unmovables_work, answers.commute, answers.unmovables_other);
 
     await base44.entities.UserProfile.create({
       rhythm_type: RHYTHM_MAP[answers.rhythm_type] || "other",
