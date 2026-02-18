@@ -13,7 +13,7 @@ const categoryIcons = {
   creative: "🎨",
 };
 
-export default function HourSquare({ hour, unmovable, habit, isSpare, isSleep, onSquareClick, compact }) {
+export default function HourSquare({ hour, unmovable, habit, isSpare, isSleep, onSquareClick }) {
   const formatHour = (h) => {
     if (h === 0) return "12a";
     if (h === 12) return "12p";
@@ -23,23 +23,16 @@ export default function HourSquare({ hour, unmovable, habit, isSpare, isSleep, o
 
   let bgClass = "bg-white border-[#E8E4DF]";
   let textClass = "text-[#B0AAA4]";
-  let content = null;
+  let emoji = null;
 
   if (isSleep) {
     bgClass = "bg-[#2D3748] border-[#2D3748]";
     textClass = "text-[#718096]";
-    content = <span className="text-xs">😴</span>;
+    emoji = "😴";
   } else if (unmovable) {
     bgClass = "bg-[#4A5568] border-[#4A5568]";
     textClass = "text-white";
-    content = (
-      <div className="flex flex-col items-center gap-0.5 w-full overflow-hidden">
-        <Lock className="w-3 h-3 opacity-60 flex-shrink-0" />
-        <span className="text-[8px] font-medium leading-tight text-center w-full overflow-hidden" style={{display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>
-          {unmovable.label}
-        </span>
-      </div>
-    );
+    emoji = "🔒";
   } else if (habit) {
     const isConfirmed = habit.status === "confirmed" || habit.status === "completed";
     const isCompleted = habit.status === "completed";
@@ -47,22 +40,11 @@ export default function HourSquare({ hour, unmovable, habit, isSpare, isSleep, o
       ? "bg-[#7C9A82] border-[#7C9A82]"
       : "bg-transparent border-[#7C9A82] border-dashed border-2";
     textClass = isConfirmed ? "text-white" : "text-[#7C9A82]";
-    content = (
-      <div className="flex flex-col items-center gap-0.5 w-full overflow-hidden">
-        {isCompleted ? (
-          <Check className="w-3.5 h-3.5 flex-shrink-0" />
-        ) : (
-          <span className="text-xs leading-none">{categoryIcons[habit.category] || "✨"}</span>
-        )}
-        <span className="text-[8px] font-medium leading-tight text-center w-full overflow-hidden" style={{display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>
-          {habit.title}
-        </span>
-      </div>
-    );
+    emoji = isCompleted ? "✅" : (categoryIcons[habit.category] || "✨");
   } else if (isSpare) {
     bgClass = "bg-[#F5EDE4] border-[#D4A574] border-dashed";
     textClass = "text-[#D4A574]";
-    content = <Sparkles className="w-3.5 h-3.5" />;
+    emoji = "✨";
   }
 
   return (
@@ -70,14 +52,13 @@ export default function HourSquare({ hour, unmovable, habit, isSpare, isSleep, o
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={() => onSquareClick?.(hour)}
-      className={`relative aspect-square rounded-xl border-2 ${bgClass} ${textClass} 
-        flex flex-col items-center justify-center transition-colors duration-200
-        ${compact ? "p-1" : "p-1.5"} cursor-pointer`}
+      className={`relative w-full aspect-square rounded-xl border-2 ${bgClass} ${textClass} 
+        flex flex-col items-center justify-center transition-colors duration-200 cursor-pointer p-1`}
     >
-      <span className={`absolute top-1 left-1.5 text-[9px] font-mono opacity-60 ${textClass}`}>
+      <span className={`absolute top-0.5 left-1 text-[8px] font-mono opacity-50 ${textClass}`}>
         {formatHour(hour)}
       </span>
-      <div className="mt-2">{content}</div>
+      {emoji && <span className="text-base leading-none mt-1">{emoji}</span>}
     </motion.button>
   );
 }
