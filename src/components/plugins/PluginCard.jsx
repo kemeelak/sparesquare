@@ -21,6 +21,14 @@ export default function PluginCard({ source, queryClient }) {
   const [expandedHabits, setExpandedHabits] = useState(false);
   const [expandedLearnings, setExpandedLearnings] = useState(false);
   const [addedIds, setAddedIds] = useState({});
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!confirm(`Remove "${source.title}" from your library?`)) return;
+    setDeleting(true);
+    await base44.entities.PluginSource.delete(source.id);
+    if (queryClient) queryClient.invalidateQueries({ queryKey: ["pluginSources"] });
+  };
   const Icon = typeIcons[source.type] || BookOpen;
   const colorClass = typeColors[source.type] || typeColors.book;
 
