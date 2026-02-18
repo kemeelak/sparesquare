@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { motion } from "framer-motion";
-import { BookOpen, Headphones, Video, FileText, ChevronDown, ChevronUp, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
+import { motion, AnimatePresence } from "framer-motion";
+import { BookOpen, Headphones, Video, FileText, ChevronDown, ChevronUp, Plus, Check, Brain } from "lucide-react";
 
 const typeIcons = {
   book: BookOpen,
@@ -20,11 +18,14 @@ const typeColors = {
 };
 
 export default function PluginCard({ source, queryClient }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expandedHabits, setExpandedHabits] = useState(false);
+  const [expandedLearnings, setExpandedLearnings] = useState(false);
+  const [addedIds, setAddedIds] = useState({});
   const Icon = typeIcons[source.type] || BookOpen;
   const colorClass = typeColors[source.type] || typeColors.book;
 
-  const addHabitToGrid = async (habit) => {
+  const addToBacklog = async (habit, index) => {
+    if (addedIds[index]) return;
     await base44.entities.HabitBlock.create({
       title: habit.title,
       description: habit.description,
@@ -34,6 +35,7 @@ export default function PluginCard({ source, queryClient }) {
       category: habit.category || "learning",
       status: "backlog",
     });
+    setAddedIds(prev => ({ ...prev, [index]: true }));
     queryClient.invalidateQueries({ queryKey: ["habits"] });
   };
 
@@ -53,40 +55,101 @@ export default function PluginCard({ source, queryClient }) {
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-[#1A1A1A] truncate">{source.title}</h3>
             <p className="text-xs text-[#8A8580]">{source.author || "Unknown"} · {source.type}</p>
+            {source.summary && (
+              <p className="text-xs text-[#8A8580] mt-1 line-clamp-2">{source.summary}</p>
+            )}
           </div>
         </div>
 
-        {source.habits_extracted?.length > 0 && (
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 mt-3 text-xs font-medium text-[#7C9A82] hover:text-[#6B8A71] transition-colors"
-          >
-            {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            {source.habits_extracted.length} habits extracted
-          </button>
-        )}
+        <div className="flex gap-3 mt-3">
+          {source.habits_extracted?.length > 0 && (
+            <button
+              onClick={() => setExpandedHabits(!expandedHabits)}
+              className="flex items-center gap-1 text-xs font-medium text-[#7C9A82] hover:text-[#6B8A71] transition-colors"
+            >
+              {expandedHabits ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              {source.habits_extracted.length} habits
+            </button>
+          )}
+          {source.learnings?.length > 0 && (
+            <button
+              onClick={() => setExpandedLearnings(!expandedLearnings)}
+              className="flex items-center gap-1 text-xs font-medium text-[#D4A574] hover:text-[#C4945A] transition-colors"
+            >
+              <Brain className="w-3 h-3" />
+              {source.learnings.length} principles
+            </button>
+          )}
+        </div>
       </div>
 
-      {expanded && source.habits_extracted?.length > 0 && (
-        <div className="border-t border-[#E8E4DF] px-4 py-3 space-y-2 bg-[#FAF8F5]">
-          {source.habits_extracted.map((habit, i) => (
-            <div key={i} className="flex items-center justify-between gap-2 py-1.5">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-[#1A1A1A] truncate">{habit.title}</p>
-                <p className="text-xs text-[#8A8580] truncate">{habit.description}</p>
-              </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => addHabitToGrid(habit)}
-                className="flex-shrink-0 text-[#7C9A82] hover:bg-[#E8F0EA]"
-              >
-                <Plus className="w-3.5 h-3.5" />
-              </Button>
+      {/* Habits */}
+      <AnimatePresence>
+        {expandedHabits && source.habits_extracted?.length > 0 && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-t border-[#E8E4DF] bg-[#FAF8F5] overflow-hidden"
+          >
+            <div className="px-4 py-3 space-y-2">
+              <p className="text-[10px] font-semibold text-[#7C9A82] uppercase tracking-wide mb-2">Add to Backlog</p>
+              {source.habits_extracted.map((habit, i) => (
+                <div key={i} className="flex items-center justify-between gap-2 py-1.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-[#1A1A1A] truncate">{habit.title}</p>
+                    <div className="flex gap-2 mt-0.5">
+                      {habit.frequency && (
+                        <span className="text-[10px] text-[#8A8580]">{habit.frequency}</span>
+                      )}
+                      {habit.duration_minutes && (
+                        <span className="text-[10px] text-[#B0AAA4]">{habit.duration_minutes}min</span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => addToBacklog(habit, i)}
+                    className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                      addedIds[i]
+                        ? "bg-[#7C9A82] text-white"
+                        : "bg-white border border-[#E8E4DF] text-[#7C9A82] hover:bg-[#E8F0EA] hover:border-[#7C9A82]"
+                    }`}
+                  >
+                    {addedIds[i] ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Learnings / Principles */}
+      <AnimatePresence>
+        {expandedLearnings && source.learnings?.length > 0 && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-t border-[#E8E4DF] bg-[#FDF8F4] overflow-hidden"
+          >
+            <div className="px-4 py-3">
+              <p className="text-[10px] font-semibold text-[#D4A574] uppercase tracking-wide mb-2">Partner Principles</p>
+              <div className="space-y-2">
+                {source.learnings.map((l, i) => (
+                  <div key={i} className="flex gap-2">
+                    <span className="text-[#D4A574] mt-0.5 flex-shrink-0">•</span>
+                    <div>
+                      <p className="text-xs font-medium text-[#1A1A1A]">{l.principle}</p>
+                      {l.explanation && <p className="text-[11px] text-[#8A8580]">{l.explanation}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
