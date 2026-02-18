@@ -139,6 +139,13 @@ export default function Home() {
 
       <GridLegend />
 
+      {/* Calendar Sync */}
+      <AnimatePresence>
+        {showCalendarSync && (
+          <CalendarSync onClose={() => setShowCalendarSync(false)} />
+        )}
+      </AnimatePresence>
+
       {/* Hour Detail Sheet */}
       <AnimatePresence>
         {selectedHour !== null && (
