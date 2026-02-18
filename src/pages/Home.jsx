@@ -202,7 +202,13 @@ export default function Home() {
 
           {/* Stats */}
           <div className="mb-4">
-            <StatsRow completed={completedCount} total={todayHabits.length} streak={3} />
+            <StatsRow
+              completed={completedCount}
+              total={todayHabits.length}
+              streak={3}
+              onClickCompleted={() => setStatsSheet("completed")}
+              onClickScheduled={() => setStatsSheet("scheduled")}
+            />
           </div>
 
       {/* Grid */}
