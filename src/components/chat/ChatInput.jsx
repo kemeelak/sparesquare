@@ -30,7 +30,7 @@ export default function ChatInput({ onSend, disabled, placeholder }) {
           className="w-full resize-none rounded-xl border border-[#E8E4DF] bg-white px-4 py-3 text-sm
             focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 focus:border-[#1A1A1A]/20
             placeholder:text-[#B0AAA4] disabled:opacity-50 transition-all"
-          style={{ minHeight: "44px", maxHeight: "120px" }}
+          style={{ minHeight: "44px", maxHeight: "120px", fontSize: "16px" }}
         />
       </div>
       <motion.button
