@@ -85,6 +85,52 @@ export default function Home() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["habits"] }),
   });
 
+  const createEventMutation = useMutation({
+    mutationFn: (data) => base44.entities.HabitBlock.create(data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["habits"] }),
+  });
+
+  const DAY_MAP = { mon: "monday", tue: "tuesday", wed: "wednesday", thu: "thursday", fri: "friday", sat: "saturday", sun: "sunday" };
+  const WEEKDAYS = ["monday","tuesday","wednesday","thursday","friday"];
+
+  const getDatesToSchedule = (repeat, fromDate, fromDateStr) => {
+    if (repeat === "none") return [fromDateStr];
+    const dates = [];
+    for (let i = 0; i < 60; i++) {
+      const d = addDaysFn(fromDate, i);
+      const dayName = formatFn(d, "EEEE").toLowerCase();
+      const dStr = formatFn(d, "yyyy-MM-dd");
+      if (repeat === "daily") dates.push(dStr);
+      else if (repeat === "weekdays" && WEEKDAYS.includes(dayName)) dates.push(dStr);
+      else if (repeat === "weekly" && i % 7 === 0) dates.push(dStr);
+      else if (DAY_MAP[repeat] === dayName) dates.push(dStr);
+    }
+    return dates;
+  };
+
+  const handleSaveNewEvent = async ({ title, duration, category, energy, repeat }) => {
+    const fromDateStr = format(selectedDate, "yyyy-MM-dd");
+    const dates = getDatesToSchedule(repeat, selectedDate, fromDateStr);
+    // Default to next available spare hour
+    let targetHour = new Date().getHours();
+    while (targetHour < 23 && (
+      unmovables.some(u => u.start_hour <= targetHour && u.end_hour > targetHour) ||
+      sleepHours.includes(targetHour) ||
+      todayHabits.some(h => h.scheduled_hour === targetHour)
+    )) targetHour++;
+
+    await Promise.all(dates.map(d =>
+      createEventMutation.mutateAsync({
+        title, status: "confirmed",
+        scheduled_date: d,
+        scheduled_hour: targetHour,
+        duration_minutes: duration,
+        category, energy_level: energy,
+      })
+    ));
+    setShowAddEvent(false);
+  };
+
   return (
     <div className="p-4 lg:p-8 max-w-2xl mx-auto">
       {/* Header */}
