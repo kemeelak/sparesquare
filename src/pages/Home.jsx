@@ -182,7 +182,7 @@ export default function Home() {
             >
               <div className="flex items-center gap-2">
                 <Sparkles className="w-3.5 h-3.5 text-[#D4A574]" />
-                <span className="text-xs font-semibold">Ask Partner</span>
+                <span className="text-xs font-semibold">Ask {profile?.partner_name || "Partner"}</span>
               </div>
               <MessageCircle className="w-3.5 h-3.5 text-white/50 group-hover:text-white transition-colors" />
             </button>

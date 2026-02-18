@@ -159,7 +159,7 @@ ${pluginKnowledge ? `\nPLUGIN KNOWLEDGE BASE (apply these principles when releva
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
+      <div className="flex-1 overflow-y-auto p-4 lg:p-6" style={{ WebkitOverflowScrolling: "touch" }}>
         <div className="max-w-2xl mx-auto">
           {messages.length === 0 && !loading && (
             <div className="text-center py-20">

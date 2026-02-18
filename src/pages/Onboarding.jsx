@@ -6,8 +6,8 @@ import { Check, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 
-// Steps with multi-select support
-const STEPS = [
+// Base steps
+const BASE_STEPS = [
   {
     field: "rhythm_type",
     question: "Welcome to SpareSquare! 👋\n\nI'm your AI growth partner. I'll find hidden time in your day and help you build habits that actually stick.\n\nFirst — what best describes your daily rhythm?",
@@ -33,6 +33,7 @@ const STEPS = [
     chips: ["School run / childcare", "Gym class / PT session", "Medical appointments", "Religious practice", "Evening class / course", "Caring for a family member", "None of the above"],
     multi: true,
   },
+  // Follow-up steps are inserted dynamically based on "unmovables_other" answers
   {
     field: "sleep_actual",
     question: "Now your **sleep window** — when do you *actually* tend to fall asleep?",
@@ -73,6 +74,52 @@ const STEPS = [
   },
 ];
 
+// Dynamic follow-up steps for each commitment type
+const FOLLOW_UP_STEPS = {
+  "School run / childcare": {
+    field: "followup_school_run",
+    question: "You mentioned a **school run / childcare** commitment. Which days does this happen, and roughly what time?",
+    chips: ["Mon–Fri 7–9am", "Mon–Fri 3–5pm", "Both morning & afternoon", "Weekdays only (custom time)"],
+    multi: false,
+    customPlaceholder: "e.g. Mon–Fri 8–9am and 3–4pm",
+  },
+  "Gym class / PT session": {
+    field: "followup_gym",
+    question: "Great that you're staying active! When are your **gym / PT sessions**?",
+    chips: ["Mon/Wed/Fri morning", "Tue/Thu morning", "Mon/Wed/Fri evening", "Tue/Thu evening", "Daily morning", "Weekends only"],
+    multi: false,
+    customPlaceholder: "e.g. Mon, Wed, Fri 6–7am",
+  },
+  "Medical appointments": {
+    field: "followup_medical",
+    question: "For **medical appointments** — are these recurring on specific days/times?",
+    chips: ["Weekly (same day/time)", "Bi-weekly", "Monthly", "Irregular / varies"],
+    multi: false,
+    customPlaceholder: "e.g. Every Tuesday 10–11am",
+  },
+  "Religious practice": {
+    field: "followup_religion",
+    question: "Which days and times do you practice your **religious activities**?",
+    chips: ["Friday prayers (1–2pm)", "Saturday (all day)", "Sunday (all day)", "Sunday morning", "Daily prayers (5x/day)", "Every evening"],
+    multi: false,
+    customPlaceholder: "e.g. Friday 1–2pm and Sunday 9–11am",
+  },
+  "Evening class / course": {
+    field: "followup_course",
+    question: "When is your **evening class or course**?",
+    chips: ["Mon evening", "Tue evening", "Wed evening", "Thu evening", "Fri evening", "Mon & Wed evenings", "Tue & Thu evenings"],
+    multi: false,
+    customPlaceholder: "e.g. Wednesday 6–9pm",
+  },
+  "Caring for a family member": {
+    field: "followup_caring",
+    question: "You mentioned **caring for a family member** — when does this typically happen?",
+    chips: ["Mornings daily", "Evenings daily", "Weekends", "Throughout the day", "Specific hours only"],
+    multi: false,
+    customPlaceholder: "e.g. Every evening 5–8pm",
+  },
+};
+
 const GROWTH_MAP = {
   "💪 Fitness & Health": "fitness",
   "💼 Building a Business": "business",
@@ -93,18 +140,6 @@ const RHYTHM_MAP = {
   "Other": "other",
 };
 
-function buildSummary(answers) {
-  return `Here's your profile — confirm or edit below:\n\n` +
-    `**Rhythm:** ${answers.rhythm_type || "—"}\n` +
-    `**Work hours:** ${answers.unmovables_work || "—"}\n` +
-    `**Other commitments:** ${answers.unmovables_other?.join(", ") || "None"}\n` +
-    `**Current sleep time:** ${answers.sleep_actual || "—"}\n` +
-    `**Wake time:** ${answers.wake_time || "—"}\n` +
-    `**Goal sleep time:** ${answers.sleep_goal || "—"}\n` +
-    `**Growth focus:** ${answers.growth_focus?.join(", ") || "—"}\n` +
-    `**Peak energy:** ${answers.energy_pattern || "—"}`;
-}
-
 function parseSleepHour(label) {
   const map = {
     "Before 10pm": 21, "Around 10–10:30pm": 22, "Around 11pm": 23,
@@ -123,7 +158,7 @@ function parseWakeHour(label) {
   return map[label] ?? 7;
 }
 
-function buildUnmovables(workAnswer, commuteAnswer, otherAnswers) {
+function buildUnmovables(workAnswer, commuteAnswer, otherAnswers, followupAnswers) {
   const blocks = [];
   const allDays = ["monday","tuesday","wednesday","thursday","friday"];
 
@@ -135,14 +170,13 @@ function buildUnmovables(workAnswer, commuteAnswer, otherAnswers) {
     "7am–3pm (early shift)":  { start: 7,  end: 15, days: allDays, label: "Work (early shift)" },
     "3pm–11pm (late shift)":  { start: 15, end: 23, days: allDays, label: "Work (late shift)" },
     "11pm–7am (night shift)": { start: 23, end: 7,  days: allDays, label: "Work (night shift)" },
-    "Rotating shifts":     null, // can't auto-map
+    "Rotating shifts":     null,
   };
 
   if (workMap[workAnswer]) {
     const w = workMap[workAnswer];
     blocks.push({ label: w.label, start_hour: w.start, end_hour: w.end, days: w.days });
   } else if (workAnswer && workAnswer !== "Flexible / WFH" && workAnswer !== "None" && workAnswer !== "Rotating shifts") {
-    // Try to parse custom input like "6am–2pm Tue–Sat"
     const timeMatch = workAnswer.match(/(\d+)(?::(\d+))?\s*(am|pm)?\s*[–\-to]+\s*(\d+)(?::(\d+))?\s*(am|pm)?/i);
     if (timeMatch) {
       let start = parseInt(timeMatch[1]);
@@ -157,10 +191,7 @@ function buildUnmovables(workAnswer, commuteAnswer, otherAnswers) {
     }
   }
 
-  // Commute blocks — add before/after work if commute time is significant
-  const commuteMinMap = {
-    "15–30 min": 1, "30–45 min": 1, "45–60 min": 1, "Over 1 hour": 1,
-  };
+  const commuteMinMap = { "15–30 min": 1, "30–45 min": 1, "45–60 min": 1, "Over 1 hour": 1 };
   if (commuteAnswer && commuteMinMap[commuteAnswer] && blocks.length > 0) {
     const workBlock = blocks[0];
     if (workBlock.start_hour > 0) {
@@ -171,30 +202,94 @@ function buildUnmovables(workAnswer, commuteAnswer, otherAnswers) {
     }
   }
 
-  if (otherAnswers?.includes("School run / childcare")) {
-    blocks.push({ label: "School run", start_hour: 7, end_hour: 9, days: allDays });
-  }
-  if (otherAnswers?.includes("Caring for a family member")) {
-    blocks.push({ label: "Caring duties", start_hour: 7, end_hour: 9, days: allDays });
-  }
+  // Parse follow-up answers into blocks
+  const followupMap = {
+    "followup_school_run": { label: "School run" },
+    "followup_gym": { label: "Gym / PT" },
+    "followup_medical": { label: "Medical appointment" },
+    "followup_religion": { label: "Religious practice" },
+    "followup_course": { label: "Evening class" },
+    "followup_caring": { label: "Caring duties" },
+  };
+
+  const dayChipMap = {
+    "Mon–Fri 7–9am": { start: 7, end: 9, days: allDays },
+    "Mon–Fri 3–5pm": { start: 15, end: 17, days: allDays },
+    "Both morning & afternoon": { start: 7, end: 9, days: allDays },
+    "Mon/Wed/Fri morning": { start: 6, end: 8, days: ["monday","wednesday","friday"] },
+    "Tue/Thu morning": { start: 6, end: 8, days: ["tuesday","thursday"] },
+    "Mon/Wed/Fri evening": { start: 18, end: 20, days: ["monday","wednesday","friday"] },
+    "Tue/Thu evening": { start: 18, end: 20, days: ["tuesday","thursday"] },
+    "Daily morning": { start: 6, end: 8, days: allDays },
+    "Weekends only": { start: 9, end: 11, days: ["saturday","sunday"] },
+    "Friday prayers (1–2pm)": { start: 13, end: 14, days: ["friday"] },
+    "Saturday (all day)": { start: 8, end: 20, days: ["saturday"] },
+    "Sunday (all day)": { start: 8, end: 20, days: ["sunday"] },
+    "Sunday morning": { start: 8, end: 12, days: ["sunday"] },
+    "Every evening": { start: 18, end: 20, days: allDays },
+    "Mon evening": { start: 18, end: 21, days: ["monday"] },
+    "Tue evening": { start: 18, end: 21, days: ["tuesday"] },
+    "Wed evening": { start: 18, end: 21, days: ["wednesday"] },
+    "Thu evening": { start: 18, end: 21, days: ["thursday"] },
+    "Fri evening": { start: 18, end: 21, days: ["friday"] },
+    "Mon & Wed evenings": { start: 18, end: 21, days: ["monday","wednesday"] },
+    "Tue & Thu evenings": { start: 18, end: 21, days: ["tuesday","thursday"] },
+    "Mornings daily": { start: 7, end: 10, days: allDays },
+    "Evenings daily": { start: 17, end: 20, days: allDays },
+    "Weekends": { start: 9, end: 18, days: ["saturday","sunday"] },
+  };
+
+  Object.entries(followupAnswers || {}).forEach(([field, value]) => {
+    const meta = followupMap[field];
+    if (!meta || !value) return;
+    const times = dayChipMap[value];
+    if (times) {
+      blocks.push({ label: meta.label, start_hour: times.start, end_hour: times.end, days: times.days });
+    } else if (typeof value === "string") {
+      // Try to parse custom text e.g. "Wednesday 6–9pm"
+      const timeMatch = value.match(/(\d+)(?::(\d+))?\s*(am|pm)?\s*[–\-to]+\s*(\d+)(?::(\d+))?\s*(am|pm)?/i);
+      if (timeMatch) {
+        let start = parseInt(timeMatch[1]);
+        let end = parseInt(timeMatch[4]);
+        if (timeMatch[3]?.toLowerCase() === "pm" && start !== 12) start += 12;
+        if (timeMatch[6]?.toLowerCase() === "pm" && end !== 12) end += 12;
+        blocks.push({ label: meta.label, start_hour: start, end_hour: end, days: allDays });
+      }
+    }
+  });
 
   return blocks;
+}
+
+// Build the actual step list dynamically based on what's selected in unmovables_other
+function buildSteps(answers) {
+  const BASE_STEP_COUNT_BEFORE_FOLLOWUP = 4; // up to and including unmovables_other
+  const steps = [...BASE_STEPS.slice(0, BASE_STEP_COUNT_BEFORE_FOLLOWUP)];
+
+  const otherAnswers = answers?.unmovables_other || [];
+  const needsFollowup = Object.keys(FOLLOW_UP_STEPS).filter(k => otherAnswers.includes(k));
+  needsFollowup.forEach(k => steps.push(FOLLOW_UP_STEPS[k]));
+
+  steps.push(...BASE_STEPS.slice(BASE_STEP_COUNT_BEFORE_FOLLOWUP));
+  return steps;
 }
 
 export default function Onboarding() {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [selected, setSelected] = useState([]); // current step selections
+  const [selected, setSelected] = useState([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [customInput, setCustomInput] = useState("");
   const containerRef = useRef(null);
 
+  // Rebuild steps dynamically whenever answers change
+  const steps = buildSteps(answers);
+  const step = steps[currentStep];
+
   useEffect(() => {
     containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [currentStep, showConfirm]);
-
-  const step = STEPS[currentStep];
 
   const toggleChip = (chip) => {
     if (!step.multi) {
@@ -215,7 +310,8 @@ export default function Onboarding() {
     setSelected([]);
     setCustomInput("");
 
-    if (currentStep + 1 >= STEPS.length) {
+    const updatedSteps = buildSteps(newAnswers);
+    if (currentStep + 1 >= updatedSteps.length) {
       setShowConfirm(true);
     } else {
       setCurrentStep(currentStep + 1);
@@ -236,7 +332,14 @@ export default function Onboarding() {
 
     const growthFocuses = Array.isArray(answers.growth_focus) ? answers.growth_focus : [answers.growth_focus];
     const primaryGrowth = GROWTH_MAP[growthFocuses[0]] || "learning";
-    const unmovables = buildUnmovables(answers.unmovables_work, answers.commute, answers.unmovables_other);
+
+    // Extract follow-up answers
+    const followupAnswers = {};
+    Object.values(FOLLOW_UP_STEPS).forEach(s => {
+      if (answers[s.field]) followupAnswers[s.field] = answers[s.field];
+    });
+
+    const unmovables = buildUnmovables(answers.unmovables_work, answers.commute, answers.unmovables_other, followupAnswers);
 
     await base44.entities.UserProfile.create({
       rhythm_type: RHYTHM_MAP[answers.rhythm_type] || "other",
@@ -270,7 +373,7 @@ export default function Onboarding() {
         {/* Progress bar */}
         {!showConfirm && (
           <div className="flex gap-1.5 mb-6 justify-center">
-            {STEPS.map((_, s) => (
+            {steps.map((_, s) => (
               <div
                 key={s}
                 className={`h-1.5 rounded-full transition-all duration-500 ${
@@ -322,18 +425,18 @@ export default function Onboarding() {
               </div>
 
               {/* Custom text input */}
-                              <div className="flex gap-2 mb-4">
-                                <input
-                                  value={customInput}
-                                  onChange={(e) => setCustomInput(step.maxLength ? e.target.value.slice(0, step.maxLength) : e.target.value)}
-                                  onKeyDown={(e) => e.key === "Enter" && canProceed && handleNext()}
-                                  placeholder={step.customPlaceholder || "Or type your own..."}
-                                  className="flex-1 rounded-xl border border-[#E8E4DF] bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 placeholder:text-[#B0AAA4]"
-                                />
-                                {step.maxLength && customInput.length > 0 && (
-                                  <span className="flex items-center text-xs text-[#B0AAA4] flex-shrink-0">{customInput.length}/{step.maxLength}</span>
-                                )}
-                              </div>
+              <div className="flex gap-2 mb-4">
+                <input
+                  value={customInput}
+                  onChange={(e) => setCustomInput(step.maxLength ? e.target.value.slice(0, step.maxLength) : e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && canProceed && handleNext()}
+                  placeholder={step.customPlaceholder || "Or type your own..."}
+                  className="flex-1 rounded-xl border border-[#E8E4DF] bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 placeholder:text-[#B0AAA4]"
+                />
+                {step.maxLength && customInput.length > 0 && (
+                  <span className="flex items-center text-xs text-[#B0AAA4] flex-shrink-0">{customInput.length}/{step.maxLength}</span>
+                )}
+              </div>
 
               <div className="flex justify-between items-center">
                 <button
@@ -347,7 +450,7 @@ export default function Onboarding() {
                   disabled={!canProceed}
                   className="bg-[#1A1A1A] hover:bg-[#333] text-white rounded-xl px-6 disabled:opacity-30"
                 >
-                  {currentStep + 1 === STEPS.length ? "Review →" : "Next →"}
+                  {currentStep + 1 === steps.length ? "Review →" : "Next →"}
                 </Button>
               </div>
             </motion.div>
@@ -371,7 +474,7 @@ export default function Onboarding() {
                     { label: "Growth focus", value: Array.isArray(answers.growth_focus) ? answers.growth_focus.join(", ") : answers.growth_focus },
                     { label: "Peak energy", value: answers.energy_pattern },
                     { label: "Partner name", value: answers.partner_name },
-                    ].map(({ label, value }) => (
+                  ].map(({ label, value }) => (
                     <div key={label} className="flex justify-between items-start gap-4 text-sm">
                       <span className="text-[#8A8580] flex-shrink-0">{label}</span>
                       <span className="text-[#1A1A1A] font-medium text-right">{value || "—"}</span>
