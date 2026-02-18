@@ -168,19 +168,23 @@ export default function Home() {
       </div>
 
       {/* Spare / Calendar / Partner row */}
-          <div className="flex items-center gap-2 mb-4 flex-wrap">
+          <div className="flex items-center gap-2 mb-4">
             <SpareCounter count={getSpareCount()} />
             <button
               onClick={() => setShowCalendarSync(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#E8E4DF] text-[#8A8580] text-xs font-medium hover:bg-[#F5F0EB] transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#E8E4DF] text-[#8A8580] text-xs font-medium hover:bg-[#F5F0EB] transition-colors whitespace-nowrap"
             >
-              <Calendar className="w-3.5 h-3.5" /> Sync Calendar
+              <Calendar className="w-3.5 h-3.5" /> Sync
             </button>
             <button
               onClick={() => window.location.href = createPageUrl("Partner") + "?context=grid"}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#E8E4DF] text-[#8A8580] text-xs font-medium hover:bg-[#F5F0EB] transition-colors"
+              className="flex-1 flex items-center justify-between bg-gradient-to-r from-[#1A1A1A] to-[#2D2D2D] hover:from-[#333] hover:to-[#444] text-white rounded-xl px-4 py-1.5 transition-all group"
             >
-              <MessageCircle className="w-3.5 h-3.5" /> Ask Partner
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-[#D4A574]" />
+                <span className="text-xs font-semibold">Ask Partner</span>
+              </div>
+              <MessageCircle className="w-3.5 h-3.5 text-white/50 group-hover:text-white transition-colors" />
             </button>
           </div>
 
