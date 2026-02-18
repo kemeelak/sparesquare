@@ -81,9 +81,15 @@ export default function Partner() {
     const pluginKnowledge = pluginSources.length > 0
       ? pluginSources.map(src => {
           const learningLines = (src.learnings || [])
-            .map(l => `  • [${l.domain || "general"}] ${l.principle}: ${l.explanation}`)
+            .map(l => `  • ${l.principle}${l.explanation ? ` — ${l.explanation}` : ""}`)
             .join("\n");
-          return `📚 ${src.title}${src.author ? ` by ${src.author}` : ""}${src.summary ? `\n  Summary: ${src.summary}` : ""}${learningLines ? `\n  Principles:\n${learningLines}` : ""}`;
+          const habitLines = (src.habits_extracted || [])
+            .map(h => `  • ${h.title}${h.frequency ? ` (${h.frequency})` : ""}`)
+            .join("\n");
+          return `📚 ${src.title}${src.author ? ` by ${src.author}` : ""}
+${src.summary ? `  Philosophy: ${src.summary}` : ""}
+${learningLines ? `  Principles (use these to shape your advice):\n${learningLines}` : ""}
+${habitLines ? `  Schedulable habits (suggest these when relevant):\n${habitLines}` : ""}`;
         }).join("\n\n")
       : null;
 
