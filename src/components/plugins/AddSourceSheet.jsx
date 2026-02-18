@@ -80,6 +80,8 @@ Return all this as structured JSON.`,
       type,
       author: extractedHabits.author || "",
       habits_extracted: selectedHabits,
+      learnings: extractedHabits.learnings || [],
+      summary: extractedHabits.summary || "",
     });
     onAdded();
   };
