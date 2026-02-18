@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Headphones, Video, FileText, ChevronDown, ChevronUp, Plus, Check, Brain } from "lucide-react";
+import { BookOpen, Headphones, Video, FileText, ChevronDown, ChevronUp, Plus, Check, Brain, Trash2 } from "lucide-react";
 
 const typeIcons = {
   book: BookOpen,
