@@ -23,15 +23,24 @@ export default function AddSourceSheet({ onClose, onAdded }) {
     setLoading(true);
 
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `Search for "${title}" (${type}) and extract actionable habits or protocols from it.
-      
-Return a JSON object with the source info and extracted habits.`,
+      prompt: `You are extracting structured knowledge from "${title}" (${type}) to train an AI life coach.
+
+Do TWO things:
+
+1. HABITS: Extract specific, actionable habits or daily protocols from this source that a person can schedule (e.g. "10-min cold shower", "zero-based budget review weekly").
+
+2. LEARNINGS: Extract the core principles, philosophies, frameworks, and methodologies the author teaches. These are NOT habits — they are IDEAS the coach should KNOW and APPLY when advising users. For example, from Dave Ramsey: "Baby Steps (pay off debt smallest to largest)", "Avoid debt at all costs", "Emergency fund before investing". From Atomic Habits: "Identity-based change", "Habit stacking", "Make it obvious/attractive/easy/satisfying". Be thorough — extract 8-15 learnings.
+
+3. SUMMARY: A one-paragraph summary of the core philosophy of this source.
+
+Return all this as structured JSON.`,
       add_context_from_internet: true,
       response_json_schema: {
         type: "object",
         properties: {
           title: { type: "string" },
           author: { type: "string" },
+          summary: { type: "string" },
           habits: {
             type: "array",
             items: {
@@ -42,6 +51,17 @@ Return a JSON object with the source info and extracted habits.`,
                 duration_minutes: { type: "number" },
                 energy_level: { type: "string", enum: ["low", "medium", "high"] },
                 category: { type: "string", enum: ["fitness", "mindfulness", "learning", "nutrition", "sleep", "productivity", "social", "creative"] }
+              }
+            }
+          },
+          learnings: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                principle: { type: "string" },
+                explanation: { type: "string" },
+                domain: { type: "string" }
               }
             }
           }
