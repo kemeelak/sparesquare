@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "./utils";
 import { base44 } from "@/api/base44Client";
-import { Grid3X3, MessageCircle, BookOpen, Layers, Menu, X } from "lucide-react";
+import { Grid3X3, MessageCircle, BookOpen, Layers, TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Layout({ children, currentPageName }) {
@@ -56,7 +56,8 @@ export default function Layout({ children, currentPageName }) {
     { name: "Partner", icon: MessageCircle, page: "Partner", label: partnerName },
     { name: "Plugins", icon: BookOpen, page: "Plugins", label: "Library" },
     { name: "Backlog", icon: Layers, page: "Backlog", label: "Backlog" },
-  ];
+    { name: "Progress", icon: TrendingUp, page: "Progress", label: "Progress" },
+    ];
 
   return (
     <div className="min-h-screen bg-[#FAF8F5]">
