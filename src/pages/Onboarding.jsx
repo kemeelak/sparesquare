@@ -318,7 +318,7 @@ export default function Onboarding() {
                   value={customInput}
                   onChange={(e) => setCustomInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && canProceed && handleNext()}
-                  placeholder="Or type your own..."
+                  placeholder={step.customPlaceholder || "Or type your own..."}
                   className="flex-1 rounded-xl border border-[#E8E4DF] bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 placeholder:text-[#B0AAA4]"
                 />
               </div>
