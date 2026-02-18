@@ -61,6 +61,7 @@ export default function Partner() {
   });
 
   const profile = profiles[0];
+  const partnerName = profile?.partner_name || "Partner";
 
   useEffect(() => {
     if (chatHistory.length > 0) {
