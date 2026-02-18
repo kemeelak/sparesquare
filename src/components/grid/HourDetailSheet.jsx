@@ -10,8 +10,6 @@ import AddEventForm from "./AddEventForm";
 
 export default function HourDetailSheet({ hour, date, habits, unmovables, sleepHours, onClose, onConfirm, onComplete }) {
   const [showAddEvent, setShowAddEvent] = useState(false);
-  const [eventTitle, setEventTitle] = useState("");
-  const [eventDuration, setEventDuration] = useState(1);
   const queryClient = useQueryClient();
 
   const formatHour = (h) => {
