@@ -84,6 +84,14 @@ export default function Home() {
 
   const completedCount = todayHabits.filter(h => h.status === "completed").length;
 
+  // Show goals onboarding prompt once after main onboarding done
+  useEffect(() => {
+    if (profile && profile.onboarding_complete && !profile.goals_onboarding_complete && !showGoalsOnboarding) {
+      const timer = setTimeout(() => setShowGoalsOnboarding(true), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [profile]);
+
   const updateHabitMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.HabitBlock.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["habits"] }),
