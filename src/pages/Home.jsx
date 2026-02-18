@@ -13,12 +13,16 @@ import StatsRow from "../components/grid/StatsRow";
 import HourDetailSheet from "../components/grid/HourDetailSheet";
 import CalendarSync from "../components/calendar/CalendarSync";
 import AddEventForm from "../components/grid/AddEventForm";
+import GoalsOnboarding from "../components/onboarding/GoalsOnboarding";
+import StatsDetailSheet from "../components/grid/StatsDetailSheet";
 
 export default function Home() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedHour, setSelectedHour] = useState(null);
   const [showCalendarSync, setShowCalendarSync] = useState(false);
   const [showAddEvent, setShowAddEvent] = useState(false);
+  const [showGoalsOnboarding, setShowGoalsOnboarding] = useState(false);
+  const [statsSheet, setStatsSheet] = useState(null); // "completed" | "scheduled" | null
   const queryClient = useQueryClient();
 
   const { data: profiles } = useQuery({
