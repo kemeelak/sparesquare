@@ -89,7 +89,16 @@ export default function Home() {
           <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">Your Grid</h1>
           <p className="text-sm text-[#8A8580]">Map your day, find your growth</p>
         </div>
-        <SpareCounter count={getSpareCount()} />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowCalendarSync(true)}
+            className="p-2.5 rounded-xl bg-white border border-[#E8E4DF] text-[#8A8580] hover:bg-[#F5F0EB] transition-colors"
+            title="Sync Calendar"
+          >
+            <Calendar className="w-4 h-4" />
+          </button>
+          <SpareCounter count={getSpareCount()} />
+        </div>
       </div>
 
       {/* Date Navigator */}
