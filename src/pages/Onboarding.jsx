@@ -63,6 +63,14 @@ const STEPS = [
     chips: ["Early morning (5–9am)", "Mid-morning (9am–12pm)", "Afternoon (12–5pm)", "Evening (5–9pm)", "Late night (9pm+)", "I'm consistent throughout"],
     multi: false,
   },
+  {
+    field: "partner_name",
+    question: "Almost there! What would you like to **call your AI Partner**?\n\nThis is the name you'll see throughout the app. Pick something that feels right to you.",
+    chips: ["Alex", "Coach", "Sage", "Aria", "Max", "Nova"],
+    multi: false,
+    customPlaceholder: "Or type your own name... (max 12 chars)",
+    maxLength: 12,
+  },
 ];
 
 const GROWTH_MAP = {
