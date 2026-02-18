@@ -48,6 +48,12 @@ export default function Partner() {
     initialData: [],
   });
 
+  const { data: pluginSources } = useQuery({
+    queryKey: ["pluginSources"],
+    queryFn: () => base44.entities.PluginSource.list(),
+    initialData: [],
+  });
+
   const { data: chatHistory } = useQuery({
     queryKey: ["chatMessages", "partner"],
     queryFn: () => base44.entities.ChatMessage.filter({ context: "partner" }, "created_date", 50),
