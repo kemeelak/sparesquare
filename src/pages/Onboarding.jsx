@@ -351,6 +351,7 @@ export default function Onboarding() {
                   {[
                     { label: "Rhythm", value: answers.rhythm_type },
                     { label: "Work hours", value: answers.unmovables_work },
+                    { label: "Commute", value: answers.commute },
                     { label: "Other commitments", value: Array.isArray(answers.unmovables_other) ? answers.unmovables_other.join(", ") : answers.unmovables_other },
                     { label: "Current sleep", value: answers.sleep_actual },
                     { label: "Wake time", value: answers.wake_time },
