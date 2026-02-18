@@ -49,9 +49,11 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
+  const partnerName = profile?.partner_name || "Partner";
+
   const navItems = [
     { name: "Home", icon: Grid3X3, page: "Home", label: "Grid" },
-    { name: "Partner", icon: MessageCircle, page: "Partner", label: "Partner" },
+    { name: "Partner", icon: MessageCircle, page: "Partner", label: partnerName },
     { name: "Plugins", icon: BookOpen, page: "Plugins", label: "Library" },
     { name: "Backlog", icon: Layers, page: "Backlog", label: "Backlog" },
   ];
