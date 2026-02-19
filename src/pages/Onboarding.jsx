@@ -274,8 +274,17 @@ function buildSteps(answers) {
   const BASE_STEP_COUNT_BEFORE_FOLLOWUP = 4; // up to and including unmovables_other
   const steps = [...BASE_STEPS.slice(0, BASE_STEP_COUNT_BEFORE_FOLLOWUP)];
 
+  // If rhythm is night shift or work is "Rotating shifts", add a shift detail step
+  const isIrregular =
+    answers?.rhythm_type === "Night Shift" ||
+    answers?.unmovables_work === "Rotating shifts";
+  if (isIrregular) {
+    steps.push(FOLLOW_UP_STEPS["rotating_shift_detail"]);
+  }
+
   const otherAnswers = answers?.unmovables_other || [];
-  const needsFollowup = Object.keys(FOLLOW_UP_STEPS).filter(k => otherAnswers.includes(k));
+  const followupKeys = Object.keys(FOLLOW_UP_STEPS).filter(k => k !== "rotating_shift_detail");
+  const needsFollowup = followupKeys.filter(k => otherAnswers.includes(k));
   needsFollowup.forEach(k => steps.push(FOLLOW_UP_STEPS[k]));
 
   steps.push(...BASE_STEPS.slice(BASE_STEP_COUNT_BEFORE_FOLLOWUP));
