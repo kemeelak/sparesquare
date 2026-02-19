@@ -77,6 +77,13 @@ const BASE_STEPS = [
 
 // Dynamic follow-up steps for each commitment type
 const FOLLOW_UP_STEPS = {
+  "rotating_shift_detail": {
+    field: "rotating_shift_detail",
+    question: "You selected rotating or irregular shifts — let's capture your actual pattern.\n\nPlease type your typical shift schedule so I can map it accurately into your grid.",
+    chips: ["Mon–Fri 6am–2pm", "Tue–Sat 2pm–10pm", "Wed–Sun 10pm–6am", "Mon/Wed/Fri 7am–3pm", "Tue/Thu/Sat 3pm–11pm"],
+    multi: false,
+    customPlaceholder: "e.g. Mon/Tue/Thu 7am–3pm, or alternate weeks",
+  },
   "School run / childcare": {
     field: "followup_school_run",
     question: "You mentioned a **school run / childcare** commitment. Which days does this happen, and roughly what time?",
