@@ -21,6 +21,7 @@ const BASE_STEPS = [
     multi: false,
     customPlaceholder: "e.g. 6am–2pm Tue–Sat, or 12pm–8pm Mon/Wed/Fri",
   },
+  // NOTE: "Rotating shifts" or "Night Shift" rhythm type triggers a follow-up — see buildSteps()
   {
     field: "commute",
     question: "Do you commute to work or school? How long is your commute one way?",
