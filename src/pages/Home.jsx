@@ -106,7 +106,18 @@ export default function Home() {
   const WEEKDAYS = ["monday","tuesday","wednesday","thursday","friday"];
 
   const getDatesToSchedule = (repeat, fromDate, fromDateStr) => {
-    if (repeat === "none") return [fromDateStr];
+    if (repeat === "none" || !repeat) return [fromDateStr];
+    // Array of specific days e.g. ["mon","thu"]
+    if (Array.isArray(repeat)) {
+      const dates = [];
+      for (let i = 0; i < 60; i++) {
+        const d = addDaysFn(fromDate, i);
+        const dayName = formatFn(d, "EEEE").toLowerCase();
+        const dStr = formatFn(d, "yyyy-MM-dd");
+        if (repeat.some(r => DAY_MAP[r] === dayName)) dates.push(dStr);
+      }
+      return dates;
+    }
     const dates = [];
     for (let i = 0; i < 60; i++) {
       const d = addDaysFn(fromDate, i);
