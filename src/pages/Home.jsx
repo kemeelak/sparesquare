@@ -123,6 +123,7 @@ export default function Home() {
   const handleSaveNewEvent = async ({ title, duration, category, energy, repeat }) => {
     const fromDateStr = format(selectedDate, "yyyy-MM-dd");
     const dates = getDatesToSchedule(repeat, selectedDate, fromDateStr);
+    // repeat may be an array of specific days
     // Default to next available spare hour
     let targetHour = new Date().getHours();
     while (targetHour < 23 && (
