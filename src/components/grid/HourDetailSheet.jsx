@@ -52,7 +52,18 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, sleepH
   const WEEKDAYS = ["monday","tuesday","wednesday","thursday","friday"];
 
   const getDatesToSchedule = (repeat) => {
-    if (repeat === "none") return [dateStr];
+    if (repeat === "none" || !repeat) return [dateStr];
+    if (Array.isArray(repeat)) {
+      const dates = [];
+      const start = new Date(date);
+      for (let i = 0; i < 60; i++) {
+        const d = addDays(start, i);
+        const dayName = format(d, "EEEE").toLowerCase();
+        const dStr = format(d, "yyyy-MM-dd");
+        if (repeat.some(r => DAY_MAP[r] === dayName)) dates.push(dStr);
+      }
+      return dates;
+    }
     const dates = [];
     const start = new Date(date);
     for (let i = 0; i < 60; i++) {
