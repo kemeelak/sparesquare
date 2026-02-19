@@ -15,18 +15,20 @@ const CATEGORIES = [
 
 const ENERGY_LEVELS = ["low", "medium", "high"];
 
-const REPEAT_OPTIONS = [
+const PRESET_REPEATS = [
   { value: "none", label: "No repeat" },
   { value: "daily", label: "Every day" },
   { value: "weekdays", label: "Weekdays" },
-  { value: "weekly", label: "Weekly" },
-  { value: "mon", label: "Mon" },
-  { value: "tue", label: "Tue" },
-  { value: "wed", label: "Wed" },
-  { value: "thu", label: "Thu" },
-  { value: "fri", label: "Fri" },
-  { value: "sat", label: "Sat" },
-  { value: "sun", label: "Sun" },
+];
+
+const DAY_OPTIONS = [
+  { value: "mon", label: "M" },
+  { value: "tue", label: "T" },
+  { value: "wed", label: "W" },
+  { value: "thu", label: "T" },
+  { value: "fri", label: "F" },
+  { value: "sat", label: "S" },
+  { value: "sun", label: "S" },
 ];
 
 const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
@@ -37,10 +39,26 @@ export default function AddEventForm({ hour, dateStr, onSave, onCancel, isPendin
   const [category, setCategory] = useState("productivity");
   const [energy, setEnergy] = useState("medium");
   const [repeat, setRepeat] = useState("none");
+  const [selectedDays, setSelectedDays] = useState([]);
+
+  const toggleDay = (day) => {
+    setSelectedDays(prev =>
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+    );
+    setRepeat("custom_days");
+  };
+
+  const handlePresetRepeat = (val) => {
+    setRepeat(val);
+    setSelectedDays([]);
+  };
 
   const handleSave = () => {
     if (!title.trim()) return;
-    onSave({ title: title.trim(), duration, category, energy, repeat });
+    const finalRepeat = repeat === "custom_days" && selectedDays.length > 0
+      ? selectedDays
+      : repeat;
+    onSave({ title: title.trim(), duration, category, energy, repeat: finalRepeat });
   };
 
   return (
@@ -118,11 +136,11 @@ export default function AddEventForm({ hour, dateStr, onSave, onCancel, isPendin
         <p className="text-xs text-[#8A8580] mb-1.5 flex items-center gap-1">
           <RotateCcw className="w-3 h-3" /> Repeat
         </p>
-        <div className="flex flex-wrap gap-1.5">
-          {REPEAT_OPTIONS.map((r) => (
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {PRESET_REPEATS.map((r) => (
             <button
               key={r.value}
-              onClick={() => setRepeat(r.value)}
+              onClick={() => handlePresetRepeat(r.value)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 repeat === r.value ? "bg-[#7C9A82] text-white" : "bg-white border border-[#E8E4DF] text-[#4A5568] hover:border-[#7C9A82]"
               }`}
@@ -130,6 +148,25 @@ export default function AddEventForm({ hour, dateStr, onSave, onCancel, isPendin
               {r.label}
             </button>
           ))}
+        </div>
+        <p className="text-xs text-[#B0AAA4] mb-1.5">Or pick specific days</p>
+        <div className="flex gap-1.5">
+          {DAY_OPTIONS.map((d, i) => {
+            const dayLabels = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+            const isSelected = selectedDays.includes(d.value);
+            return (
+              <button
+                key={d.value}
+                onClick={() => toggleDay(d.value)}
+                title={dayLabels[i]}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  isSelected ? "bg-[#7C9A82] text-white" : "bg-white border border-[#E8E4DF] text-[#4A5568] hover:border-[#7C9A82]"
+                }`}
+              >
+                {d.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
