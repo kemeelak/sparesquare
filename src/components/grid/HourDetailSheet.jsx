@@ -172,10 +172,10 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, sleepH
                 </Button>
               )}
               {(habit.status === "confirmed" || habit.status === "suggested") && (
-                <Button onClick={() => onComplete(habit)} variant="outline" className="rounded-xl border-current hover:bg-white/10">
-                  Mark Complete
-                </Button>
-              )}
+                  <Button onClick={() => onComplete(habit)} className="rounded-xl bg-white/20 hover:bg-white/30 text-white border border-white/40">
+                    Mark Complete
+                  </Button>
+                )}
             </div>
           </div>
         )}
