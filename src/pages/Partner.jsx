@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Menu, Pin, Trash2, MoreVertical } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import ChatBubble from "../components/chat/ChatBubble";
+import ChatBubble from "../components/chat/ChatBubble.jsx";
 import ChatInput from "../components/chat/ChatInput";
 import LoadingDots from "../components/shared/LoadingDots";
 import ThreadSidebar from "../components/chat/ThreadSidebar";
