@@ -52,6 +52,7 @@ import Home from './pages/Home';
 import Onboarding from './pages/Onboarding';
 import Plugins from './pages/Plugins';
 import Progress from './pages/Progress';
+import Partner from './pages/Partner';
 import __Layout from './Layout.jsx';
 
 
@@ -61,6 +62,7 @@ export const PAGES = {
     "Onboarding": Onboarding,
     "Plugins": Plugins,
     "Progress": Progress,
+    "Partner": Partner,
 }
 
 export const pagesConfig = {
