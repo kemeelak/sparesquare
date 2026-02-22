@@ -36,10 +36,43 @@ export default function Layout({ children, currentPageName }) {
       }
     }, [profileLoaded, profile, currentPageName, isAuthenticated]);
 
-  if (currentPageName === "Onboarding") {
+  if (profileLoaded && !isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#FAF8F5]">
+      <div className="min-h-screen bg-[#FAF8F5] flex flex-col items-center justify-center p-6">
         <style>{`
+          :root { --stone: #F5F0EB; --charcoal: #1A1A1A; --sage: #7C9A82; }
+          * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        `}</style>
+        <div className="w-full max-w-sm text-center">
+          <div className="w-16 h-16 rounded-2xl bg-[#1A1A1A] flex items-center justify-center mx-auto mb-6">
+            <span className="text-white font-bold text-2xl">S²</span>
+          </div>
+          <h1 className="text-2xl font-bold text-[#1A1A1A] mb-2">SpareSquare</h1>
+          <p className="text-[#8A8580] text-sm mb-10">Find hidden time. Build habits that stick.</p>
+          <div className="space-y-3">
+            <button
+              onClick={() => base44.auth.redirectToLogin(window.location.href)}
+              className="w-full h-12 rounded-xl bg-[#1A1A1A] text-white font-semibold text-sm hover:bg-[#333] transition-colors"
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => base44.auth.redirectToLogin(window.location.href)}
+              className="w-full h-12 rounded-xl border border-[#E8E4DF] bg-white text-[#1A1A1A] font-semibold text-sm hover:bg-[#F5F0EB] transition-colors"
+            >
+              Create Account
+            </button>
+          </div>
+          <p className="text-xs text-[#B0AAA4] mt-8">New users will be guided through a quick setup after signing up.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (currentPageName === "Onboarding") {
+      return (
+        <div className="min-h-screen bg-[#FAF8F5]">
+          <style>{`
           :root {
             --stone: #F5F0EB;
             --stone-light: #FAF8F5;
