@@ -2,6 +2,8 @@ import React from "react";
 import { motion } from "framer-motion";
 import { X, Check, Target } from "lucide-react";
 import { format } from "date-fns";
+import { base44 } from "@/api/base44Client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const categoryEmoji = {
   fitness: "💪", mindfulness: "🧘", learning: "📚",
