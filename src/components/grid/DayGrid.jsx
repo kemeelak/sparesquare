@@ -25,22 +25,26 @@ export default function DayGrid({ date, unmovables, habits, sleepHours, onSquare
   };
 
   const isSpareHour = (hour) => {
-    return !getUnmovableForHour(hour) && !getHabitForHour(hour) && !isSleepHour(hour);
+    return !getUnmovableForHour(hour) && !getHabitsForHour(hour).length && !isSleepHour(hour);
   };
 
   return (
     <div className="grid grid-cols-6 gap-2">
-      {hours.map((hour) => (
-        <HourSquare
-          key={hour}
-          hour={hour}
-          unmovable={getUnmovableForHour(hour)}
-          habit={getHabitForHour(hour)}
-          isSpare={isSpareHour(hour)}
-          isSleep={isSleepHour(hour)}
-          onSquareClick={onSquareClick}
-        />
-      ))}
+      {hours.map((hour) => {
+        const habitsForHour = getHabitsForHour(hour);
+        return (
+          <HourSquare
+            key={hour}
+            hour={hour}
+            unmovable={getUnmovableForHour(hour)}
+            habit={habitsForHour[0] || null}
+            habits={habitsForHour}
+            isSpare={isSpareHour(hour)}
+            isSleep={isSleepHour(hour)}
+            onSquareClick={onSquareClick}
+          />
+        );
+      })}
     </div>
   );
 }
