@@ -49,6 +49,7 @@ export default function HourSquare({ hour, unmovable, habit, habits = [], isSpar
       : "bg-transparent border-[#7C9A82] border-dashed border-2";
     textClass = isConfirmed ? "text-white" : "text-[#7C9A82]";
     emoji = isCompleted ? "✅" : (categoryIcons[habit.category] || "✨");
+    multiCount = habits.length > 1 ? habits.length : null;
   } else if (isSpare) {
     bgClass = "bg-[#F5EDE4] border-[#D4A574] border-dashed";
     textClass = "text-[#D4A574]";
