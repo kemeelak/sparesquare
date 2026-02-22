@@ -50,9 +50,9 @@
 import Backlog from './pages/Backlog';
 import Home from './pages/Home';
 import Onboarding from './pages/Onboarding';
+import Partner from './pages/Partner';
 import Plugins from './pages/Plugins';
 import Progress from './pages/Progress';
-import Partner from './pages/Partner';
 import __Layout from './Layout.jsx';
 
 
@@ -60,9 +60,9 @@ export const PAGES = {
     "Backlog": Backlog,
     "Home": Home,
     "Onboarding": Onboarding,
+    "Partner": Partner,
     "Plugins": Plugins,
     "Progress": Progress,
-    "Partner": Partner,
 }
 
 export const pagesConfig = {

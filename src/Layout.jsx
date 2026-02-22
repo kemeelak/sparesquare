@@ -13,27 +13,28 @@ export default function Layout({ children, currentPageName }) {
     loadProfile();
   }, []);
 
-  const loadProfile = async () => {
-    const isAuth = await base44.auth.isAuthenticated();
-    if (!isAuth) {
-      if (!window.location.pathname.includes("login")) {
-        base44.auth.redirectToLogin(window.location.href);
-      }
-      setProfileLoaded(true);
-      return;
-    }
-    const profiles = await base44.entities.UserProfile.list();
-    if (profiles.length > 0) setProfile(profiles[0]);
-    setProfileLoaded(true);
-  };
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  useEffect(() => {
-    if (!profileLoaded) return;
-    if (currentPageName === "Onboarding") return;
-    if (!profile?.onboarding_complete) {
-      window.location.href = createPageUrl("Onboarding");
-    }
-  }, [profileLoaded, profile, currentPageName]);
+    const loadProfile = async () => {
+      const isAuth = await base44.auth.isAuthenticated();
+      setIsAuthenticated(isAuth);
+      if (!isAuth) {
+        setProfileLoaded(true);
+        return;
+      }
+      const profiles = await base44.entities.UserProfile.list();
+      if (profiles.length > 0) setProfile(profiles[0]);
+      setProfileLoaded(true);
+    };
+
+    useEffect(() => {
+      if (!profileLoaded) return;
+      if (!isAuthenticated) return;
+      if (currentPageName === "Onboarding") return;
+      if (!profile?.onboarding_complete) {
+        window.location.href = createPageUrl("Onboarding");
+      }
+    }, [profileLoaded, profile, currentPageName, isAuthenticated]);
 
   if (currentPageName === "Onboarding") {
     return (
