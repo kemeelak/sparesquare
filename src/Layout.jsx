@@ -16,7 +16,10 @@ export default function Layout({ children, currentPageName }) {
   const loadProfile = async () => {
     const isAuth = await base44.auth.isAuthenticated();
     if (!isAuth) {
-      base44.auth.redirectToLogin();
+      if (!window.location.pathname.includes("login")) {
+        base44.auth.redirectToLogin(window.location.href);
+      }
+      setProfileLoaded(true);
       return;
     }
     const profiles = await base44.entities.UserProfile.list();
