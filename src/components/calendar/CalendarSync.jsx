@@ -155,7 +155,7 @@ Group recurring events into schedule blocks with start_hour and end_hour (intege
           </div>
         )}
 
-        {status === "unsupported" && (
+        {status === "manual" && (
           <ManualScheduleEntry onSubmit={handleManualDescribe} />
         )}
 
