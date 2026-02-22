@@ -12,68 +12,73 @@ function extractVideoId(url) {
   return null;
 }
 
-async function getCaptionTrackUrl(videoId) {
+async function getTranscript(videoId) {
   const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
     headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       "Accept-Language": "en-US,en;q=0.9",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     }
   });
+
+  if (!pageRes.ok) throw new Error("Failed to fetch YouTube page");
   const html = await pageRes.text();
 
-  // Try to find captionTracks JSON array — be lenient with the regex
-  const match = html.match(/"captionTracks":\s*(\[[\s\S]*?\])\s*,\s*"/);
-  if (!match) return null;
-
-  let tracks;
-  try {
-    tracks = JSON.parse(match[1]);
-  } catch {
-    return null;
+  // Extract the serialized player response JSON
+  const playerResponseMatch = html.match(/ytInitialPlayerResponse\s*=\s*({.+?})\s*;/);
+  if (!playerResponseMatch) {
+    throw new Error("Could not find player response on page");
   }
 
-  if (!Array.isArray(tracks) || tracks.length === 0) return null;
+  let playerResponse;
+  try {
+    playerResponse = JSON.parse(playerResponseMatch[1]);
+  } catch {
+    throw new Error("Failed to parse player response JSON");
+  }
 
-  const englishTrack = tracks.find(t => t.languageCode === "en" && t.kind === "asr")
-    || tracks.find(t => t.languageCode === "en")
-    || tracks[0];
+  const captionTracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+  if (!captionTracks || captionTracks.length === 0) {
+    throw new Error("No captions available for this video");
+  }
 
-  return englishTrack?.baseUrl || null;
-}
+  // Prefer English track
+  const track = captionTracks.find(t => t.languageCode === "en" && t.kind === "asr")
+    || captionTracks.find(t => t.languageCode === "en")
+    || captionTracks[0];
 
-async function fetchCaptions(captionUrl) {
-  // Try JSON format first
-  const res = await fetch(captionUrl + "&fmt=json3");
-  if (res.ok) {
+  const captionUrl = track.baseUrl;
+
+  // Fetch captions as XML
+  const captRes = await fetch(captionUrl + "&fmt=json3");
+  if (captRes.ok) {
     try {
-      const data = await res.json();
+      const data = await captRes.json();
       if (data.events) {
-        return data.events
+        const text = data.events
           .filter(e => e.segs)
-          .map(e => e.segs.map(s => s.utf8 || "").join(""))
+          .flatMap(e => e.segs.map(s => s.utf8 || ""))
           .join(" ")
           .replace(/\s+/g, " ")
           .trim();
+        if (text.length > 50) return text;
       }
-    } catch { /* fall through */ }
+    } catch { /* fall through to XML */ }
   }
 
-  // Fallback: XML format
+  // XML fallback
   const xmlRes = await fetch(captionUrl);
   if (xmlRes.ok) {
     const xml = await xmlRes.text();
-    return xml
+    const text = xml
       .replace(/<[^>]+>/g, " ")
-      .replace(/&amp;/g, "&")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/&#39;/g, "'")
-      .replace(/&quot;/g, '"')
-      .replace(/\s+/g, " ")
-      .trim();
+      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+      .replace(/&#39;/g, "'").replace(/&quot;/g, '"')
+      .replace(/\s+/g, " ").trim();
+    if (text.length > 50) return text;
   }
 
-  return null;
+  throw new Error("Could not parse caption content");
 }
 
 Deno.serve(async (req) => {
@@ -88,19 +93,9 @@ Deno.serve(async (req) => {
     const videoId = extractVideoId(url);
     if (!videoId) return Response.json({ error: "Invalid YouTube URL" }, { status: 400 });
 
-    const captionUrl = await getCaptionTrackUrl(videoId);
-    if (!captionUrl) {
-      return Response.json({
-        error: "No captions found for this video. Make sure the video has subtitles/captions enabled."
-      }, { status: 404 });
-    }
-
-    const transcript = await fetchCaptions(captionUrl);
-    if (!transcript || transcript.length < 50) {
-      return Response.json({ error: "Could not extract transcript from captions." }, { status: 500 });
-    }
-
+    const transcript = await getTranscript(videoId);
     return Response.json({ transcript, videoId });
+
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
