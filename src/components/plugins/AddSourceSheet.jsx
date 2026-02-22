@@ -14,16 +14,39 @@ const types = [
 
 export default function AddSourceSheet({ onClose, onAdded }) {
   const [title, setTitle] = useState("");
+  const [url, setUrl] = useState("");
   const [type, setType] = useState("book");
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState("");
   const [extractedHabits, setExtractedHabits] = useState(null);
+
+  const isYouTubeUrl = (str) => /youtube\.com|youtu\.be/.test(str);
 
   const handleSearch = async () => {
     if (!title.trim()) return;
     setLoading(true);
 
+    let transcriptContext = "";
+
+    // If video type and a YouTube URL provided, transcribe first
+    if (type === "video" && url.trim() && isYouTubeUrl(url)) {
+      setLoadingStep("Fetching transcript...");
+      try {
+        const res = await base44.functions.invoke("transcribeVideo", { url: url.trim() });
+        if (res.data?.transcript) {
+          transcriptContext = `\n\nVIDEO TRANSCRIPT (use this as your PRIMARY source — extract ONLY from what's actually said):\n${res.data.transcript.slice(0, 12000)}`;
+        }
+      } catch (e) {
+        // continue without transcript
+      }
+    }
+
+    setLoadingStep(transcriptContext ? "Extracting habits from transcript..." : "Searching & extracting...");
+
     const result = await base44.integrations.Core.InvokeLLM({
       prompt: `You are extracting structured knowledge from "${title}" (${type}) to train an AI life coach called SpareSquare Partner.
+${transcriptContext ? "IMPORTANT: Base your extraction ONLY on the transcript provided below. Do NOT invent or assume anything not mentioned." : ""}
+...
 
     Extract THREE things:
 
