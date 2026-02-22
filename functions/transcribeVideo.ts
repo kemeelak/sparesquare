@@ -12,7 +12,6 @@ function extractVideoId(url) {
   return null;
 }
 
-// Fetch the YouTube page and extract the caption track URL
 async function getCaptionTrackUrl(videoId) {
   const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
     headers: {
@@ -22,12 +21,19 @@ async function getCaptionTrackUrl(videoId) {
   });
   const html = await pageRes.text();
 
-  // Extract captionTracks from ytInitialPlayerResponse
-  const match = html.match(/"captionTracks":(\[.*?\])/);
+  // Try to find captionTracks JSON array — be lenient with the regex
+  const match = html.match(/"captionTracks":\s*(\[[\s\S]*?\])\s*,\s*"/);
   if (!match) return null;
 
-  const tracks = JSON.parse(match[1]);
-  // Prefer English auto-generated or manual
+  let tracks;
+  try {
+    tracks = JSON.parse(match[1]);
+  } catch {
+    return null;
+  }
+
+  if (!Array.isArray(tracks) || tracks.length === 0) return null;
+
   const englishTrack = tracks.find(t => t.languageCode === "en" && t.kind === "asr")
     || tracks.find(t => t.languageCode === "en")
     || tracks[0];
@@ -35,26 +41,28 @@ async function getCaptionTrackUrl(videoId) {
   return englishTrack?.baseUrl || null;
 }
 
-// Fetch and parse the caption XML into plain text
 async function fetchCaptions(captionUrl) {
+  // Try JSON format first
   const res = await fetch(captionUrl + "&fmt=json3");
   if (res.ok) {
-    const data = await res.json();
-    if (data.events) {
-      return data.events
-        .filter(e => e.segs)
-        .map(e => e.segs.map(s => s.utf8).join(""))
-        .join(" ")
-        .replace(/\s+/g, " ")
-        .trim();
-    }
+    try {
+      const data = await res.json();
+      if (data.events) {
+        return data.events
+          .filter(e => e.segs)
+          .map(e => e.segs.map(s => s.utf8 || "").join(""))
+          .join(" ")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+    } catch { /* fall through */ }
   }
 
-  // Fallback: fetch XML format
+  // Fallback: XML format
   const xmlRes = await fetch(captionUrl);
   if (xmlRes.ok) {
     const xml = await xmlRes.text();
-    const text = xml
+    return xml
       .replace(/<[^>]+>/g, " ")
       .replace(/&amp;/g, "&")
       .replace(/&lt;/g, "<")
@@ -63,7 +71,6 @@ async function fetchCaptions(captionUrl) {
       .replace(/&quot;/g, '"')
       .replace(/\s+/g, " ")
       .trim();
-    return text;
   }
 
   return null;
@@ -83,12 +90,14 @@ Deno.serve(async (req) => {
 
     const captionUrl = await getCaptionTrackUrl(videoId);
     if (!captionUrl) {
-      return Response.json({ error: "No captions available for this video. Try a video with subtitles enabled." }, { status: 404 });
+      return Response.json({
+        error: "No captions found for this video. Make sure the video has subtitles/captions enabled."
+      }, { status: 404 });
     }
 
     const transcript = await fetchCaptions(captionUrl);
-    if (!transcript) {
-      return Response.json({ error: "Could not parse captions for this video." }, { status: 500 });
+    if (!transcript || transcript.length < 50) {
+      return Response.json({ error: "Could not extract transcript from captions." }, { status: 500 });
     }
 
     return Response.json({ transcript, videoId });
