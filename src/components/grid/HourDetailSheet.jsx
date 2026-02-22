@@ -8,7 +8,7 @@ import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "../../utils";
 import AddEventForm from "./AddEventForm";
 
-export default function HourDetailSheet({ hour, date, habits, unmovables, sleepHours, profile, onClose, onConfirm, onComplete }) {
+export default function HourDetailSheet({ hour, date, habits, unmovables, sleepHours, profile, onClose, onConfirm, onComplete, onCompleteById }) {
   const [showAddEvent, setShowAddEvent] = useState(false);
   const queryClient = useQueryClient();
 
