@@ -20,7 +20,7 @@ export default function CalendarSync({ onClose }) {
   const isSupported = typeof window !== "undefined" && "navigator" in window;
 
   const handleSync = () => {
-    setStatus("unsupported");
+    setStatus("manual");
   };
 
   const handleManualDescribe = async (text) => {
