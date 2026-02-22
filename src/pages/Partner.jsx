@@ -219,25 +219,7 @@ export default function Partner() {
       queryClient.invalidateQueries({ queryKey: ["chatThreads"] });
     }
 
-    const habitMatch = response.match(/```habit\s*([\s\S]*?)\s*```/);
-    if (habitMatch) {
-      try {
-        const habitData = JSON.parse(habitMatch[1]);
-        const scheduledHour = typeof habitData.scheduled_hour === "number" ? habitData.scheduled_hour : new Date().getHours() + 1;
-        await base44.entities.HabitBlock.create({
-          title: habitData.title,
-          description: habitData.description || "",
-          duration_minutes: habitData.duration_minutes || 30,
-          category: habitData.category || "fitness",
-          energy_level: habitData.energy_level || "medium",
-          scheduled_hour: scheduledHour,
-          scheduled_date: format(new Date(), "yyyy-MM-dd"),
-          status: "confirmed",
-          source: activeThread ? activeThread.name : "Partner suggestion",
-        });
-        queryClient.invalidateQueries({ queryKey: ["habits"] });
-      } catch (e) { console.error("Failed to parse habit block:", e); }
-    }
+    // Habit and sleep blocks are now handled interactively via ActionCard — no auto-creation
   };
 
   const category = activeThread?.category || "general";
