@@ -19,41 +19,7 @@ export default function CalendarSync({ onClose }) {
 
   const isSupported = typeof window !== "undefined" && "navigator" in window;
 
-  const handleSync = async () => {
-    // Try Web Calendar API (Chrome on Android/some browsers)
-    if (navigator.permissions && window.CalendarManager) {
-      // Native calendar path — not widely available yet, fall through
-    }
-
-    // Use device calendar via getUserMedia-style permission — not available in browsers.
-    // Best available approach: use the Temporal/Calendar web API where available,
-    // or fall back to the LLM-based extraction using event titles the user describes.
-    
-    // Most practical approach for a PWA: read from navigator.calendar if available
-    setStatus("requesting");
-
-    // Check for experimental Calendar API (Chrome Origin Trial / Chromium)
-    if ("calendar" in navigator) {
-      try {
-        const permission = await navigator.calendar.requestPermission();
-        if (permission === "granted") {
-          const today = new Date();
-          const end = addDays(today, 30);
-          const events = await navigator.calendar.getEvents({ startDate: today, endDate: end });
-          await processEvents(events.map(e => ({
-            title: e.title || e.summary,
-            start: e.startDate,
-            end: e.endDate,
-            recurring: !!e.recurrenceRule,
-          })));
-          return;
-        }
-      } catch (e) {
-        // fall through to manual
-      }
-    }
-
-    // Fallback: use screen prompt to let user describe their schedule
+  const handleSync = () => {
     setStatus("unsupported");
   };
 
