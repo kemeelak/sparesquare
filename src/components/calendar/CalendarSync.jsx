@@ -183,9 +183,9 @@ function ManualScheduleEntry({ onSubmit }) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-[#FEF3C7] rounded-2xl p-4 text-sm text-[#92400E]">
-        <p className="font-medium mb-1">Direct calendar access isn't available in this browser</p>
-        <p className="text-xs text-[#B45309]">Describe your weekly schedule below and we'll map it automatically.</p>
+      <div className="bg-[#F5F0EB] rounded-2xl p-4 text-sm text-[#4A5568]">
+        <p className="font-medium mb-1">Describe your weekly schedule</p>
+        <p className="text-xs text-[#8A8580]">Tell us your recurring commitments and we'll automatically map them as Unmovable blocks on your grid.</p>
       </div>
       <textarea
         value={text}
