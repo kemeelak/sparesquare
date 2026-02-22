@@ -12,6 +12,13 @@ const categoryEmoji = {
 };
 
 export default function StatsDetailSheet({ type, habits, date, onClose }) {
+  const queryClient = useQueryClient();
+
+  const completeMutation = useMutation({
+    mutationFn: (id) => base44.entities.HabitBlock.update(id, { status: "completed" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["habits"] }),
+  });
+
   const items = type === "completed"
     ? habits.filter(h => h.status === "completed")
     : habits.filter(h => h.status === "confirmed" || h.status === "suggested");
