@@ -24,6 +24,7 @@ export default function HourSquare({ hour, unmovable, habit, habits = [], isSpar
   let bgClass = "bg-white border-[#E8E4DF]";
   let textClass = "text-[#B0AAA4]";
   let emoji = null;
+  let multiCount = null;
 
   if (isSleep) {
     bgClass = "bg-[#2D3748] border-[#2D3748]";
