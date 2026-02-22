@@ -172,23 +172,44 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, sleepH
           </div>
         )}
 
-        {habit && (
-          <div className={`rounded-2xl p-5 ${habit.status === "confirmed" || habit.status === "completed" ? "bg-[#7C9A82] text-white" : "bg-[#E8F0EA] text-[#1A1A1A]"}`}>
-            <p className="text-lg font-bold mb-1">{habit.title}</p>
-            {habit.description && <p className="text-sm opacity-80 mb-3">{habit.description}</p>}
-            {habit.source && <p className="text-xs opacity-60 mb-4">From: {habit.source}</p>}
-            <div className="flex gap-2 flex-wrap">
-              {habit.status === "suggested" && (
-                <Button onClick={() => onConfirm(habit)} className="bg-[#7C9A82] hover:bg-[#6B8A71] text-white rounded-xl">
-                  <Check className="w-4 h-4 mr-2" /> Confirm
-                </Button>
-              )}
-              {(habit.status === "confirmed" || habit.status === "suggested") && (
-                  <Button onClick={() => onComplete(habit)} className="rounded-xl bg-white/20 hover:bg-white/30 text-white border border-white/40">
-                    Mark Complete
-                  </Button>
-                )}
-            </div>
+        {hourHabits.length > 0 && (
+          <div className="space-y-3">
+            {hourHabits.map((h, i) => {
+              const isConfirmed = h.status === "confirmed" || h.status === "completed";
+              const isCompleted = h.status === "completed";
+              // Calculate per-habit start time based on order
+              const prevMinutes = hourHabits.slice(0, i).reduce((sum, p) => sum + (p.duration_minutes || 30), 0);
+              const startMin = prevMinutes % 60;
+              const startHourOffset = Math.floor(prevMinutes / 60);
+              const startH = hour + startHourOffset;
+              const timeLabel = `${startH > 12 ? startH - 12 : startH || 12}:${String(startMin).padStart(2,"0")} ${startH >= 12 ? "PM" : "AM"}`;
+              return (
+                <div key={h.id} className={`rounded-2xl p-5 ${isConfirmed ? "bg-[#7C9A82] text-white" : "bg-[#E8F0EA] text-[#1A1A1A]"}`}>
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <p className="text-lg font-bold leading-tight">{h.title}</p>
+                    <span className={`text-xs font-mono mt-1 flex-shrink-0 ${isConfirmed ? "text-white/70" : "text-[#8A8580]"}`}>{timeLabel}</span>
+                  </div>
+                  {h.duration_minutes && <p className={`text-xs mb-1 ${isConfirmed ? "text-white/70" : "text-[#8A8580]"}`}>{h.duration_minutes} min</p>}
+                  {h.description && <p className="text-sm opacity-80 mb-3">{h.description}</p>}
+                  {h.source && <p className="text-xs opacity-60 mb-3">From: {h.source}</p>}
+                  {!isCompleted && (
+                    <div className="flex gap-2 flex-wrap mt-2">
+                      {h.status === "suggested" && (
+                        <Button onClick={() => onConfirm(h)} size="sm" className="bg-[#7C9A82] hover:bg-[#6B8A71] text-white rounded-xl">
+                          <Check className="w-3.5 h-3.5 mr-1" /> Confirm
+                        </Button>
+                      )}
+                      {(h.status === "confirmed" || h.status === "suggested") && (
+                        <Button onClick={() => onComplete(h)} size="sm" className="rounded-xl bg-white/20 hover:bg-white/30 text-white border border-white/40">
+                          ✓ Mark Complete
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  {isCompleted && <p className="text-sm font-semibold mt-2 opacity-80">✅ Completed</p>}
+                </div>
+              );
+            })}
           </div>
         )}
 
