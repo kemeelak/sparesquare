@@ -12,11 +12,11 @@ export default function DayGrid({ date, unmovables, habits, sleepHours, onSquare
     );
   };
 
-  const getHabitForHour = (hour) => {
+  const getHabitsForHour = (hour) => {
     const dateStr = format(date, "yyyy-MM-dd");
-    return habits?.find(
+    return habits?.filter(
       (h) => h.scheduled_hour === hour && h.scheduled_date === dateStr && h.status !== "backlog"
-    );
+    ) || [];
   };
 
   const isSleepHour = (hour) => {
