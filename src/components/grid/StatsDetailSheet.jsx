@@ -78,10 +78,18 @@ export default function StatsDetailSheet({ type, habits, date, onClose }) {
                     {habit.duration_minutes ? ` · ${habit.duration_minutes} min` : ""}
                   </p>
                 </div>
-                {habit.status === "completed" && (
+                {habit.status === "completed" ? (
                   <div className="w-6 h-6 rounded-full bg-[#7C9A82] flex items-center justify-center flex-shrink-0">
                     <Check className="w-3.5 h-3.5 text-white" />
                   </div>
+                ) : (
+                  <button
+                    onClick={() => completeMutation.mutate(habit.id)}
+                    disabled={completeMutation.isPending}
+                    className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#7C9A82] text-white hover:bg-[#6B8A71] transition-colors disabled:opacity-50"
+                  >
+                    Done
+                  </button>
                 )}
               </div>
             ))}
