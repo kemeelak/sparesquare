@@ -13,7 +13,7 @@ const categoryIcons = {
   creative: "🎨",
 };
 
-export default function HourSquare({ hour, unmovable, habit, isSpare, isSleep, onSquareClick }) {
+export default function HourSquare({ hour, unmovable, habit, habits = [], isSpare, isSleep, onSquareClick }) {
   const formatHour = (h) => {
     if (h === 0) return "12a";
     if (h === 12) return "12p";
