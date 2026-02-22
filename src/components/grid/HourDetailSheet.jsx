@@ -21,7 +21,8 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, sleepH
 
   const dateStr = format(date, "yyyy-MM-dd");
   const dayName = format(date, "EEEE").toLowerCase();
-  const habit = habits?.find(h => h.scheduled_hour === hour && h.scheduled_date === dateStr && h.status !== "backlog");
+  const hourHabits = habits?.filter(h => h.scheduled_hour === hour && h.scheduled_date === dateStr && h.status !== "backlog") || [];
+  const habit = hourHabits[0] || null;
   const unmovable = unmovables?.find(u => u.start_hour <= hour && u.end_hour > hour && (u.days?.includes(dayName) || u.days?.length === 0));
   const isSleep = sleepHours?.includes(hour);
   const isSpare = !habit && !unmovable && !isSleep;
