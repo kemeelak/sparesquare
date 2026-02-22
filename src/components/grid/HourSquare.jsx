@@ -69,6 +69,11 @@ export default function HourSquare({ hour, unmovable, habit, habits = [], isSpar
         {formatHour(hour)}
       </span>
       {emoji && <span className="text-base leading-none mt-1">{emoji}</span>}
+      {multiCount && (
+        <span className="absolute top-0.5 right-1 text-[8px] font-bold bg-white/30 rounded-full px-1 leading-tight">
+          {multiCount}
+        </span>
+      )}
     </motion.button>
   );
 }
