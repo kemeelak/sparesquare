@@ -7,6 +7,7 @@ import { Layers, Calendar, Zap, Clock, Trash2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ScheduleSheet from "../components/backlog/ScheduleSheet";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 const energyColors = {
   low: "bg-[#E8F0EA] text-[#7C9A82]",
@@ -26,13 +27,15 @@ const categoryEmoji = {
 };
 
 export default function Backlog() {
+  const currentUser = useCurrentUser();
   const [scheduling, setScheduling] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: habits, isLoading } = useQuery({
     queryKey: ["habits"],
-    queryFn: () => base44.entities.HabitBlock.list(),
+    queryFn: () => base44.entities.HabitBlock.filter({ created_by_id: currentUser.id }),
     initialData: [],
+    enabled: !!currentUser,
   });
 
   const backlogHabits = habits.filter((h) => h.status === "backlog");

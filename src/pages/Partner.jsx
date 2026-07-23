@@ -9,6 +9,7 @@ import ChatInput from "../components/chat/ChatInput";
 import LoadingDots from "../components/shared/LoadingDots";
 import ThreadSidebar from "../components/chat/ThreadSidebar";
 import QuickPrompts from "../components/chat/QuickPrompts";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 const categoryColors = {
   fitness: "text-orange-600", mindfulness: "text-purple-600", learning: "text-blue-600",
@@ -120,6 +121,7 @@ ${pluginKnowledge ? `\nKNOWLEDGE BASE FROM THEIR LIBRARY:\n${pluginKnowledge}` :
 };
 
 export default function Partner() {
+  const currentUser = useCurrentUser();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeThread, setActiveThread] = useState(null);
@@ -128,10 +130,10 @@ export default function Partner() {
   const messagesEndRef = useRef(null);
   const queryClient = useQueryClient();
 
-  const { data: profiles } = useQuery({ queryKey: ["userProfile"], queryFn: () => base44.entities.UserProfile.list(), initialData: [] });
-  const { data: habits } = useQuery({ queryKey: ["habits"], queryFn: () => base44.entities.HabitBlock.list(), initialData: [] });
-  const { data: pluginSources } = useQuery({ queryKey: ["pluginSources"], queryFn: () => base44.entities.PluginSource.list(), initialData: [] });
-  const { data: threads } = useQuery({ queryKey: ["chatThreads"], queryFn: () => base44.entities.ChatThread.list("-created_date", 50), initialData: [] });
+  const { data: profiles } = useQuery({ queryKey: ["userProfile"], queryFn: () => base44.entities.UserProfile.filter({ created_by_id: currentUser.id }), initialData: [], enabled: !!currentUser });
+  const { data: habits } = useQuery({ queryKey: ["habits"], queryFn: () => base44.entities.HabitBlock.filter({ created_by_id: currentUser.id }), initialData: [], enabled: !!currentUser });
+  const { data: pluginSources } = useQuery({ queryKey: ["pluginSources"], queryFn: () => base44.entities.PluginSource.filter({ created_by_id: currentUser.id }), initialData: [], enabled: !!currentUser });
+  const { data: threads } = useQuery({ queryKey: ["chatThreads"], queryFn: () => base44.entities.ChatThread.filter({ created_by_id: currentUser.id }, "-created_date", 50), initialData: [], enabled: !!currentUser });
 
   const { data: threadMessages } = useQuery({
     queryKey: ["chatMessages", activeThread?.id],

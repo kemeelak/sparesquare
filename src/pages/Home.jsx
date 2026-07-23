@@ -15,8 +15,10 @@ import CalendarSync from "../components/calendar/CalendarSync";
 import AddEventForm from "../components/grid/AddEventForm";
 import GoalsOnboarding from "../components/onboarding/GoalsOnboarding";
 import StatsDetailSheet from "../components/grid/StatsDetailSheet";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 export default function Home() {
+  const currentUser = useCurrentUser();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedHour, setSelectedHour] = useState(null);
   const [showCalendarSync, setShowCalendarSync] = useState(false);
@@ -27,14 +29,16 @@ export default function Home() {
 
   const { data: profiles } = useQuery({
     queryKey: ["userProfile"],
-    queryFn: () => base44.entities.UserProfile.list(),
+    queryFn: () => base44.entities.UserProfile.filter({ created_by_id: currentUser.id }),
     initialData: [],
+    enabled: !!currentUser,
   });
 
   const { data: habits } = useQuery({
     queryKey: ["habits"],
-    queryFn: () => base44.entities.HabitBlock.list(),
+    queryFn: () => base44.entities.HabitBlock.filter({ created_by_id: currentUser.id }),
     initialData: [],
+    enabled: !!currentUser,
   });
 
   const profile = profiles[0];

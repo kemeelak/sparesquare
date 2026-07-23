@@ -22,7 +22,8 @@ export default function Layout({ children, currentPageName }) {
         setProfileLoaded(true);
         return;
       }
-      const profiles = await base44.entities.UserProfile.list();
+      const me = await base44.auth.me();
+      const profiles = await base44.entities.UserProfile.filter({ created_by_id: me.id });
       if (profiles.length > 0) setProfile(profiles[0]);
       setProfileLoaded(true);
     };

@@ -7,18 +7,23 @@ import { createPageUrl } from "../utils";
 import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from "recharts";
 import { motion } from "framer-motion";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 
 export default function Progress() {
+  const currentUser = useCurrentUser();
+
   const { data: habits } = useQuery({
     queryKey: ["habits"],
-    queryFn: () => base44.entities.HabitBlock.list(),
+    queryFn: () => base44.entities.HabitBlock.filter({ created_by_id: currentUser.id }),
     initialData: [],
+    enabled: !!currentUser,
   });
 
   const { data: profiles } = useQuery({
     queryKey: ["userProfile"],
-    queryFn: () => base44.entities.UserProfile.list(),
+    queryFn: () => base44.entities.UserProfile.filter({ created_by_id: currentUser.id }),
     initialData: [],
+    enabled: !!currentUser,
   });
 
   const profile = profiles[0];

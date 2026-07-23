@@ -81,7 +81,8 @@ Group recurring events into schedule blocks with start_hour and end_hour (intege
   };
 
   const saveBlocks = async (blocks) => {
-    const profiles = await base44.entities.UserProfile.list();
+    const me = await base44.auth.me();
+    const profiles = await base44.entities.UserProfile.filter({ created_by_id: me.id });
     if (profiles.length > 0) {
       const existing = profiles[0].unmovables || [];
       await base44.entities.UserProfile.update(profiles[0].id, {
