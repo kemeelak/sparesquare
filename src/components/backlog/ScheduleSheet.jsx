@@ -138,15 +138,15 @@ export default function ScheduleSheet({ habit, habits = [], profile, onClose, on
               <div className="flex items-center gap-1.5 mb-2">
                 <CalendarDays className="w-3.5 h-3.5 text-[#8A8580]" />
                 <p className="text-xs font-semibold text-[#4A5568] uppercase tracking-wide">
-                  {repeat === "weekly" ? "Starting week of" : repeat === "monthly" ? "Starting month" : "Date"}
+                  {repeat === "weekly" ? "Starting day" : repeat === "monthly" ? "Starting date" : "Date"}
                 </p>
               </div>
               <div className="flex items-center justify-between bg-[#F5F0EB] rounded-xl p-3">
-                <button onClick={() => setDate(subDays(date, repeat === "weekly" ? 7 : 1))} className="p-1">
+                <button onClick={() => setDate(subDays(date, 1))} className="p-1">
                   <ChevronLeft className="w-4 h-4 text-[#8A8580]" />
                 </button>
                 <p className="text-sm font-medium text-[#1A1A1A]">{format(date, "EEEE, MMM d")}</p>
-                <button onClick={() => setDate(addDays(date, repeat === "weekly" ? 7 : 1))} className="p-1">
+                <button onClick={() => setDate(addDays(date, 1))} className="p-1">
                   <ChevronRight className="w-4 h-4 text-[#8A8580]" />
                 </button>
               </div>
