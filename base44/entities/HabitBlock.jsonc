@@ -1,0 +1,68 @@
+{
+  "name": "HabitBlock",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Name of the habit"
+    },
+    "description": {
+      "type": "string",
+      "description": "Details about the habit"
+    },
+    "source": {
+      "type": "string",
+      "description": "Book/podcast/video this habit came from"
+    },
+    "duration_minutes": {
+      "type": "number",
+      "description": "How long this habit takes"
+    },
+    "scheduled_hour": {
+      "type": "number",
+      "description": "Hour of day (0-23) when scheduled"
+    },
+    "scheduled_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when scheduled"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "suggested",
+        "confirmed",
+        "completed",
+        "skipped",
+        "backlog"
+      ],
+      "default": "suggested"
+    },
+    "energy_level": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "description": "Energy level needed for this habit"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "fitness",
+        "mindfulness",
+        "learning",
+        "nutrition",
+        "sleep",
+        "productivity",
+        "social",
+        "creative"
+      ],
+      "description": "Category of the habit"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

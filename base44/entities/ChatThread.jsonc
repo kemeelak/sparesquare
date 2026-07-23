@@ -1,0 +1,35 @@
+{
+  "name": "ChatThread",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Thread title"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "fitness",
+        "mindfulness",
+        "learning",
+        "nutrition",
+        "sleep",
+        "productivity",
+        "social",
+        "creative",
+        "general"
+      ],
+      "default": "general"
+    },
+    "pinned": {
+      "type": "boolean",
+      "default": false
+    },
+    "last_message_preview": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "UserPublicProfile",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Reference to the user"
+    },
+    "username": {
+      "type": "string",
+      "description": "Unique username for friend finding"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "phone_number": {
+      "type": "string"
+    },
+    "current_streak": {
+      "type": "number",
+      "default": 0
+    },
+    "total_completed": {
+      "type": "number",
+      "default": 0
+    },
+    "avatar_emoji": {
+      "type": "string",
+      "default": "\ud83e\uddd1"
+    }
+  },
+  "required": [
+    "user_id"
+  ]
+}

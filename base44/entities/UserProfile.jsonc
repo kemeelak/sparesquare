@@ -1,0 +1,101 @@
+{
+  "name": "UserProfile",
+  "type": "object",
+  "properties": {
+    "rhythm_type": {
+      "type": "string",
+      "enum": [
+        "nine_to_five",
+        "student",
+        "night_shift",
+        "freelancer",
+        "parent",
+        "other"
+      ],
+      "description": "User's work rhythm type"
+    },
+    "sleep_actual": {
+      "type": "string",
+      "description": "Actual sleep time e.g. 12:00 AM"
+    },
+    "sleep_goal": {
+      "type": "string",
+      "description": "Goal sleep time e.g. 10:30 PM"
+    },
+    "wake_time": {
+      "type": "string",
+      "description": "Wake up time e.g. 6:00 AM"
+    },
+    "growth_focus": {
+      "type": "string",
+      "enum": [
+        "fitness",
+        "business",
+        "peace",
+        "learning",
+        "creativity",
+        "relationships"
+      ],
+      "description": "What the best version of user is working on"
+    },
+    "unmovables": {
+      "type": "array",
+      "description": "List of unmovable blocks",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "start_hour": {
+            "type": "number"
+          },
+          "end_hour": {
+            "type": "number"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "onboarding_complete": {
+      "type": "boolean",
+      "default": false
+    },
+    "goals_onboarding_complete": {
+      "type": "boolean",
+      "default": false
+    },
+    "timezone_offset": {
+      "type": "number",
+      "description": "User timezone offset in hours"
+    },
+    "partner_name": {
+      "type": "string",
+      "description": "User's chosen name for their AI partner"
+    },
+    "goals": {
+      "type": "array",
+      "description": "User's specific life goals",
+      "items": {
+        "type": "string"
+      }
+    },
+    "challenges": {
+      "type": "array",
+      "description": "Past challenges / blockers the user has faced",
+      "items": {
+        "type": "string"
+      }
+    },
+    "motivation": {
+      "type": "string",
+      "description": "Why the user is doing this \u2014 their deeper why"
+    }
+  },
+  "required": []
+}

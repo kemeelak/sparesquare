@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { X, Check, Sparkles, Lock, Moon, Plus, ArrowRight } from "lucide-react";
+import { X, Check, Sparkles, Lock, Moon, Plus, ArrowRight, Pencil } from "lucide-react";
+import EditUnmovableSheet from "./EditUnmovableSheet";
 import { format, addDays } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,6 +11,7 @@ import AddEventForm from "./AddEventForm";
 
 export default function HourDetailSheet({ hour, date, habits, unmovables, sleepHours, profile, onClose, onConfirm, onComplete, onCompleteById }) {
   const [showAddEvent, setShowAddEvent] = useState(false);
+  const [editingUnmovable, setEditingUnmovable] = useState(null); // { unmovable, index }
   const queryClient = useQueryClient();
 
   const formatHour = (h) => {
@@ -154,12 +156,32 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, sleepH
 
         {unmovable && (
           <div className="bg-[#4A5568] text-white rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-2">
-              <Lock className="w-4 h-4" />
-              <span className="text-sm font-semibold">Unmovable</span>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Lock className="w-4 h-4" />
+                <span className="text-sm font-semibold">Unmovable</span>
+              </div>
+              <button
+                onClick={() => {
+                  const idx = (profile?.unmovables || []).findIndex(u => u === unmovable || (u.label === unmovable.label && u.start_hour === unmovable.start_hour));
+                  setEditingUnmovable({ unmovable, index: idx });
+                }}
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
             </div>
-            <p className="text-lg font-bold">{unmovable.label}</p>
+            <p className="text-lg font-bold">{unmovable.emoji || ""} {unmovable.label}</p>
           </div>
+        )}
+
+        {editingUnmovable && profile && (
+          <EditUnmovableSheet
+            unmovable={editingUnmovable.unmovable}
+            index={editingUnmovable.index}
+            profile={profile}
+            onClose={() => setEditingUnmovable(null)}
+          />
         )}
 
         {isSleep && (

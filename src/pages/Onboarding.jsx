@@ -2,12 +2,12 @@ import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "../utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronRight } from "lucide-react";
+import { Check, ChevronRight, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 
-// Base steps
-const BASE_STEPS = [
+// Initial fixed steps — after these, AI takes over
+const INITIAL_STEPS = [
   {
     field: "rhythm_type",
     question: "Welcome to SpareSquare! 👋\n\nI'm your AI growth partner. I'll find hidden time in your day and help you build habits that actually stick.\n\nFirst — what best describes your daily rhythm?",
@@ -16,25 +16,21 @@ const BASE_STEPS = [
   },
   {
     field: "unmovables_work",
-    question: "Got it. Now let's map your **Unmovables** — blocks that are completely non-negotiable.\n\n**Work / School hours?**\n\nIf you do shift work, pick the closest pattern or type your exact hours below.",
+    question: "Got it. Now let's map your **Unmovables** — blocks that are completely non-negotiable.\n\n**Work / School hours?**",
     chips: ["9am–5pm Mon–Fri", "8am–4pm Mon–Fri", "8am–3pm Mon–Fri", "10am–6pm Mon–Fri", "7am–3pm (early shift)", "3pm–11pm (late shift)", "11pm–7am (night shift)", "Rotating shifts", "Flexible / WFH", "None"],
     multi: false,
-    customPlaceholder: "e.g. 6am–2pm Tue–Sat, or 12pm–8pm Mon/Wed/Fri",
+    customPlaceholder: "e.g. 6am–2pm Tue–Sat",
   },
-  // NOTE: "Rotating shifts" or "Night Shift" rhythm type triggers a follow-up — see buildSteps()
   {
     field: "commute",
-    question: "Do you commute to work or school? How long is your commute one way?",
+    question: "Do you commute? How long is your commute one way?",
     chips: ["No commute (WFH)", "Under 15 min", "15–30 min", "30–45 min", "45–60 min", "Over 1 hour"],
     multi: false,
   },
-  {
-    field: "unmovables_other",
-    question: "Any other regular commitments? (Select all that apply)",
-    chips: ["School run / childcare", "Gym class / PT session", "Medical appointments", "Religious practice", "Evening class / course", "Caring for a family member", "None of the above"],
-    multi: true,
-  },
-  // Follow-up steps are inserted dynamically based on "unmovables_other" answers
+];
+
+// Final steps always appear at the end
+const FINAL_STEPS = [
   {
     field: "sleep_actual",
     question: "Now your **sleep window** — when do you *actually* tend to fall asleep?",
@@ -55,78 +51,25 @@ const BASE_STEPS = [
   },
   {
     field: "growth_focus",
-    question: "Almost done! What is the **best version of you** working on? (Pick all that resonate)",
+    question: "What is the **best version of you** working on? (Pick all that resonate)",
     chips: ["💪 Fitness & Health", "💼 Building a Business", "🧘 Inner Peace / Mindfulness", "📚 Learning & Skills", "🎨 Creativity", "❤️ Relationships", "💰 Financial Freedom"],
     multi: true,
   },
   {
     field: "energy_pattern",
-    question: "Last one! When do you feel **most energised and focused** during the day?",
+    question: "When do you feel **most energised and focused** during the day?",
     chips: ["Early morning (5–9am)", "Mid-morning (9am–12pm)", "Afternoon (12–5pm)", "Evening (5–9pm)", "Late night (9pm+)", "I'm consistent throughout"],
     multi: false,
   },
   {
     field: "partner_name",
-    question: "Almost there! What would you like to **call your AI Partner**?\n\nThis is the name you'll see throughout the app. Pick something that feels right to you.",
+    question: "Almost there! What would you like to **call your AI Partner**?\n\nThis is the name you'll see throughout the app.",
     chips: ["Alex", "Coach", "Sage", "Aria", "Max", "Nova"],
     multi: false,
     customPlaceholder: "Or type your own name... (max 12 chars)",
     maxLength: 12,
   },
 ];
-
-// Dynamic follow-up steps for each commitment type
-const FOLLOW_UP_STEPS = {
-  "rotating_shift_detail": {
-    field: "rotating_shift_detail",
-    question: "You selected rotating or irregular shifts — let's capture your actual pattern.\n\nPlease type your typical shift schedule so I can map it accurately into your grid.",
-    chips: ["Mon–Fri 6am–2pm", "Tue–Sat 2pm–10pm", "Wed–Sun 10pm–6am", "Mon/Wed/Fri 7am–3pm", "Tue/Thu/Sat 3pm–11pm"],
-    multi: false,
-    customPlaceholder: "e.g. Mon/Tue/Thu 7am–3pm, or alternate weeks",
-  },
-  "School run / childcare": {
-    field: "followup_school_run",
-    question: "You mentioned a **school run / childcare** commitment. Which days does this happen, and roughly what time?",
-    chips: ["Mon–Fri 7–9am", "Mon–Fri 3–5pm", "Both morning & afternoon", "Weekdays only (custom time)"],
-    multi: false,
-    customPlaceholder: "e.g. Mon–Fri 8–9am and 3–4pm",
-  },
-  "Gym class / PT session": {
-    field: "followup_gym",
-    question: "Great that you're staying active! When are your **gym / PT sessions**?",
-    chips: ["Mon/Wed/Fri morning", "Tue/Thu morning", "Mon/Wed/Fri evening", "Tue/Thu evening", "Daily morning", "Weekends only"],
-    multi: false,
-    customPlaceholder: "e.g. Mon, Wed, Fri 6–7am",
-  },
-  "Medical appointments": {
-    field: "followup_medical",
-    question: "For **medical appointments** — are these recurring on specific days/times?",
-    chips: ["Weekly (same day/time)", "Bi-weekly", "Monthly", "Irregular / varies"],
-    multi: false,
-    customPlaceholder: "e.g. Every Tuesday 10–11am",
-  },
-  "Religious practice": {
-    field: "followup_religion",
-    question: "Which days and times do you practice your **religious activities**?",
-    chips: ["Friday prayers (1–2pm)", "Saturday (all day)", "Sunday (all day)", "Sunday morning", "Daily prayers (5x/day)", "Every evening"],
-    multi: false,
-    customPlaceholder: "e.g. Friday 1–2pm and Sunday 9–11am",
-  },
-  "Evening class / course": {
-    field: "followup_course",
-    question: "When is your **evening class or course**?",
-    chips: ["Mon evening", "Tue evening", "Wed evening", "Thu evening", "Fri evening", "Mon & Wed evenings", "Tue & Thu evenings"],
-    multi: false,
-    customPlaceholder: "e.g. Wednesday 6–9pm",
-  },
-  "Caring for a family member": {
-    field: "followup_caring",
-    question: "You mentioned **caring for a family member** — when does this typically happen?",
-    chips: ["Mornings daily", "Evenings daily", "Weekends", "Throughout the day", "Specific hours only"],
-    multi: false,
-    customPlaceholder: "e.g. Every evening 5–8pm",
-  },
-};
 
 const GROWTH_MAP = {
   "💪 Fitness & Health": "fitness",
@@ -166,7 +109,7 @@ function parseWakeHour(label) {
   return map[label] ?? 7;
 }
 
-function buildUnmovables(workAnswer, commuteAnswer, otherAnswers, followupAnswers) {
+function buildUnmovablesFromAnswers(answers) {
   const blocks = [];
   const allDays = ["monday","tuesday","wednesday","thursday","friday"];
 
@@ -175,32 +118,29 @@ function buildUnmovables(workAnswer, commuteAnswer, otherAnswers, followupAnswer
     "8am–4pm Mon–Fri":     { start: 8,  end: 16, days: allDays, label: "Work" },
     "8am–3pm Mon–Fri":     { start: 8,  end: 15, days: allDays, label: "School" },
     "10am–6pm Mon–Fri":    { start: 10, end: 18, days: allDays, label: "Work" },
-    "7am–3pm (early shift)":  { start: 7,  end: 15, days: allDays, label: "Work (early shift)" },
-    "3pm–11pm (late shift)":  { start: 15, end: 23, days: allDays, label: "Work (late shift)" },
-    "11pm–7am (night shift)": { start: 23, end: 7,  days: allDays, label: "Work (night shift)" },
-    "Rotating shifts":     null,
+    "7am–3pm (early shift)":  { start: 7,  end: 15, days: allDays, label: "Work" },
+    "3pm–11pm (late shift)":  { start: 15, end: 23, days: allDays, label: "Work" },
+    "11pm–7am (night shift)": { start: 23, end: 7,  days: allDays, label: "Work" },
   };
 
+  const workAnswer = answers.unmovables_work;
   if (workMap[workAnswer]) {
     const w = workMap[workAnswer];
     blocks.push({ label: w.label, start_hour: w.start, end_hour: w.end, days: w.days });
-  } else if (workAnswer && workAnswer !== "Flexible / WFH" && workAnswer !== "None" && workAnswer !== "Rotating shifts") {
+  } else if (workAnswer && !["Flexible / WFH", "None", "Rotating shifts"].includes(workAnswer)) {
     const timeMatch = workAnswer.match(/(\d+)(?::(\d+))?\s*(am|pm)?\s*[–\-to]+\s*(\d+)(?::(\d+))?\s*(am|pm)?/i);
     if (timeMatch) {
       let start = parseInt(timeMatch[1]);
       let end = parseInt(timeMatch[4]);
-      const startAmPm = timeMatch[3]?.toLowerCase();
-      const endAmPm = timeMatch[6]?.toLowerCase();
-      if (startAmPm === "pm" && start !== 12) start += 12;
-      if (startAmPm === "am" && start === 12) start = 0;
-      if (endAmPm === "pm" && end !== 12) end += 12;
-      if (endAmPm === "am" && end === 12) end = 0;
+      if (timeMatch[3]?.toLowerCase() === "pm" && start !== 12) start += 12;
+      if (timeMatch[6]?.toLowerCase() === "pm" && end !== 12) end += 12;
       blocks.push({ label: "Work", start_hour: start, end_hour: end, days: allDays });
     }
   }
 
-  const commuteMinMap = { "15–30 min": 1, "30–45 min": 1, "45–60 min": 1, "Over 1 hour": 1 };
-  if (commuteAnswer && commuteMinMap[commuteAnswer] && blocks.length > 0) {
+  // Add commute
+  const commuteAnswer = answers.commute;
+  if (commuteAnswer && commuteAnswer !== "No commute (WFH)" && commuteAnswer !== "Under 15 min" && blocks.length > 0) {
     const workBlock = blocks[0];
     if (workBlock.start_hour > 0) {
       blocks.push({ label: "Commute (morning)", start_hour: workBlock.start_hour - 1, end_hour: workBlock.start_hour, days: workBlock.days });
@@ -210,106 +150,113 @@ function buildUnmovables(workAnswer, commuteAnswer, otherAnswers, followupAnswer
     }
   }
 
-  // Parse follow-up answers into blocks
-  const followupMap = {
-    "followup_school_run": { label: "School run" },
-    "followup_gym": { label: "Gym / PT" },
-    "followup_medical": { label: "Medical appointment" },
-    "followup_religion": { label: "Religious practice" },
-    "followup_course": { label: "Evening class" },
-    "followup_caring": { label: "Caring duties" },
-  };
-
-  const dayChipMap = {
-    "Mon–Fri 7–9am": { start: 7, end: 9, days: allDays },
-    "Mon–Fri 3–5pm": { start: 15, end: 17, days: allDays },
-    "Both morning & afternoon": { start: 7, end: 9, days: allDays },
-    "Mon/Wed/Fri morning": { start: 6, end: 8, days: ["monday","wednesday","friday"] },
-    "Tue/Thu morning": { start: 6, end: 8, days: ["tuesday","thursday"] },
-    "Mon/Wed/Fri evening": { start: 18, end: 20, days: ["monday","wednesday","friday"] },
-    "Tue/Thu evening": { start: 18, end: 20, days: ["tuesday","thursday"] },
-    "Daily morning": { start: 6, end: 8, days: allDays },
-    "Weekends only": { start: 9, end: 11, days: ["saturday","sunday"] },
-    "Friday prayers (1–2pm)": { start: 13, end: 14, days: ["friday"] },
-    "Saturday (all day)": { start: 8, end: 20, days: ["saturday"] },
-    "Sunday (all day)": { start: 8, end: 20, days: ["sunday"] },
-    "Sunday morning": { start: 8, end: 12, days: ["sunday"] },
-    "Every evening": { start: 18, end: 20, days: allDays },
-    "Mon evening": { start: 18, end: 21, days: ["monday"] },
-    "Tue evening": { start: 18, end: 21, days: ["tuesday"] },
-    "Wed evening": { start: 18, end: 21, days: ["wednesday"] },
-    "Thu evening": { start: 18, end: 21, days: ["thursday"] },
-    "Fri evening": { start: 18, end: 21, days: ["friday"] },
-    "Mon & Wed evenings": { start: 18, end: 21, days: ["monday","wednesday"] },
-    "Tue & Thu evenings": { start: 18, end: 21, days: ["tuesday","thursday"] },
-    "Mornings daily": { start: 7, end: 10, days: allDays },
-    "Evenings daily": { start: 17, end: 20, days: allDays },
-    "Weekends": { start: 9, end: 18, days: ["saturday","sunday"] },
-  };
-
-  Object.entries(followupAnswers || {}).forEach(([field, value]) => {
-    const meta = followupMap[field];
-    if (!meta || !value) return;
-    const times = dayChipMap[value];
-    if (times) {
-      blocks.push({ label: meta.label, start_hour: times.start, end_hour: times.end, days: times.days });
-    } else if (typeof value === "string") {
-      // Try to parse custom text e.g. "Wednesday 6–9pm"
-      const timeMatch = value.match(/(\d+)(?::(\d+))?\s*(am|pm)?\s*[–\-to]+\s*(\d+)(?::(\d+))?\s*(am|pm)?/i);
-      if (timeMatch) {
-        let start = parseInt(timeMatch[1]);
-        let end = parseInt(timeMatch[4]);
-        if (timeMatch[3]?.toLowerCase() === "pm" && start !== 12) start += 12;
-        if (timeMatch[6]?.toLowerCase() === "pm" && end !== 12) end += 12;
-        blocks.push({ label: meta.label, start_hour: start, end_hour: end, days: allDays });
-      }
+  // Parse any AI-generated followup unmovable answers
+  Object.entries(answers).forEach(([key, value]) => {
+    if (!key.startsWith("followup_") || !value) return;
+    const label = key.replace("followup_", "").replace(/_/g, " ");
+    const timeMatch = (typeof value === "string") && value.match(/(\d+)(?::(\d+))?\s*(am|pm)?\s*[–\-to]+\s*(\d+)(?::(\d+))?\s*(am|pm)?/i);
+    if (timeMatch) {
+      let start = parseInt(timeMatch[1]);
+      let end = parseInt(timeMatch[4]);
+      if (timeMatch[3]?.toLowerCase() === "pm" && start !== 12) start += 12;
+      if (timeMatch[6]?.toLowerCase() === "pm" && end !== 12) end += 12;
+      blocks.push({ label, start_hour: start, end_hour: end, days: allDays });
     }
   });
 
   return blocks;
 }
 
-// Build the actual step list dynamically based on what's selected in unmovables_other
-function buildSteps(answers) {
-  const BASE_STEP_COUNT_BEFORE_FOLLOWUP = 4; // up to and including unmovables_other
-  const steps = [...BASE_STEPS.slice(0, BASE_STEP_COUNT_BEFORE_FOLLOWUP)];
+async function generateNextQuestion(answers, questionHistory) {
+  const answeredSummary = Object.entries(answers)
+    .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+    .join("\n");
 
-  // If rhythm is night shift or work is "Rotating shifts", add a shift detail step
-  const isIrregular =
-    answers?.rhythm_type === "Night Shift" ||
-    answers?.unmovables_work === "Rotating shifts";
-  if (isIrregular) {
-    steps.push(FOLLOW_UP_STEPS["rotating_shift_detail"]);
-  }
+  const askedFields = questionHistory.map(q => q.field).join(", ");
 
-  const otherAnswers = answers?.unmovables_other || [];
-  const followupKeys = Object.keys(FOLLOW_UP_STEPS).filter(k => k !== "rotating_shift_detail");
-  const needsFollowup = followupKeys.filter(k => otherAnswers.includes(k));
-  needsFollowup.forEach(k => steps.push(FOLLOW_UP_STEPS[k]));
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: `You are conducting a personalized onboarding for a productivity app called SpareSquare. 
+    
+The user has already answered these questions:
+${answeredSummary}
 
-  steps.push(...BASE_STEPS.slice(BASE_STEP_COUNT_BEFORE_FOLLOWUP));
-  return steps;
+Questions already asked (do NOT repeat these fields): ${askedFields}
+
+Based on what we know, generate ONE highly personalized follow-up question to better understand this specific user's schedule, constraints, or lifestyle. 
+
+The question should:
+- Dig deeper into something specific they mentioned
+- Help us understand hidden time blockers or opportunities
+- Be conversational and empathetic
+- NOT repeat anything already asked
+- Be relevant to THEIR specific rhythm/life situation
+
+Fields we still need to eventually ask (pick the most relevant ONE for now, or ask something more specific):
+- unmovables_other (other regular commitments)
+- Any specific schedule details relevant to their rhythm type
+
+Return a JSON object with:
+{
+  "field": "unique_field_name_snake_case",
+  "question": "The question text in markdown",
+  "chips": ["option1", "option2", "option3", "option4"],
+  "multi": false,
+  "customPlaceholder": "optional placeholder text"
+}
+
+Make chips specific and relevant. If it's about time, include actual time options. Return ONLY the JSON object, nothing else.`,
+    response_json_schema: {
+      type: "object",
+      properties: {
+        field: { type: "string" },
+        question: { type: "string" },
+        chips: { type: "array", items: { type: "string" } },
+        multi: { type: "boolean" },
+        customPlaceholder: { type: "string" }
+      }
+    }
+  });
+  return result;
 }
 
 export default function Onboarding() {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [phase, setPhase] = useState("initial"); // "initial" | "ai" | "final" | "confirm"
+  const [initialStep, setInitialStep] = useState(0);
+  const [aiQuestions, setAiQuestions] = useState([]); // AI-generated questions
+  const [aiStep, setAiStep] = useState(0); // which AI question we're on
+  const [finalStep, setFinalStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [selected, setSelected] = useState([]);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [customInput, setCustomInput] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [generatingQuestion, setGeneratingQuestion] = useState(false);
   const containerRef = useRef(null);
 
-  // Rebuild steps dynamically whenever answers change
-  const steps = buildSteps(answers);
-  const step = steps[currentStep];
+  const MAX_AI_QUESTIONS = 3; // How many AI follow-ups to generate
 
   useEffect(() => {
     containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [currentStep, showConfirm]);
+  }, [phase, initialStep, aiStep, finalStep]);
+
+  // Determine current step object
+  const getCurrentStep = () => {
+    if (phase === "initial") return INITIAL_STEPS[initialStep];
+    if (phase === "ai") return aiQuestions[aiStep] || null;
+    if (phase === "final") return FINAL_STEPS[finalStep];
+    return null;
+  };
+
+  const step = getCurrentStep();
+
+  // Total steps for progress bar (approximate)
+  const totalSteps = INITIAL_STEPS.length + MAX_AI_QUESTIONS + FINAL_STEPS.length;
+  const currentGlobalStep = phase === "initial" ? initialStep
+    : phase === "ai" ? INITIAL_STEPS.length + aiStep
+    : phase === "final" ? INITIAL_STEPS.length + aiQuestions.length + finalStep
+    : totalSteps;
 
   const toggleChip = (chip) => {
-    if (!step.multi) {
+    if (!step?.multi) {
       setSelected([chip]);
     } else {
       setSelected((prev) =>
@@ -318,21 +265,72 @@ export default function Onboarding() {
     }
   };
 
-  const handleNext = () => {
-    const value = selected.length > 0 ? (step.multi ? selected : selected[0]) : customInput || null;
-    if (!value && !customInput) return;
-    const finalValue = selected.length > 0 ? (step.multi ? selected : selected[0]) : customInput;
-    const newAnswers = { ...answers, [step.field]: finalValue };
+  const saveAnswer = () => {
+    if (!step) return {};
+    const value = selected.length > 0
+      ? (step.multi ? selected : selected[0])
+      : customInput.trim() || null;
+    if (!value) return null;
+    const newAnswers = { ...answers, [step.field]: value };
     setAnswers(newAnswers);
     setSelected([]);
     setCustomInput("");
+    return newAnswers;
+  };
 
-    const updatedSteps = buildSteps(newAnswers);
-    if (currentStep + 1 >= updatedSteps.length) {
-      setShowConfirm(true);
-    } else {
-      setCurrentStep(currentStep + 1);
+  const handleNext = async () => {
+    const newAnswers = saveAnswer();
+    if (!newAnswers) return;
+
+    if (phase === "initial") {
+      if (initialStep + 1 < INITIAL_STEPS.length) {
+        setInitialStep(initialStep + 1);
+      } else {
+        // Transition to AI phase — generate first question
+        setPhase("ai");
+        setGeneratingQuestion(true);
+        const q = await generateNextQuestion(newAnswers, INITIAL_STEPS);
+        setAiQuestions([q]);
+        setGeneratingQuestion(false);
+      }
+    } else if (phase === "ai") {
+      if (aiStep + 1 < MAX_AI_QUESTIONS) {
+        setAiStep(aiStep + 1);
+        // Generate next AI question
+        setGeneratingQuestion(true);
+        const allAsked = [...INITIAL_STEPS, ...aiQuestions.slice(0, aiStep + 1)];
+        const q = await generateNextQuestion(newAnswers, allAsked);
+        setAiQuestions(prev => [...prev, q]);
+        setGeneratingQuestion(false);
+      } else {
+        // Move to final steps
+        setPhase("final");
+      }
+    } else if (phase === "final") {
+      if (finalStep + 1 < FINAL_STEPS.length) {
+        setFinalStep(finalStep + 1);
+      } else {
+        setPhase("confirm");
+      }
     }
+  };
+
+  const handleBack = () => {
+    if (phase === "initial" && initialStep > 0) {
+      setInitialStep(initialStep - 1);
+    } else if (phase === "ai" && aiStep > 0) {
+      setAiStep(aiStep - 1);
+    } else if (phase === "ai" && aiStep === 0) {
+      setPhase("initial");
+      setInitialStep(INITIAL_STEPS.length - 1);
+    } else if (phase === "final" && finalStep > 0) {
+      setFinalStep(finalStep - 1);
+    } else if (phase === "final" && finalStep === 0) {
+      setPhase("ai");
+      setAiStep(aiQuestions.length - 1);
+    }
+    setSelected([]);
+    setCustomInput("");
   };
 
   const handleConfirm = async () => {
@@ -348,15 +346,41 @@ export default function Onboarding() {
     };
 
     const growthFocuses = Array.isArray(answers.growth_focus) ? answers.growth_focus : [answers.growth_focus];
-    const primaryGrowth = GROWTH_MAP[growthFocuses[0]] || "learning";
+    const primaryGrowth = GROWTH_MAP[growthFocuses?.[0]] || "learning";
+    const unmovables = buildUnmovablesFromAnswers(answers);
 
-    // Extract follow-up answers
-    const followupAnswers = {};
-    Object.values(FOLLOW_UP_STEPS).forEach(s => {
-      if (answers[s.field]) followupAnswers[s.field] = answers[s.field];
+    // Generate AI backlog suggestions based on onboarding answers
+    const profileSummary = Object.entries(answers)
+      .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+      .join("\n");
+
+    const backlogSuggestions = await base44.integrations.Core.InvokeLLM({
+      prompt: `Based on this user's onboarding profile, suggest 5 highly personalized habit blocks for their backlog. These should be specific, actionable, and deeply relevant to their life situation.
+
+User profile:
+${profileSummary}
+
+Return 5 habits as a JSON array with fields: title, description, duration_minutes (15-60), energy_level (low/medium/high), category (fitness/mindfulness/learning/nutrition/sleep/productivity/social/creative), frequency (daily/weekly).`,
+      response_json_schema: {
+        type: "object",
+        properties: {
+          habits: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                title: { type: "string" },
+                description: { type: "string" },
+                duration_minutes: { type: "number" },
+                energy_level: { type: "string" },
+                category: { type: "string" },
+                frequency: { type: "string" }
+              }
+            }
+          }
+        }
+      }
     });
-
-    const unmovables = buildUnmovables(answers.unmovables_work, answers.commute, answers.unmovables_other, followupAnswers);
 
     await base44.entities.UserProfile.create({
       rhythm_type: RHYTHM_MAP[answers.rhythm_type] || "other",
@@ -370,10 +394,28 @@ export default function Onboarding() {
       partner_name: answers.partner_name || "Partner",
     });
 
+    // Add AI-suggested habits to backlog
+    if (backlogSuggestions?.habits?.length > 0) {
+      await base44.entities.HabitBlock.bulkCreate(
+        backlogSuggestions.habits.map(h => ({
+          title: h.title,
+          description: h.description,
+          duration_minutes: h.duration_minutes || 20,
+          energy_level: h.energy_level || "medium",
+          category: h.category || "productivity",
+          status: "backlog",
+          source: "SpareSquare AI",
+        }))
+      );
+    }
+
     window.location.href = createPageUrl("Home");
   };
 
   const canProceed = selected.length > 0 || customInput.trim().length > 0;
+  const isLastStep = phase === "final" && finalStep === FINAL_STEPS.length - 1;
+
+  const progressPct = Math.round((currentGlobalStep / totalSteps) * 100);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-start p-4 pt-10" ref={containerRef}>
@@ -388,41 +430,61 @@ export default function Onboarding() {
         </motion.div>
 
         {/* Progress bar */}
-        {!showConfirm && (
-          <div className="flex gap-1.5 mb-6 justify-center">
-            {steps.map((_, s) => (
-              <div
-                key={s}
-                className={`h-1.5 rounded-full transition-all duration-500 ${
-                  s < currentStep ? "w-6 bg-[#7C9A82]" : s === currentStep ? "w-8 bg-[#1A1A1A]" : "w-3 bg-[#E8E4DF]"
-                }`}
+        {phase !== "confirm" && (
+          <div className="mb-6">
+            <div className="h-1.5 bg-[#E8E4DF] rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-[#1A1A1A] rounded-full"
+                animate={{ width: `${progressPct}%` }}
+                transition={{ duration: 0.4 }}
               />
-            ))}
+            </div>
+            <p className="text-xs text-[#B0AAA4] mt-1 text-right">{progressPct}% complete</p>
           </div>
         )}
 
         <AnimatePresence mode="wait">
-          {!showConfirm ? (
+          {/* Generating AI question loader */}
+          {generatingQuestion && (
             <motion.div
-              key={currentStep}
+              key="loading"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="bg-white rounded-2xl border border-[#E8E4DF] px-5 py-8 text-center shadow-sm"
+            >
+              <Sparkles className="w-8 h-8 text-[#D4A574] mx-auto mb-3 animate-pulse" />
+              <p className="text-sm font-medium text-[#1A1A1A]">Personalising your questions...</p>
+              <p className="text-xs text-[#8A8580] mt-1">Based on what you've told me</p>
+            </motion.div>
+          )}
+
+          {/* Question step */}
+          {!generatingQuestion && step && phase !== "confirm" && (
+            <motion.div
+              key={`${phase}-${phase === "initial" ? initialStep : phase === "ai" ? aiStep : finalStep}`}
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -30 }}
               transition={{ duration: 0.25 }}
             >
-              {/* Question bubble */}
+              {/* AI badge for AI-generated questions */}
+              {phase === "ai" && (
+                <div className="flex items-center gap-1.5 mb-3">
+                  <Sparkles className="w-3.5 h-3.5 text-[#D4A574]" />
+                  <span className="text-xs font-medium text-[#D4A574]">Personalised for you</span>
+                </div>
+              )}
+
               <div className="bg-white rounded-2xl border border-[#E8E4DF] px-5 py-4 mb-4 shadow-sm">
                 <div className="text-sm leading-relaxed text-[#1A1A1A] prose prose-sm max-w-none prose-p:my-1">
                   <ReactMarkdown>{step.question}</ReactMarkdown>
                 </div>
-                {step.multi && (
-                  <p className="text-xs text-[#B0AAA4] mt-2">Select all that apply</p>
-                )}
+                {step.multi && <p className="text-xs text-[#B0AAA4] mt-2">Select all that apply</p>}
               </div>
 
-              {/* Chips */}
               <div className="flex flex-wrap gap-2 mb-4">
-                {step.chips.map((chip) => {
+                {step.chips?.map((chip) => {
                   const isSelected = selected.includes(chip);
                   return (
                     <button
@@ -441,7 +503,6 @@ export default function Onboarding() {
                 })}
               </div>
 
-              {/* Custom text input */}
               <div className="flex gap-2 mb-4">
                 <input
                   value={customInput}
@@ -457,8 +518,8 @@ export default function Onboarding() {
 
               <div className="flex justify-between items-center">
                 <button
-                  onClick={() => { if (currentStep > 0) { setCurrentStep(currentStep - 1); setSelected([]); setCustomInput(""); } }}
-                  className={`text-sm text-[#8A8580] hover:text-[#1A1A1A] transition-colors ${currentStep === 0 ? "invisible" : ""}`}
+                  onClick={handleBack}
+                  className={`text-sm text-[#8A8580] hover:text-[#1A1A1A] transition-colors ${phase === "initial" && initialStep === 0 ? "invisible" : ""}`}
                 >
                   ← Back
                 </button>
@@ -467,34 +528,29 @@ export default function Onboarding() {
                   disabled={!canProceed}
                   className="bg-[#1A1A1A] hover:bg-[#333] text-white rounded-xl px-6 disabled:opacity-30"
                 >
-                  {currentStep + 1 === steps.length ? "Review →" : "Next →"}
+                  {isLastStep ? "Review →" : "Next →"}
                 </Button>
               </div>
             </motion.div>
-          ) : (
+          )}
+
+          {/* Confirm screen */}
+          {phase === "confirm" && (
             <motion.div
               key="confirm"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
               <div className="bg-white rounded-2xl border border-[#E8E4DF] px-5 py-5 mb-5 shadow-sm">
-                <h2 className="font-bold text-[#1A1A1A] text-base mb-3">Your Profile Summary</h2>
+                <h2 className="font-bold text-[#1A1A1A] text-base mb-1">Your Profile Summary</h2>
+                <p className="text-xs text-[#8A8580] mb-4">We'll also add 5 personalised habits to your backlog ✨</p>
                 <div className="space-y-2">
-                  {[
-                    { label: "Rhythm", value: answers.rhythm_type },
-                    { label: "Work hours", value: answers.unmovables_work },
-                    { label: "Commute", value: answers.commute },
-                    { label: "Other commitments", value: Array.isArray(answers.unmovables_other) ? answers.unmovables_other.join(", ") : answers.unmovables_other },
-                    { label: "Current sleep", value: answers.sleep_actual },
-                    { label: "Wake time", value: answers.wake_time },
-                    { label: "Sleep goal", value: answers.sleep_goal },
-                    { label: "Growth focus", value: Array.isArray(answers.growth_focus) ? answers.growth_focus.join(", ") : answers.growth_focus },
-                    { label: "Peak energy", value: answers.energy_pattern },
-                    { label: "Partner name", value: answers.partner_name },
-                  ].map(({ label, value }) => (
-                    <div key={label} className="flex justify-between items-start gap-4 text-sm">
-                      <span className="text-[#8A8580] flex-shrink-0">{label}</span>
-                      <span className="text-[#1A1A1A] font-medium text-right">{value || "—"}</span>
+                  {Object.entries(answers).slice(0, 10).map(([key, value]) => (
+                    <div key={key} className="flex justify-between items-start gap-4 text-sm">
+                      <span className="text-[#8A8580] flex-shrink-0 capitalize">{key.replace(/_/g, " ")}</span>
+                      <span className="text-[#1A1A1A] font-medium text-right">
+                        {Array.isArray(value) ? value.join(", ") : value || "—"}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -503,7 +559,7 @@ export default function Onboarding() {
               <div className="flex gap-3">
                 <Button
                   variant="outline"
-                  onClick={() => { setShowConfirm(false); setCurrentStep(0); setSelected([]); }}
+                  onClick={() => { setPhase("initial"); setInitialStep(0); setSelected([]); setCustomInput(""); }}
                   className="flex-1 rounded-xl border-[#E8E4DF]"
                 >
                   Edit Answers
@@ -513,7 +569,12 @@ export default function Onboarding() {
                   disabled={saving}
                   className="flex-1 bg-[#7C9A82] hover:bg-[#6B8A71] text-white rounded-xl"
                 >
-                  {saving ? "Setting up..." : "✨ Build My Grid"}
+                  {saving ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Building your grid...
+                    </span>
+                  ) : "✨ Build My Grid"}
                 </Button>
               </div>
             </motion.div>

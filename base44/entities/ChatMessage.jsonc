@@ -1,0 +1,40 @@
+{
+  "name": "ChatMessage",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "user",
+        "assistant"
+      ],
+      "description": "Who sent the message"
+    },
+    "content": {
+      "type": "string",
+      "description": "Message content"
+    },
+    "context": {
+      "type": "string",
+      "enum": [
+        "onboarding",
+        "partner",
+        "plugin"
+      ],
+      "description": "Which chat context this belongs to"
+    },
+    "thread_id": {
+      "type": "string",
+      "description": "ID of the ChatThread this message belongs to"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Any structured data from the AI response",
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "role",
+    "content"
+  ]
+}

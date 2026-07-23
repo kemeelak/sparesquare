@@ -1,0 +1,78 @@
+{
+  "name": "PluginSource",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "book",
+        "podcast",
+        "video",
+        "article"
+      ]
+    },
+    "author": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string",
+      "description": "One-paragraph core philosophy of the source"
+    },
+    "habits_extracted": {
+      "type": "array",
+      "description": "Schedulable actions \u2014 things the user can actually put on their grid or backlog",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "duration_minutes": {
+            "type": "number"
+          },
+          "energy_level": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "frequency": {
+            "type": "string",
+            "description": "e.g. daily, weekly, monthly"
+          }
+        }
+      }
+    },
+    "learnings": {
+      "type": "array",
+      "description": "Principles and philosophies \u2014 NOT schedulable, but used to train the Partner's thinking",
+      "items": {
+        "type": "object",
+        "properties": {
+          "principle": {
+            "type": "string"
+          },
+          "explanation": {
+            "type": "string"
+          },
+          "domain": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "cover_image_url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "type"
+  ]
+}

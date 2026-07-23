@@ -1,0 +1,48 @@
+{
+  "name": "Friendship",
+  "type": "object",
+  "properties": {
+    "requester_id": {
+      "type": "string",
+      "description": "User ID who sent the request"
+    },
+    "recipient_id": {
+      "type": "string",
+      "description": "User ID who received the request"
+    },
+    "requester_email": {
+      "type": "string"
+    },
+    "recipient_email": {
+      "type": "string"
+    },
+    "requester_name": {
+      "type": "string"
+    },
+    "recipient_name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "declined"
+      ],
+      "default": "pending"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "friend",
+        "accountability"
+      ],
+      "default": "friend",
+      "description": "friend = streak sharing; accountability = accountability partner"
+    }
+  },
+  "required": [
+    "requester_id",
+    "recipient_id"
+  ]
+}
