@@ -6,11 +6,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
 const EMOJI_OPTIONS = ["🏢", "📚", "🏋️", "🚗", "🙏", "👨‍👩‍👧", "💼", "🎓", "🏥", "🧘", "🎨", "🍽️", "☕", "🌙", "⚡", "🔒", "🏠", "🎯"];
-const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => {
-  if (i === 0) return { label: "12:00 AM", value: 0 };
-  if (i === 12) return { label: "12:00 PM", value: 12 };
-  if (i < 12) return { label: `${i}:00 AM`, value: i };
-  return { label: `${i - 12}:00 PM`, value: i };
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const h = Math.floor(i / 2);
+  const m = i % 2 === 0 ? "00" : "30";
+  const value = h + (i % 2 === 0 ? 0 : 0.5);
+  if (h === 0) return { label: `12:${m} AM`, value };
+  if (h === 12) return { label: `12:${m} PM`, value };
+  if (h < 12) return { label: `${h}:${m} AM`, value };
+  return { label: `${h - 12}:${m} PM`, value };
 });
 
 const DAY_OPTIONS = [
@@ -29,6 +32,7 @@ export default function EditUnmovableSheet({ unmovable, index, profile, onClose 
   const [emoji, setEmoji] = useState(unmovable.emoji || "🔒");
   const [startHour, setStartHour] = useState(unmovable.start_hour ?? 9);
   const [endHour, setEndHour] = useState(unmovable.end_hour ?? 17);
+  // Support half-hour values stored as decimals (e.g. 9.5 = 9:30)
   const [days, setDays] = useState(unmovable.days || ["monday","tuesday","wednesday","thursday","friday"]);
 
   const saveMutation = useMutation({
@@ -116,7 +120,7 @@ export default function EditUnmovableSheet({ unmovable, index, profile, onClose 
               onChange={(e) => setStartHour(Number(e.target.value))}
               className="w-full rounded-xl border border-[#E8E4DF] px-3 py-2.5 text-sm bg-white focus:outline-none"
             >
-              {HOUR_OPTIONS.map(opt => (
+              {TIME_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
@@ -128,7 +132,7 @@ export default function EditUnmovableSheet({ unmovable, index, profile, onClose 
               onChange={(e) => setEndHour(Number(e.target.value))}
               className="w-full rounded-xl border border-[#E8E4DF] px-3 py-2.5 text-sm bg-white focus:outline-none"
             >
-              {HOUR_OPTIONS.map(opt => (
+              {TIME_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>

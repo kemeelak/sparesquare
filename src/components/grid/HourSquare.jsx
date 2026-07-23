@@ -33,15 +33,19 @@ export default function HourSquare({ hour, unmovable, habit, habits = [], isSpar
   } else if (unmovable) {
     bgClass = "bg-[#4A5568] border-[#4A5568]";
     textClass = "text-white";
-    const label = (unmovable.label || "").toLowerCase();
-    if (label.includes("work") || label.includes("shift")) emoji = "💼";
-    else if (label.includes("school") || label.includes("class") || label.includes("course") || label.includes("study")) emoji = "🎓";
-    else if (label.includes("commute")) emoji = "🚗";
-    else if (label.includes("gym") || label.includes("pt")) emoji = "🏋️";
-    else if (label.includes("medical") || label.includes("doctor") || label.includes("health")) emoji = "🏥";
-    else if (label.includes("religi") || label.includes("prayer") || label.includes("church") || label.includes("mosque")) emoji = "🙏";
-    else if (label.includes("caring") || label.includes("family") || label.includes("childcare") || label.includes("school run")) emoji = "👨‍👩‍👧";
-    else emoji = "🔒";
+    if (unmovable.emoji) {
+      emoji = unmovable.emoji;
+    } else {
+      const label = (unmovable.label || "").toLowerCase();
+      if (label.includes("work") || label.includes("shift")) emoji = "💼";
+      else if (label.includes("school") || label.includes("class") || label.includes("course") || label.includes("study")) emoji = "🎓";
+      else if (label.includes("commute")) emoji = "🚗";
+      else if (label.includes("gym") || label.includes("pt")) emoji = "🏋️";
+      else if (label.includes("medical") || label.includes("doctor") || label.includes("health")) emoji = "🏥";
+      else if (label.includes("religi") || label.includes("prayer") || label.includes("church") || label.includes("mosque")) emoji = "🙏";
+      else if (label.includes("caring") || label.includes("family") || label.includes("childcare") || label.includes("school run")) emoji = "👨‍👩‍👧";
+      else emoji = "🔒";
+    }
   } else if (habit) {
     const isConfirmed = habit.status === "confirmed" || habit.status === "completed";
     const isCompleted = habit.status === "completed";
