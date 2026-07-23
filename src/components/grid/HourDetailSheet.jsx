@@ -4,25 +4,15 @@ import { X, Check, Sparkles, Lock, Moon, Plus, ArrowRight, Pencil } from "lucide
 import EditUnmovableSheet from "./EditUnmovableSheet";
 import { format, addDays } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "../../utils";
 import AddEventForm from "./AddEventForm";
-import { useCurrentUser } from "@/lib/useCurrentUser";
 
-export default function HourDetailSheet({ hour, date, habits, unmovables, sleepHours, profile: profileProp, onClose, onConfirm, onComplete, onCompleteById }) {
+export default function HourDetailSheet({ hour, date, habits, unmovables, sleepHours, profile, onClose, onConfirm, onComplete, onCompleteById }) {
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [editingUnmovable, setEditingUnmovable] = useState(null); // { unmovable, index }
   const queryClient = useQueryClient();
-  const currentUser = useCurrentUser();
-
-  // Always read fresh profile from cache so edits reflect immediately
-  const { data: freshProfiles } = useQuery({
-    queryKey: ["userProfile"],
-    queryFn: () => base44.entities.UserProfile.filter({ created_by_id: currentUser.id }),
-    enabled: !!currentUser,
-  });
-  const profile = freshProfiles?.[0] ?? profileProp;
 
   const formatHour = (h) => {
     if (h === 0) return "12:00 AM";

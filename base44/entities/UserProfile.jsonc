@@ -47,6 +47,9 @@
           "label": {
             "type": "string"
           },
+          "emoji": {
+            "type": "string"
+          },
           "start_hour": {
             "type": "number"
           },

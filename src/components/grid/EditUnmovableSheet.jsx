@@ -41,8 +41,9 @@ export default function EditUnmovableSheet({ unmovable, index, profile, onClose 
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const newUnmovables = [...(profile.unmovables || [])];
-      newUnmovables[index] = { ...unmovable, label, emoji, start_hour: startHour, end_hour: endHour, days };
+      const newUnmovables = (profile.unmovables || []).map((u, i) =>
+        i === index ? { ...u, label, emoji, start_hour: startHour, end_hour: endHour, days } : u
+      );
       return base44.entities.UserProfile.update(profile.id, { unmovables: newUnmovables });
     },
     onSuccess: async () => {
