@@ -39,8 +39,9 @@ export default function Friends() {
 
   const { data: myHabits } = useQuery({
     queryKey: ["habits"],
-    queryFn: () => base44.entities.HabitBlock.list(),
+    queryFn: () => me ? base44.entities.HabitBlock.filter({ created_by_id: me.id }) : Promise.resolve([]),
     initialData: [],
+    enabled: !!me,
   });
 
   const { data: friendships } = useQuery({
@@ -179,7 +180,7 @@ export default function Friends() {
   const myStreak = calcStreak(myHabits);
 
   return (
-    <div className="p-4 lg:p-8 max-w-2xl mx-auto">
+    <div className="p-4 lg:p-8 max-w-2xl mx-auto pb-24 lg:pb-8">
       <div className="flex items-center gap-3 mb-6">
         <Link to={createPageUrl("Progress")} className="p-2 rounded-xl hover:bg-[#F5F0EB] transition-colors">
           <ArrowLeft className="w-5 h-5 text-[#4A5568]" />
