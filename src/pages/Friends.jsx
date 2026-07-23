@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Users, UserPlus, Flame, Trophy, Check, X, UserCheck, Shield, ArrowLeft } from "lucide-react";
+import AccountabilityTab from "@/components/accountability/AccountabilityTab";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
@@ -282,47 +283,13 @@ export default function Friends() {
         {/* Accountability */}
         {activeTab === "accountability" && (
           <motion.div key="accountability" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-            <div className="bg-[#E8F0EA] rounded-2xl p-4 mb-4 border border-[#C8DEC9]">
-              <p className="font-semibold text-[#1A1A1A] text-sm mb-1">Accountability Partners ({accountabilityPartners.length}/2)</p>
-              <p className="text-xs text-[#4A5568]">Your accountability partners can see your daily completion and streak. They'll be notified if you miss a day.</p>
-            </div>
-            {accountabilityPartners.length === 0 ? (
-              <div className="text-center py-12">
-                <Shield className="w-10 h-10 text-[#E8E4DF] mx-auto mb-3" />
-                <p className="font-semibold text-[#1A1A1A]">No accountability partners yet</p>
-                <p className="text-sm text-[#8A8580] mt-1">Add up to 2 people who'll keep you accountable</p>
-                <Button
-                  onClick={() => setActiveTab("add")}
-                  className="mt-4 bg-[#1A1A1A] hover:bg-[#333] text-white rounded-xl"
-                >
-                  Add Partner
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {accountabilityPartners.map(f => {
-                  const isRequester = f.requester_id === me?.id;
-                  const partnerId = isRequester ? f.recipient_id : f.requester_id;
-                  const partnerName = isRequester ? f.recipient_name : f.requester_name;
-                  const partnerPub = publicProfiles.find(p => p.user_id === partnerId);
-                  return (
-                    <div key={f.id} className="bg-white rounded-2xl border border-[#E8E4DF] p-4 flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-[#E8F0EA] flex items-center justify-center text-2xl">
-                        {partnerPub?.avatar_emoji || "🧑"}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-[#1A1A1A]">{partnerName || "Partner"}</p>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <Flame className="w-3 h-3 text-[#D4A574]" />
-                          <span className="text-xs text-[#8A8580]">{partnerPub?.current_streak || 0} day streak</span>
-                        </div>
-                      </div>
-                      <UserCheck className="w-5 h-5 text-[#7C9A82]" />
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <AccountabilityTab
+              accountabilityPartners={accountabilityPartners}
+              me={me}
+              publicProfiles={publicProfiles}
+              myHabits={myHabits}
+              onAddPartner={() => setActiveTab("add")}
+            />
           </motion.div>
         )}
 

@@ -1,0 +1,37 @@
+{
+  "name": "AccountabilityNudge",
+  "type": "object",
+  "properties": {
+    "from_user_id": {
+      "type": "string"
+    },
+    "to_user_id": {
+      "type": "string"
+    },
+    "from_name": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "nudge",
+        "checkin",
+        "motivation",
+        "alert"
+      ],
+      "description": "nudge = quick poke, checkin = how are you doing, motivation = encouragement, alert = partner fallen off"
+    },
+    "message": {
+      "type": "string"
+    },
+    "read": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "from_user_id",
+    "to_user_id",
+    "type"
+  ]
+}
