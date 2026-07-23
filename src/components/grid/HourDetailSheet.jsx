@@ -180,7 +180,10 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, sleepH
             unmovable={editingUnmovable.unmovable}
             index={editingUnmovable.index}
             profile={profile}
-            onClose={() => setEditingUnmovable(null)}
+            onClose={() => {
+              setEditingUnmovable(null);
+              onClose(); // close HourDetailSheet so grid re-renders with fresh data
+            }}
           />
         )}
 

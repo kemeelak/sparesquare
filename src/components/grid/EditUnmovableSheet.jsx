@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
-const EMOJI_OPTIONS = ["🏢", "📚", "🏋️", "🚗", "🙏", "👨‍👩‍👧", "💼", "🎓", "🏥", "🧘", "🎨", "🍽️", "☕", "🌙", "⚡", "🔒", "🏠", "🎯"];
+const EMOJI_OPTIONS = [
+  "🏢", "📚", "🏋️", "🚗", "🙏", "👨‍👩‍👧", "💼", "🎓", "🏥", "🧘", "🎨", "🍽️", "☕", "🌙", "⚡", "🔒", "🏠", "🎯",
+  "🎵", "🎮", "✈️", "🏊", "🚴", "🧹", "💊", "🐕", "🌿", "📝", "💻", "📞", "🛒", "🏃", "🧠", "❤️", "🌅", "🔥",
+  "🎤", "📊", "🍳", "🧘‍♂️", "🤝", "🛌", "🧺", "🌳", "⚽", "🎸", "📖", "🧪", "🏡", "🚿", "🧴", "💰", "🎭", "🎬",
+];
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
   const h = Math.floor(i / 2);
   const m = i % 2 === 0 ? "00" : "30";
