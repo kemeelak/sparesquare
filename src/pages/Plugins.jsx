@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCurrentUser } from "@/lib/useCurrentUser";
 import { Search, BookOpen, Headphones, Video, FileText, Plus, Check, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,14 +11,16 @@ import PluginCard from "../components/plugins/PluginCard";
 import AddSourceSheet from "../components/plugins/AddSourceSheet";
 
 export default function Plugins() {
+  const currentUser = useCurrentUser();
   const [showAdd, setShowAdd] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const queryClient = useQueryClient();
 
   const { data: sources, isLoading } = useQuery({
     queryKey: ["pluginSources"],
-    queryFn: () => base44.entities.PluginSource.list("-created_date"),
+    queryFn: () => base44.entities.PluginSource.filter({ created_by_id: currentUser.id }, "-created_date"),
     initialData: [],
+    enabled: !!currentUser,
   });
 
   const filtered = sources.filter(
