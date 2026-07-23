@@ -118,14 +118,32 @@ Extract 4-7 habits. Include frequency (daily/weekly/monthly) and realistic durat
 
   const handleSave = async (selectedIndices) => {
     const selectedHabits = extractedData.habits.filter((_, i) => selectedIndices.includes(i));
+    const sourceName = extractedData.title || title;
+
     await base44.entities.PluginSource.create({
-      title: extractedData.title || title,
+      title: sourceName,
       type,
       author: extractedData.author || "",
       habits_extracted: selectedHabits,
       learnings: extractedData.learnings || [],
       summary: extractedData.summary || "",
     });
+
+    // Add selected habits to the backlog
+    if (selectedHabits.length > 0) {
+      await base44.entities.HabitBlock.bulkCreate(
+        selectedHabits.map((h) => ({
+          title: h.title,
+          description: h.description || "",
+          source: sourceName,
+          duration_minutes: h.duration_minutes || 15,
+          energy_level: h.energy_level || "medium",
+          category: h.category || "productivity",
+          status: "backlog",
+        }))
+      );
+    }
+
     onAdded();
   };
 
