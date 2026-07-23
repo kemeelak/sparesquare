@@ -27,10 +27,9 @@ export default function Home() {
   const [statsSheet, setStatsSheet] = useState(null); // "completed" | "scheduled" | null
   const queryClient = useQueryClient();
 
-  const { data: profiles } = useQuery({
+  const { data: profiles = [] } = useQuery({
     queryKey: ["userProfile"],
     queryFn: () => base44.entities.UserProfile.filter({ created_by_id: currentUser.id }),
-    initialData: [],
     enabled: !!currentUser,
   });
 
