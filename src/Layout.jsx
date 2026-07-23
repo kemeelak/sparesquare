@@ -146,15 +146,15 @@ export default function Layout({ children, currentPageName }) {
       </aside>
 
       {/* Mobile Bottom Nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-[#E8E4DF] z-50 px-4 pb-safe">
-        <div className="flex justify-around py-2">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-[#E8E4DF] z-50 pb-safe">
+        <div className="flex overflow-x-auto scrollbar-hide py-2 px-2 gap-1">
           {navItems.map((item) => {
             const isActive = currentPageName === item.page;
             return (
               <Link
                 key={item.name}
                 to={createPageUrl(item.page)}
-                className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all
+                className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all flex-shrink-0 min-w-[60px]
                   ${isActive ? "text-[#1A1A1A]" : "text-[#8A8580]"}`}
               >
                 <item.icon className={`w-5 h-5 ${isActive ? "stroke-[2.5]" : ""}`} />
