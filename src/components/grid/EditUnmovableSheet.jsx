@@ -45,8 +45,8 @@ export default function EditUnmovableSheet({ unmovable, index, profile, onClose 
       newUnmovables[index] = { ...unmovable, label, emoji, start_hour: startHour, end_hour: endHour, days };
       return base44.entities.UserProfile.update(profile.id, { unmovables: newUnmovables });
     },
-    onSuccess: async (updatedProfile) => {
-      queryClient.setQueryData(["userProfile"], [updatedProfile]);
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ["userProfile"] });
       onClose();
     },
   });
@@ -56,8 +56,8 @@ export default function EditUnmovableSheet({ unmovable, index, profile, onClose 
       const newUnmovables = (profile.unmovables || []).filter((_, i) => i !== index);
       return base44.entities.UserProfile.update(profile.id, { unmovables: newUnmovables });
     },
-    onSuccess: async (updatedProfile) => {
-      queryClient.setQueryData(["userProfile"], [updatedProfile]);
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ["userProfile"] });
       onClose();
     },
   });
