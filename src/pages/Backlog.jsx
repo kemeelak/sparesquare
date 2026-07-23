@@ -38,6 +38,15 @@ export default function Backlog() {
     enabled: !!currentUser,
   });
 
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: async () => {
+      const profiles = await base44.entities.UserProfile.filter({ created_by_id: currentUser.id });
+      return profiles[0] || null;
+    },
+    enabled: !!currentUser,
+  });
+
   const backlogHabits = habits.filter((h) => h.status === "backlog");
 
   const deleteMutation = useMutation({
@@ -197,6 +206,8 @@ export default function Backlog() {
         {scheduling && (
           <ScheduleSheet
             habit={scheduling}
+            habits={habits}
+            profile={profile}
             onClose={() => setScheduling(null)}
             onSchedule={(hour, date, repeat) => {
               scheduleMutation.mutate({

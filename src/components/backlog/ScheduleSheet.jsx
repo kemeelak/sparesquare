@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, RefreshCw, CalendarDays } from "lucide-react";
 import { format, addDays, subDays } from "date-fns";
@@ -12,19 +12,76 @@ const REPEAT_OPTIONS = [
   { value: "monthly", label: "Monthly" },
 ];
 
-export default function ScheduleSheet({ habit, onClose, onSchedule }) {
+const formatHour = (h) => {
+  if (h === 0) return "12 AM";
+  if (h === 12) return "12 PM";
+  if (h < 12) return `${h} AM`;
+  return `${h - 12} PM`;
+};
+
+export default function ScheduleSheet({ habit, habits = [], profile, onClose, onSchedule }) {
   const [date, setDate] = useState(new Date());
   const [selectedHour, setSelectedHour] = useState(null);
   const [repeat, setRepeat] = useState("none");
 
-  const hours = Array.from({ length: 24 }, (_, i) => i);
+  const dateStr = format(date, "yyyy-MM-dd");
+  
+  const dayName = format(date, "EEEE").toLowerCase(); // e.g. "monday"
 
-  const formatHour = (h) => {
-    if (h === 0) return "12 AM";
-    if (h === 12) return "12 PM";
-    if (h < 12) return `${h} AM`;
-    return `${h - 12} PM`;
-  };
+  // Compute busy hours for the selected date
+  const busyHours = useMemo(() => {
+    const busy = new Set();
+
+    // Hours occupied by scheduled habits on this date
+    if (habits) {
+      habits.forEach((h) => {
+        if (
+          h.status !== "backlog" &&
+          h.scheduled_date === dateStr &&
+          h.scheduled_hour != null
+        ) {
+          const h0 = Math.floor(h.scheduled_hour);
+          const durationHours = Math.ceil((h.duration_minutes || 15) / 60);
+          for (let i = 0; i < durationHours; i++) busy.add(h0 + i);
+        }
+      });
+    }
+
+    // Hours occupied by unmovable blocks on this day
+    if (profile?.unmovables) {
+      profile.unmovables.forEach((block) => {
+        const blockDays = block.days || [];
+        if (blockDays.length === 0 || blockDays.map(d => d.toLowerCase()).includes(dayName)) {
+          for (let h = Math.floor(block.start_hour); h < Math.ceil(block.end_hour); h++) {
+            busy.add(h);
+          }
+        }
+      });
+    }
+
+    // Sleep hours
+    if (profile?.wake_time && profile?.sleep_actual) {
+      const parseHour = (t) => {
+        if (!t) return null;
+        const match = t.match(/(\d+):?(\d*)\s*(AM|PM)/i);
+        if (!match) return null;
+        let h = parseInt(match[1]);
+        const ampm = match[3].toUpperCase();
+        if (ampm === "PM" && h !== 12) h += 12;
+        if (ampm === "AM" && h === 12) h = 0;
+        return h;
+      };
+      const wake = parseHour(profile.wake_time);
+      const sleep = parseHour(profile.sleep_actual);
+      if (wake != null && sleep != null) {
+        // Sleep from sleep hour to midnight, and midnight to wake
+        for (let h = 0; h < wake; h++) busy.add(h);
+        for (let h = sleep; h < 24; h++) busy.add(h);
+      }
+    }
+
+    return busy;
+  }, [habits, profile, dateStr, dayName]);
 
   return (
     <motion.div
@@ -98,21 +155,31 @@ export default function ScheduleSheet({ habit, onClose, onSchedule }) {
 
           {/* Hour picker */}
           <div className="mb-2">
-            <p className="text-xs font-semibold text-[#4A5568] uppercase tracking-wide mb-2">Time</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold text-[#4A5568] uppercase tracking-wide">Available Times</p>
+              <p className="text-[10px] text-[#B0AAA4]">{24 - busyHours.size} free hours</p>
+            </div>
             <div className="grid grid-cols-4 gap-2 mb-6">
-              {hours.map((h) => (
-                <button
-                  key={h}
-                  onClick={() => setSelectedHour(h)}
-                  className={`py-2 px-3 rounded-xl text-sm font-medium transition-all
-                    ${selectedHour === h
-                      ? "bg-[#7C9A82] text-white"
-                      : "bg-[#F5F0EB] text-[#8A8580] hover:bg-[#E8E4DF]"
-                    }`}
-                >
-                  {formatHour(h)}
-                </button>
-              ))}
+              {Array.from({ length: 24 }, (_, h) => h).map((h) => {
+                const isBusy = busyHours.has(h);
+                const isSelected = selectedHour === h;
+                return (
+                  <button
+                    key={h}
+                    onClick={() => !isBusy && setSelectedHour(h)}
+                    disabled={isBusy}
+                    className={`py-2 px-3 rounded-xl text-sm font-medium transition-all
+                      ${isSelected
+                        ? "bg-[#7C9A82] text-white"
+                        : isBusy
+                          ? "bg-[#F5F0EB] text-[#C0BAB4] line-through cursor-not-allowed opacity-40"
+                          : "bg-[#F5F0EB] text-[#8A8580] hover:bg-[#E8E4DF]"
+                      }`}
+                  >
+                    {formatHour(h)}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
