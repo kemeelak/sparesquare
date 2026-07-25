@@ -289,19 +289,31 @@ export default function Onboarding() {
         // Transition to AI phase — generate first question
         setPhase("ai");
         setGeneratingQuestion(true);
-        const q = await generateNextQuestion(newAnswers, INITIAL_STEPS);
-        setAiQuestions([q]);
-        setGeneratingQuestion(false);
+        try {
+          const q = await generateNextQuestion(newAnswers, INITIAL_STEPS);
+          setAiQuestions([q]);
+          setGeneratingQuestion(false);
+        } catch (e) {
+          // If AI fails, skip straight to final steps
+          setGeneratingQuestion(false);
+          setPhase("final");
+        }
       }
     } else if (phase === "ai") {
       if (aiStep + 1 < MAX_AI_QUESTIONS) {
         setAiStep(aiStep + 1);
         // Generate next AI question
         setGeneratingQuestion(true);
-        const allAsked = [...INITIAL_STEPS, ...aiQuestions.slice(0, aiStep + 1)];
-        const q = await generateNextQuestion(newAnswers, allAsked);
-        setAiQuestions(prev => [...prev, q]);
-        setGeneratingQuestion(false);
+        try {
+          const allAsked = [...INITIAL_STEPS, ...aiQuestions.slice(0, aiStep + 1)];
+          const q = await generateNextQuestion(newAnswers, allAsked);
+          setAiQuestions(prev => [...prev, q]);
+          setGeneratingQuestion(false);
+        } catch (e) {
+          // If AI fails, skip to final steps
+          setGeneratingQuestion(false);
+          setPhase("final");
+        }
       } else {
         // Move to final steps
         setPhase("final");
