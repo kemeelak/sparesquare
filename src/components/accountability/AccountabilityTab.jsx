@@ -2,14 +2,18 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, Flame, UserCheck, Bell, MessageCircle, Zap, Heart, AlertTriangle, Check, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { Shield, Flame, UserCheck, Bell, AlertTriangle, ChevronDown, ChevronUp, Loader2, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format, subDays } from "date-fns";
 
 const NUDGE_TYPES = [
-  { key: "nudge",      emoji: "👊", label: "Quick Nudge",     message: "Hey! Don't forget to keep your streak going today 🔥" },
-  { key: "checkin",    emoji: "👋", label: "Check In",        message: "Hey, just checking in — how are you doing with your habits this week?" },
-  { key: "motivation", emoji: "💪", label: "Send Motivation", message: null }, // AI-generated
+  { key: "nudge",       emoji: "👊", label: "Quick Nudge",     message: "Hey! Don't forget to keep your streak going today 🔥", color: "bg-orange-50 border-orange-200" },
+  { key: "hype",        emoji: "🚀", label: "Hype Up",         message: "YOU'VE GOT THIS! 🚀 Today is your day — go crush it!", color: "bg-yellow-50 border-yellow-200" },
+  { key: "checkin",     emoji: "👋", label: "Check In",        message: "Hey, just checking in — how are you doing with your habits this week?", color: "bg-blue-50 border-blue-200" },
+  { key: "celebration", emoji: "🎉", label: "Celebrate",       message: "I saw your streak — that's AMAZING! Keep going, you're inspiring me 🎉", color: "bg-pink-50 border-pink-200" },
+  { key: "challenge",   emoji: "⚔️", label: "Challenge",       message: "I'm challenging you: can you complete ALL your habits today? I bet you can 😤", color: "bg-purple-50 border-purple-200" },
+  { key: "motivation",  emoji: "✨", label: "AI Motivation",   message: null, color: "bg-green-50 border-green-200" }, // AI-generated
+  { key: "custom",      emoji: "💬", label: "Custom",          message: null, color: "bg-gray-50 border-gray-200" }, // user-written
 ];
 
 function calcMissedDays(habits) {
@@ -19,7 +23,7 @@ function calcMissedDays(habits) {
     const hasCompleted = habits.some(h => h.scheduled_date === dateStr && h.status === "completed");
     const hasScheduled = habits.some(h => h.scheduled_date === dateStr);
     if (hasScheduled && !hasCompleted) missed++;
-    else if (hasCompleted) break; // streak intact, stop counting
+    else if (hasCompleted) break;
   }
   return missed;
 }
@@ -27,18 +31,19 @@ function calcMissedDays(habits) {
 export default function AccountabilityTab({ accountabilityPartners, me, publicProfiles, myHabits, onAddPartner }) {
   const queryClient = useQueryClient();
   const [expandedPartner, setExpandedPartner] = useState(null);
-  const [sendingNudge, setSendingNudge] = useState(null); // partnerId
+  const [sendingNudge, setSendingNudge] = useState(null);
   const [generatingMotivation, setGeneratingMotivation] = useState(false);
+  const [customMessageTarget, setCustomMessageTarget] = useState(null); // { partnerId, partnerName }
+  const [customText, setCustomText] = useState("");
 
   const { data: nudges } = useQuery({
     queryKey: ["nudges"],
     queryFn: () => base44.entities.AccountabilityNudge.list(),
     initialData: [],
     enabled: !!me,
-    refetchInterval: 30000, // poll every 30s
+    refetchInterval: 30000,
   });
 
-  // Mark nudges to me as read on mount
   useEffect(() => {
     if (!me || nudges.length === 0) return;
     const unread = nudges.filter(n => n.to_user_id === me.id && !n.read);
@@ -65,10 +70,16 @@ export default function AccountabilityTab({ accountabilityPartners, me, publicPr
   });
 
   const handleSendNudge = async (toUserId, toName, nudgeType) => {
+    if (nudgeType === "custom") {
+      setCustomMessageTarget({ partnerId: toUserId, partnerName: toName });
+      setCustomText("");
+      return;
+    }
+
     setSendingNudge(toUserId + nudgeType);
     const preset = NUDGE_TYPES.find(n => n.key === nudgeType);
-
     let message = preset.message;
+
     if (nudgeType === "motivation") {
       setGeneratingMotivation(true);
       const partnerPub = publicProfiles.find(p => p.user_id === toUserId);
@@ -82,6 +93,19 @@ export default function AccountabilityTab({ accountabilityPartners, me, publicPr
     sendNudgeMutation.mutate({ toUserId, toName, type: nudgeType, message });
   };
 
+  const handleSendCustom = () => {
+    if (!customText.trim() || !customMessageTarget) return;
+    setSendingNudge(customMessageTarget.partnerId + "custom");
+    sendNudgeMutation.mutate({
+      toUserId: customMessageTarget.partnerId,
+      toName: customMessageTarget.partnerName,
+      type: "custom",
+      message: customText.trim(),
+    });
+    setCustomMessageTarget(null);
+    setCustomText("");
+  };
+
   const handleAlertPartner = async (toUserId, toName) => {
     setSendingNudge(toUserId + "alert");
     sendNudgeMutation.mutate({
@@ -91,6 +115,8 @@ export default function AccountabilityTab({ accountabilityPartners, me, publicPr
       message: `Hey ${toName || "friend"}, I noticed you haven't completed habits in a few days. Just checking in — you've got this! 💙`,
     });
   };
+
+  const nudgeEmoji = { nudge: "👊", hype: "🚀", checkin: "👋", celebration: "🎉", challenge: "⚔️", motivation: "✨", custom: "💬", alert: "⚠️" };
 
   if (accountabilityPartners.length === 0) {
     return (
@@ -107,7 +133,62 @@ export default function AccountabilityTab({ accountabilityPartners, me, publicPr
 
   return (
     <div className="space-y-4">
-      {/* Inbox — nudges received */}
+      {/* Custom message modal */}
+      <AnimatePresence>
+        {customMessageTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4"
+            onClick={(e) => e.target === e.currentTarget && setCustomMessageTarget(null)}
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-bold text-[#1A1A1A]">Custom Message</h3>
+                  <p className="text-xs text-[#8A8580]">To {customMessageTarget.partnerName}</p>
+                </div>
+                <button onClick={() => setCustomMessageTarget(null)} className="p-1.5 rounded-lg hover:bg-[#F5F0EB]">
+                  <X className="w-4 h-4 text-[#8A8580]" />
+                </button>
+              </div>
+
+              {/* Fun emoji shortcuts */}
+              <div className="flex gap-2 mb-3 flex-wrap">
+                {["🔥 Keep going!", "🎯 Stay focused!", "💪 You've got this!", "⚡ Let's go!", "🏆 Crushing it!"].map(quick => (
+                  <button key={quick} onClick={() => setCustomText(quick)}
+                    className="text-xs px-2.5 py-1 rounded-full bg-[#F5F0EB] text-[#4A5568] hover:bg-[#E8E4DF] transition-colors">
+                    {quick}
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                value={customText}
+                onChange={(e) => setCustomText(e.target.value)}
+                placeholder="Write something real... or use a shortcut above 👆"
+                rows={3}
+                className="w-full rounded-xl border border-[#E8E4DF] px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 placeholder:text-[#B0AAA4]"
+              />
+              <Button
+                onClick={handleSendCustom}
+                disabled={!customText.trim()}
+                className="w-full mt-3 bg-[#1A1A1A] hover:bg-[#333] text-white rounded-xl flex items-center gap-2"
+              >
+                <Send className="w-4 h-4" /> Send Message
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Inbox */}
       {inboxNudges.length > 0 && (
         <div className="mb-2">
           <p className="text-xs font-semibold text-[#8A8580] uppercase tracking-wide mb-2 flex items-center gap-1.5">
@@ -122,9 +203,7 @@ export default function AccountabilityTab({ accountabilityPartners, me, publicPr
                 animate={{ opacity: 1, x: 0 }}
                 className={`rounded-2xl p-4 border flex items-start gap-3 ${!n.read ? "bg-[#FFF8F0] border-[#E8D9C8]" : "bg-white border-[#E8E4DF]"}`}
               >
-                <span className="text-lg mt-0.5">
-                  {n.type === "nudge" ? "👊" : n.type === "checkin" ? "👋" : n.type === "motivation" ? "💪" : "⚠️"}
-                </span>
+                <span className="text-lg mt-0.5">{nudgeEmoji[n.type] || "💬"}</span>
                 <div className="flex-1">
                   <p className="text-xs font-semibold text-[#1A1A1A]">{n.from_name}</p>
                   <p className="text-sm text-[#4A5568] mt-0.5 leading-relaxed">{n.message}</p>
@@ -148,8 +227,6 @@ export default function AccountabilityTab({ accountabilityPartners, me, publicPr
         const partnerPub = publicProfiles.find(p => p.user_id === partnerId);
         const partnerStreak = partnerPub?.current_streak || 0;
         const isExpanded = expandedPartner === f.id;
-
-        // Detect if partner has fallen off (streak = 0 and had activity before)
         const hasFallenOff = partnerStreak === 0 && (partnerPub?.total_completed || 0) > 3;
         const recentlySentAlert = nudges.some(
           n => n.from_user_id === me?.id && n.to_user_id === partnerId && n.type === "alert" &&
@@ -158,27 +235,21 @@ export default function AccountabilityTab({ accountabilityPartners, me, publicPr
 
         return (
           <motion.div key={f.id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl border border-[#E8E4DF] overflow-hidden">
-            {/* Fallen-off alert banner */}
             {hasFallenOff && (
               <div className="bg-[#FFF3CD] border-b border-[#F5E0A0] px-4 py-2.5 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-[#D4A030] flex-shrink-0" />
                   <p className="text-xs font-medium text-[#7A5C00]">{partnerName || "Your partner"} seems to have fallen off their streak</p>
                 </div>
-                {!recentlySentAlert && (
-                  <button
-                    onClick={() => handleAlertPartner(partnerId, partnerName)}
-                    disabled={sendingNudge === partnerId + "alert"}
-                    className="text-xs font-semibold text-[#D4A030] hover:text-[#B8891A] whitespace-nowrap disabled:opacity-50"
-                  >
+                {!recentlySentAlert ? (
+                  <button onClick={() => handleAlertPartner(partnerId, partnerName)} disabled={sendingNudge === partnerId + "alert"}
+                    className="text-xs font-semibold text-[#D4A030] hover:text-[#B8891A] whitespace-nowrap disabled:opacity-50">
                     {sendingNudge === partnerId + "alert" ? "Sending..." : "Reach out →"}
                   </button>
-                )}
-                {recentlySentAlert && <span className="text-xs text-[#7A5C00]">✓ Message sent</span>}
+                ) : <span className="text-xs text-[#7A5C00]">✓ Message sent</span>}
               </div>
             )}
 
-            {/* Partner card header */}
             <div className="p-4 flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-[#E8F0EA] flex items-center justify-center text-2xl flex-shrink-0">
                 {partnerPub?.avatar_emoji || "🧑"}
@@ -196,16 +267,13 @@ export default function AccountabilityTab({ accountabilityPartners, me, publicPr
               </div>
               <div className="flex items-center gap-2">
                 <UserCheck className="w-4 h-4 text-[#7C9A82]" />
-                <button
-                  onClick={() => setExpandedPartner(isExpanded ? null : f.id)}
-                  className="p-1.5 rounded-lg hover:bg-[#F5F0EB] transition-colors"
-                >
+                <button onClick={() => setExpandedPartner(isExpanded ? null : f.id)}
+                  className="p-1.5 rounded-lg hover:bg-[#F5F0EB] transition-colors">
                   {isExpanded ? <ChevronUp className="w-4 h-4 text-[#8A8580]" /> : <ChevronDown className="w-4 h-4 text-[#8A8580]" />}
                 </button>
               </div>
             </div>
 
-            {/* Expanded actions */}
             <AnimatePresence>
               {isExpanded && (
                 <motion.div
@@ -216,11 +284,12 @@ export default function AccountabilityTab({ accountabilityPartners, me, publicPr
                   className="overflow-hidden"
                 >
                   <div className="px-4 pb-4 border-t border-[#F5F0EB] pt-3">
-                    <p className="text-xs font-semibold text-[#8A8580] uppercase tracking-wide mb-2">Send a message</p>
+                    <p className="text-xs font-semibold text-[#8A8580] uppercase tracking-wide mb-3">Send a message</p>
                     <div className="grid grid-cols-3 gap-2">
                       {NUDGE_TYPES.map(nudgeType => {
                         const isSending = sendingNudge === partnerId + nudgeType.key;
-                        const recentlySent = nudges.some(
+                        const isGenerating = nudgeType.key === "motivation" && generatingMotivation;
+                        const recentlySent = nudgeType.key !== "custom" && nudges.some(
                           n => n.from_user_id === me?.id && n.to_user_id === partnerId &&
                                n.type === nudgeType.key &&
                                new Date(n.created_date) > subDays(new Date(), 0.5)
@@ -229,14 +298,14 @@ export default function AccountabilityTab({ accountabilityPartners, me, publicPr
                           <button
                             key={nudgeType.key}
                             onClick={() => !recentlySent && handleSendNudge(partnerId, partnerName, nudgeType.key)}
-                            disabled={isSending || recentlySent || generatingMotivation}
+                            disabled={isSending || recentlySent || (generatingMotivation && nudgeType.key !== "motivation")}
                             className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border text-center transition-all
                               ${recentlySent
                                 ? "bg-[#E8F0EA] border-[#C8DEC9] cursor-default"
-                                : "bg-white border-[#E8E4DF] hover:border-[#1A1A1A] hover:bg-[#F5F0EB] active:scale-95"
+                                : `${nudgeType.color} hover:opacity-80 active:scale-95`
                               } disabled:opacity-50`}
                           >
-                            {isSending || (nudgeType.key === "motivation" && generatingMotivation)
+                            {isSending || isGenerating
                               ? <Loader2 className="w-4 h-4 animate-spin text-[#8A8580]" />
                               : <span className="text-lg">{recentlySent ? "✓" : nudgeType.emoji}</span>
                             }

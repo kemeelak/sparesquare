@@ -136,11 +136,11 @@ export default function Partner() {
   const { data: threads } = useQuery({ queryKey: ["chatThreads"], queryFn: () => base44.entities.ChatThread.filter({ created_by_id: currentUser.id }, "-created_date", 50), initialData: [], enabled: !!currentUser });
 
   const { data: threadMessages } = useQuery({
-    queryKey: ["chatMessages", activeThread?.id],
+    queryKey: ["chatMessages", activeThread?.id, currentUser?.id],
     queryFn: () => activeThread
-      ? base44.entities.ChatMessage.filter({ thread_id: activeThread.id }, "created_date", 100)
-      : base44.entities.ChatMessage.filter({ context: "partner", thread_id: null }, "created_date", 50),
-    enabled: true,
+      ? base44.entities.ChatMessage.filter({ thread_id: activeThread.id, created_by_id: currentUser.id }, "created_date", 100)
+      : base44.entities.ChatMessage.filter({ context: "partner", thread_id: null, created_by_id: currentUser.id }, "created_date", 50),
+    enabled: !!currentUser,
     initialData: [],
   });
 
