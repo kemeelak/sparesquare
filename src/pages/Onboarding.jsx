@@ -286,18 +286,8 @@ export default function Onboarding() {
       if (initialStep + 1 < INITIAL_STEPS.length) {
         setInitialStep(initialStep + 1);
       } else {
-        // Transition to AI phase — generate first question
-        setPhase("ai");
-        setGeneratingQuestion(true);
-        try {
-          const q = await generateNextQuestion(newAnswers, INITIAL_STEPS);
-          setAiQuestions([q]);
-          setGeneratingQuestion(false);
-        } catch (e) {
-          // If AI fails, skip straight to final steps
-          setGeneratingQuestion(false);
-          setPhase("final");
-        }
+        // Skip AI phase, go straight to final steps
+        setPhase("final");
       }
     } else if (phase === "ai") {
       if (aiStep + 1 < MAX_AI_QUESTIONS) {
