@@ -35,6 +35,9 @@ export default function AccountabilityTab({ accountabilityPartners, me, publicPr
   const [generatingMotivation, setGeneratingMotivation] = useState(false);
   const [customMessageTarget, setCustomMessageTarget] = useState(null); // { partnerId, partnerName }
   const [customText, setCustomText] = useState("");
+  const [replyTarget, setReplyTarget] = useState(null); // nudge being replied to
+  const [replyText, setReplyText] = useState("");
+  const [sendingReply, setSendingReply] = useState(false);
 
   const { data: nudges } = useQuery({
     queryKey: ["nudges"],
@@ -106,6 +109,23 @@ export default function AccountabilityTab({ accountabilityPartners, me, publicPr
     setCustomText("");
   };
 
+  const handleSendReply = async () => {
+    if (!replyText.trim() || !replyTarget) return;
+    setSendingReply(true);
+    await base44.entities.AccountabilityNudge.create({
+      from_user_id: me.id,
+      to_user_id: replyTarget.from_user_id,
+      from_name: me.full_name || "Your partner",
+      type: "custom",
+      message: replyText.trim(),
+      read: false,
+    });
+    queryClient.invalidateQueries({ queryKey: ["nudges"] });
+    setReplyTarget(null);
+    setReplyText("");
+    setSendingReply(false);
+  };
+
   const handleAlertPartner = async (toUserId, toName) => {
     setSendingNudge(toUserId + "alert");
     sendNudgeMutation.mutate({
@@ -133,6 +153,61 @@ export default function AccountabilityTab({ accountabilityPartners, me, publicPr
 
   return (
     <div className="space-y-4">
+      {/* Reply modal */}
+      <AnimatePresence>
+        {replyTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4"
+            onClick={(e) => e.target === e.currentTarget && setReplyTarget(null)}
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h3 className="font-bold text-[#1A1A1A]">Reply to {replyTarget.from_name}</h3>
+                </div>
+                <button onClick={() => setReplyTarget(null)} className="p-1.5 rounded-lg hover:bg-[#F5F0EB]">
+                  <X className="w-4 h-4 text-[#8A8580]" />
+                </button>
+              </div>
+              {/* Original message preview */}
+              <div className="bg-[#F5F0EB] rounded-xl px-3 py-2 mb-3 text-xs text-[#4A5568] italic">
+                "{replyTarget.message}"
+              </div>
+              <div className="flex gap-2 mb-3 flex-wrap">
+                {["🔥 Right back at you!", "💪 Thanks, needed that!", "🎯 Let's go!", "😤 Challenge accepted!"].map(quick => (
+                  <button key={quick} onClick={() => setReplyText(quick)}
+                    className="text-xs px-2.5 py-1 rounded-full bg-[#F5F0EB] text-[#4A5568] hover:bg-[#E8E4DF] transition-colors">
+                    {quick}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                placeholder="Write your reply..."
+                rows={3}
+                className="w-full rounded-xl border border-[#E8E4DF] px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 placeholder:text-[#B0AAA4]"
+              />
+              <Button
+                onClick={handleSendReply}
+                disabled={!replyText.trim() || sendingReply}
+                className="w-full mt-3 bg-[#1A1A1A] hover:bg-[#333] text-white rounded-xl flex items-center gap-2 justify-center"
+              >
+                {sendingReply ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4" /> Send Reply</>}
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Custom message modal */}
       <AnimatePresence>
         {customMessageTarget && (
@@ -207,7 +282,15 @@ export default function AccountabilityTab({ accountabilityPartners, me, publicPr
                 <div className="flex-1">
                   <p className="text-xs font-semibold text-[#1A1A1A]">{n.from_name}</p>
                   <p className="text-sm text-[#4A5568] mt-0.5 leading-relaxed">{n.message}</p>
-                  <p className="text-xs text-[#B0AAA4] mt-1">{n.created_date ? format(new Date(n.created_date), "MMM d, h:mm a") : ""}</p>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <p className="text-xs text-[#B0AAA4]">{n.created_date ? format(new Date(n.created_date), "MMM d, h:mm a") : ""}</p>
+                    <button
+                      onClick={() => { setReplyTarget(n); setReplyText(""); }}
+                      className="text-xs font-medium text-[#7C9A82] hover:text-[#5A7A60] flex items-center gap-1 transition-colors"
+                    >
+                      <Send className="w-3 h-3" /> Reply
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             ))}
