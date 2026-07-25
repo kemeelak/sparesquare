@@ -81,14 +81,23 @@ export default function GoalsOnboarding({ profile, onClose }) {
 
   const handleSave = async (finalAnswers) => {
     setSaving(true);
-    await base44.entities.UserProfile.update(profile.id, {
-      goals: Array.isArray(finalAnswers.goals) ? finalAnswers.goals : [finalAnswers.goals],
-      challenges: Array.isArray(finalAnswers.challenges) ? finalAnswers.challenges : [finalAnswers.challenges],
-      motivation: Array.isArray(finalAnswers.motivation) ? finalAnswers.motivation[0] : finalAnswers.motivation,
-      goals_onboarding_complete: true,
-    });
-    queryClient.invalidateQueries({ queryKey: ["userProfile"] });
-    onClose();
+    try {
+      const me = await base44.auth.me();
+      const profiles = await base44.entities.UserProfile.filter({ created_by_id: me.id });
+      const latestProfile = profiles[0];
+      if (!latestProfile) return;
+
+      await base44.entities.UserProfile.update(latestProfile.id, {
+        goals: Array.isArray(finalAnswers.goals) ? finalAnswers.goals : [finalAnswers.goals],
+        challenges: Array.isArray(finalAnswers.challenges) ? finalAnswers.challenges : [finalAnswers.challenges],
+        motivation: Array.isArray(finalAnswers.motivation) ? finalAnswers.motivation[0] : finalAnswers.motivation,
+        goals_onboarding_complete: true,
+      });
+      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      onClose();
+    } finally {
+      setSaving(false);
+    }
   };
 
   const canProceed = selected.length > 0 || customInput.trim().length > 0;
