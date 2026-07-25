@@ -69,6 +69,15 @@ const FINAL_STEPS = [
     customPlaceholder: "Or type your own name... (max 12 chars)",
     maxLength: 12,
   },
+  {
+    field: "username",
+    question: "Last step! Pick a **username** so friends can find you on SpareSquare.\n\nThis is how you'll appear on leaderboards and accountability groups.",
+    chips: [],
+    multi: false,
+    customPlaceholder: "e.g. alex_builds (letters, numbers, underscores)",
+    maxLength: 20,
+    usernameField: true,
+  },
 ];
 
 const GROWTH_MAP = {
@@ -384,6 +393,28 @@ Return 5 habits as a JSON array with fields: title, description, duration_minute
       }
     });
 
+    // Create public profile with username
+    const me = await base44.auth.me();
+    if (me && answers.username) {
+      const existingPub = await base44.entities.UserPublicProfile.filter({ created_by_id: me.id });
+      const username = answers.username.replace(/[^a-z0-9_]/gi, "").toLowerCase();
+      if (existingPub.length > 0) {
+        await base44.entities.UserPublicProfile.update(existingPub[0].id, {
+          username,
+          display_name: me.full_name || username,
+          user_id: me.id,
+        });
+      } else {
+        await base44.entities.UserPublicProfile.create({
+          user_id: me.id,
+          username,
+          display_name: me.full_name || username,
+          current_streak: 0,
+          total_completed: 0,
+        });
+      }
+    }
+
     await base44.entities.UserProfile.create({
       rhythm_type: RHYTHM_MAP[answers.rhythm_type] || "other",
       unmovables,
@@ -508,7 +539,11 @@ Return 5 habits as a JSON array with fields: title, description, duration_minute
               <div className="flex gap-2 mb-4">
                 <input
                   value={customInput}
-                  onChange={(e) => setCustomInput(step.maxLength ? e.target.value.slice(0, step.maxLength) : e.target.value)}
+                  onChange={(e) => {
+                    let val = e.target.value;
+                    if (step.usernameField) val = val.replace(/[^a-z0-9_]/gi, "").toLowerCase();
+                    setCustomInput(step.maxLength ? val.slice(0, step.maxLength) : val);
+                  }}
                   onKeyDown={(e) => e.key === "Enter" && canProceed && handleNext()}
                   placeholder={step.customPlaceholder || "Or type your own..."}
                   className="flex-1 rounded-xl border border-[#E8E4DF] bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 placeholder:text-[#B0AAA4]"
