@@ -207,7 +207,7 @@ export default function Partner() {
 
     const response = await base44.integrations.Core.InvokeLLM({
       prompt: `${systemPrompt}\n\nConversation:\n${recentHistory}\n\nRespond as ${partnerName}:`,
-      add_context_from_internet: needsInternet,
+      ...(needsInternet ? { add_context_from_internet: true, model: "gemini_3_flash" } : {}),
     });
 
     const assistantMsg = { role: "assistant", content: response, context: "partner", thread_id: activeThread?.id || null };

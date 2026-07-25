@@ -55,6 +55,7 @@ export default function Friends() {
     queryKey: ["publicProfiles"],
     queryFn: () => base44.entities.UserPublicProfile.list(),
     initialData: [],
+    enabled: !!me,
   });
 
   // Ensure current user has a public profile

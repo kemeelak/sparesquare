@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format, addDays, subDays } from "date-fns";
+import { format, addDays, subDays, format as formatFn, addDays as addDaysFn } from "date-fns";
 import { createPageUrl } from "../utils";
 import { ChevronLeft, ChevronRight, Calendar, MessageCircle, Plus, Sparkles } from "lucide-react";
-import { addDays as addDaysFn, format as formatFn } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import DayGrid from "../components/grid/DayGrid";
 import GridLegend from "../components/grid/GridLegend";
