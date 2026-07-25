@@ -98,6 +98,25 @@ export default function Friends() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["friendships"] }),
   });
 
+  const upgradeMutation = useMutation({
+    mutationFn: async (friendship) => {
+      const partnerId = friendship.requester_id === me.id ? friendship.recipient_id : friendship.requester_id;
+      const partnerName = friendship.requester_id === me.id ? friendship.recipient_name : friendship.requester_name;
+      const partnerEmail = friendship.requester_id === me.id ? friendship.recipient_email : friendship.requester_email;
+      return base44.entities.Friendship.create({
+        requester_id: me.id,
+        requester_name: me.full_name || "A SpareSquare user",
+        requester_email: me.email,
+        recipient_id: partnerId,
+        recipient_name: partnerName,
+        recipient_email: partnerEmail,
+        status: "pending",
+        type: "accountability",
+      });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["friendships"] }),
+  });
+
   const handleSendInvite = async () => {
     if (!addValue.trim() || !me) return;
     setSending(true);
@@ -248,34 +267,64 @@ export default function Friends() {
                 </div>
               ) : (
                 leaderboardProfiles.map((p, i) => {
-                  const isMe = p.user_id === me?.id;
-                  const streak = isMe ? myStreak : (p.current_streak || 0);
-                  const medals = ["🥇", "🥈", "🥉"];
-                  return (
-                    <motion.div
-                      key={p.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      className={`rounded-2xl p-4 border flex items-center gap-4 ${isMe ? "bg-[#1A1A1A] border-[#1A1A1A] text-white" : "bg-white border-[#E8E4DF]"}`}
-                    >
-                      <span className="text-2xl">{medals[i] || `#${i + 1}`}</span>
-                      <div className="w-10 h-10 rounded-xl bg-[#F5F0EB] flex items-center justify-center text-xl flex-shrink-0">
-                        {p.avatar_emoji || "🧑"}
-                      </div>
-                      <div className="flex-1">
-                        <p className={`font-semibold text-sm ${isMe ? "text-white" : "text-[#1A1A1A]"}`}>
-                          {p.display_name || "Anonymous"} {isMe && "(you)"}
-                        </p>
-                        <p className={`text-xs ${isMe ? "text-white/60" : "text-[#8A8580]"}`}>{p.total_completed || 0} habits completed</p>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Flame className={`w-4 h-4 ${streak > 0 ? "text-[#D4A574]" : isMe ? "text-white/30" : "text-[#E8E4DF]"}`} />
-                        <span className={`font-bold text-lg ${isMe ? "text-white" : "text-[#1A1A1A]"}`}>{streak}</span>
-                        <span className={`text-xs ${isMe ? "text-white/60" : "text-[#8A8580]"}`}>day streak</span>
-                      </div>
-                    </motion.div>
-                  );
+                const isMe = p.user_id === me?.id;
+                const streak = isMe ? myStreak : (p.current_streak || 0);
+                const medals = ["🥇", "🥈", "🥉"];
+
+                // Find their friendship record and check if they're already an accountability partner
+                const friendship = accepted.find(f =>
+                (f.requester_id === me?.id && f.recipient_id === p.user_id) ||
+                (f.recipient_id === me?.id && f.requester_id === p.user_id)
+                );
+                const isAlreadyPartner = accountabilityPartners.some(f =>
+                f.requester_id === p.user_id || f.recipient_id === p.user_id
+                );
+                const partnerRequestPending = myFriendships.some(f =>
+                f.type === "accountability" && f.status === "pending" &&
+                (f.requester_id === p.user_id || f.recipient_id === p.user_id)
+                );
+                const canUpgrade = !isMe && friendship && !isAlreadyPartner && !partnerRequestPending && accountabilityPartners.length < 2;
+
+                return (
+                <motion.div
+                  key={p.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className={`rounded-2xl p-4 border flex items-center gap-4 ${isMe ? "bg-[#1A1A1A] border-[#1A1A1A] text-white" : "bg-white border-[#E8E4DF]"}`}
+                >
+                  <span className="text-2xl">{medals[i] || `#${i + 1}`}</span>
+                  <div className="w-10 h-10 rounded-xl bg-[#F5F0EB] flex items-center justify-center text-xl flex-shrink-0">
+                    {p.avatar_emoji || "🧑"}
+                  </div>
+                  <div className="flex-1">
+                    <p className={`font-semibold text-sm ${isMe ? "text-white" : "text-[#1A1A1A]"}`}>
+                      {p.display_name || "Anonymous"} {isMe && "(you)"}
+                    </p>
+                    <p className={`text-xs ${isMe ? "text-white/60" : "text-[#8A8580]"}`}>
+                      {isAlreadyPartner ? "🛡️ Accountability partner" : partnerRequestPending ? "⏳ Request pending" : `${p.total_completed || 0} habits completed`}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <Flame className={`w-4 h-4 ${streak > 0 ? "text-[#D4A574]" : isMe ? "text-white/30" : "text-[#E8E4DF]"}`} />
+                      <span className={`font-bold text-lg ${isMe ? "text-white" : "text-[#1A1A1A]"}`}>{streak}</span>
+                      <span className={`text-xs ${isMe ? "text-white/60" : "text-[#8A8580]"}`}>day</span>
+                    </div>
+                    {canUpgrade && (
+                      <button
+                        onClick={() => upgradeMutation.mutate(friendship)}
+                        disabled={upgradeMutation.isPending}
+                        title="Invite as accountability partner"
+                        className="ml-1 flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#E8F0EA] hover:bg-[#7C9A82] hover:text-white text-[#7C9A82] text-xs font-semibold border border-[#C8DEC9] hover:border-[#7C9A82] transition-all"
+                      >
+                        <Shield className="w-3 h-3" />
+                        Partner
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+                );
                 })
               )}
             </div>
