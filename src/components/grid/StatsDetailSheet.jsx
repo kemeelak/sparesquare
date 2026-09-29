@@ -70,7 +70,7 @@ export default function StatsDetailSheet({ type, habits, date, onClose }) {
           <div className="space-y-3">
             {items.map((habit) => (
               <div key={habit.id} className="flex items-center gap-3 bg-[#F5F0EB] rounded-xl px-4 py-3">
-                <span className="text-lg">{categoryEmoji[habit.category] || "⭐"}</span>
+                <span className="text-lg">{habit.emoji || categoryEmoji[habit.category] || "⭐"}</span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[#1A1A1A] truncate">{habit.title}</p>
                   <p className="text-xs text-[#8A8580]">

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, RotateCcw } from "lucide-react";
+import EmojiPicker from "@/components/shared/EmojiPicker";
 
 const CATEGORIES = [
   { value: "fitness", emoji: "💪" },
@@ -40,6 +41,7 @@ export default function AddEventForm({ hour, dateStr, onSave, onCancel, isPendin
   const [energy, setEnergy] = useState("medium");
   const [repeat, setRepeat] = useState("none");
   const [selectedDays, setSelectedDays] = useState([]);
+  const [emoji, setEmoji] = useState("");
 
   const toggleDay = (day) => {
     setSelectedDays(prev =>
@@ -58,7 +60,7 @@ export default function AddEventForm({ hour, dateStr, onSave, onCancel, isPendin
     const finalRepeat = repeat === "custom_days" && selectedDays.length > 0
       ? selectedDays
       : repeat;
-    onSave({ title: title.trim(), duration, category, energy, repeat: finalRepeat });
+    onSave({ title: title.trim(), duration, category, energy, repeat: finalRepeat, emoji });
   };
 
   return (
@@ -74,6 +76,16 @@ export default function AddEventForm({ hour, dateStr, onSave, onCancel, isPendin
         placeholder="What do you want to do?"
         className="w-full rounded-xl border border-[#E8E4DF] bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10"
       />
+
+      {/* Emoji */}
+      <div>
+        <EmojiPicker
+          value={emoji}
+          onChange={setEmoji}
+          defaultEmoji={CATEGORIES.find(c => c.value === category)?.emoji || "✨"}
+          label="Emoji (optional — defaults to category)"
+        />
+      </div>
 
       {/* Duration */}
       <div>

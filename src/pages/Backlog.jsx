@@ -144,7 +144,7 @@ export default function Backlog() {
             >
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#F5F0EB] flex items-center justify-center text-lg flex-shrink-0">
-                  {categoryEmoji[habit.category] || "✨"}
+                  {habit.emoji || categoryEmoji[habit.category] || "✨"}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-[#1A1A1A]">{habit.title}</h3>

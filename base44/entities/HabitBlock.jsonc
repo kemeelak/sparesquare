@@ -60,6 +60,10 @@
         "creative"
       ],
       "description": "Category of the habit"
+    },
+    "emoji": {
+      "type": "string",
+      "description": "Custom emoji for this habit (overrides category default)"
     }
   },
   "required": [

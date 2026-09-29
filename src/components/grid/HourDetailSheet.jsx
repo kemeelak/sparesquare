@@ -8,6 +8,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "../../utils";
 import AddEventForm from "./AddEventForm";
+import EmojiPicker from "@/components/shared/EmojiPicker";
+
+const CATEGORY_EMOJIS = {
+  fitness: "🏃", mindfulness: "🧘", learning: "📚", nutrition: "🥗",
+  sleep: "😴", productivity: "⚡", social: "👥", creative: "🎨",
+};
 
 export default function HourDetailSheet({ hour, date, habits, unmovables, sleepHours, profile, onClose, onConfirm, onComplete, onCompleteById }) {
   const [showAddEvent, setShowAddEvent] = useState(false);
@@ -51,6 +57,13 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, sleepH
     },
   });
 
+  const updateEmojiMutation = useMutation({
+    mutationFn: ({ id, emoji }) => base44.entities.HabitBlock.update(id, { emoji }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["habits"] }),
+  });
+
+  const [editingEmojiFor, setEditingEmojiFor] = useState(null);
+
   const DAY_MAP = { mon: "monday", tue: "tuesday", wed: "wednesday", thu: "thursday", fri: "friday", sat: "saturday", sun: "sunday" };
   const WEEKDAYS = ["monday","tuesday","wednesday","thursday","friday"];
 
@@ -81,7 +94,7 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, sleepH
     return dates;
   };
 
-  const handleSaveEvent = async ({ title, duration, category, energy, repeat }) => {
+  const handleSaveEvent = async ({ title, duration, category, energy, repeat, emoji }) => {
     const dates = getDatesToSchedule(repeat);
     await Promise.all(dates.map(d =>
       createEventMutation.mutateAsync({
@@ -92,6 +105,7 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, sleepH
         duration_minutes: duration,
         category,
         energy_level: energy,
+        emoji,
       })
     ));
     setShowAddEvent(false);
@@ -208,10 +222,35 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, sleepH
               const startHourOffset = Math.floor(prevMinutes / 60);
               const startH = hour + startHourOffset;
               const timeLabel = `${startH > 12 ? startH - 12 : startH || 12}:${String(startMin).padStart(2,"0")} ${startH >= 12 ? "PM" : "AM"}`;
+              const habitEmoji = h.emoji || CATEGORY_EMOJIS[h.category] || "✨";
+              const isEditingEmoji = editingEmojiFor === h.id;
               return (
                 <div key={h.id} className={`rounded-2xl p-5 ${isConfirmed ? "bg-[#7C9A82] text-white" : "bg-[#E8F0EA] text-[#1A1A1A]"}`}>
                   <div className="flex items-start justify-between gap-2 mb-1">
-                    <p className="text-lg font-bold leading-tight">{h.title}</p>
+                    <div className="flex items-start gap-2 flex-1 min-w-0">
+                      <div className="relative flex-shrink-0">
+                        <button
+                          onClick={() => setEditingEmojiFor(isEditingEmoji ? null : h.id)}
+                          title="Edit emoji"
+                          className="text-2xl leading-none hover:scale-110 transition-transform"
+                        >
+                          {habitEmoji}
+                        </button>
+                        {isEditingEmoji && (
+                          <div className="absolute top-9 left-0 z-20">
+                            <EmojiPicker
+                              value={h.emoji || ""}
+                              onChange={(em) => {
+                                updateEmojiMutation.mutate({ id: h.id, emoji: em });
+                                setEditingEmojiFor(null);
+                              }}
+                              defaultEmoji={CATEGORY_EMOJIS[h.category] || "✨"}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-lg font-bold leading-tight">{h.title}</p>
+                    </div>
                     <span className={`text-xs font-mono mt-1 flex-shrink-0 ${isConfirmed ? "text-white/70" : "text-[#8A8580]"}`}>{timeLabel}</span>
                   </div>
                   {h.duration_minutes && <p className={`text-xs mb-1 ${isConfirmed ? "text-white/70" : "text-[#8A8580]"}`}>{h.duration_minutes} min</p>}
