@@ -44,5 +44,40 @@
   "required": [
     "requester_id",
     "recipient_id"
-  ]
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.requester_id": "{{user.id}}"
+        },
+        {
+          "data.recipient_id": "{{user.id}}"
+        }
+      ]
+    },
+    "create": {
+      "data.requester_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.requester_id": "{{user.id}}"
+        },
+        {
+          "data.recipient_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.requester_id": "{{user.id}}"
+        },
+        {
+          "data.recipient_id": "{{user.id}}"
+        }
+      ]
+    }
+  }
 }

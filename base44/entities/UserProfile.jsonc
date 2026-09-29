@@ -100,5 +100,16 @@
       "description": "Why the user is doing this \u2014 their deeper why"
     }
   },
-  "required": []
+  "required": [],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
 }
