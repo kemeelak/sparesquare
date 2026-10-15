@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, ChevronRight, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
+import { Mic } from "lucide-react";
+import VoiceSpill from "@/components/onboarding/VoiceSpill";
 
 // Initial fixed steps — after these, AI takes over
 const INITIAL_STEPS = [
@@ -239,7 +241,40 @@ export default function Onboarding() {
   const [customInput, setCustomInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [generatingQuestion, setGeneratingQuestion] = useState(false);
+  const [showVoice, setShowVoice] = useState(false);
+  const [voiceExtras, setVoiceExtras] = useState({ goals: [], challenges: [], motivation: "", summary: "" });
   const containerRef = useRef(null);
+
+  // Fields in the order the fixed steps ask them
+  const FIXED_ORDER = [
+    ...INITIAL_STEPS.map((s) => ({ phase: "initial", field: s.field })),
+    ...FINAL_STEPS.map((s) => ({ phase: "final", field: s.field })),
+  ];
+
+  const handleVoiceResult = (result) => {
+    const voiceAnswers = { ...answers, ...result.answers };
+    setAnswers(voiceAnswers);
+    setVoiceExtras({
+      goals: result.goals,
+      challenges: result.challenges,
+      motivation: result.motivation,
+      summary: result.summary,
+    });
+    setShowVoice(false);
+    setSelected([]);
+    setCustomInput("");
+    // Jump to the first fixed step the voice note didn't cover
+    const next = FIXED_ORDER.find((s) => !voiceAnswers[s.field]);
+    if (!next) {
+      setPhase("confirm");
+    } else if (next.phase === "initial") {
+      setPhase("initial");
+      setInitialStep(INITIAL_STEPS.findIndex((s) => s.field === next.field));
+    } else {
+      setPhase("final");
+      setFinalStep(FINAL_STEPS.findIndex((s) => s.field === next.field));
+    }
+  };
 
   const MAX_AI_QUESTIONS = 3; // How many AI follow-ups to generate
 
@@ -425,6 +460,9 @@ Return 5 habits as a JSON array with fields: title, description, duration_minute
       onboarding_complete: true,
       timezone_offset: new Date().getTimezoneOffset() / -60,
       partner_name: answers.partner_name || "Partner",
+      ...(voiceExtras.goals.length > 0 && { goals: voiceExtras.goals }),
+      ...(voiceExtras.challenges.length > 0 && { challenges: voiceExtras.challenges }),
+      ...(voiceExtras.motivation && { motivation: voiceExtras.motivation }),
     });
 
     // Add AI-suggested habits to backlog
@@ -476,6 +514,31 @@ Return 5 habits as a JSON array with fields: title, description, duration_minute
           </div>
         )}
 
+        {/* Voice entry — available on the first step */}
+        {phase === "initial" && initialStep === 0 && !showVoice && !generatingQuestion && (
+          <button
+            onClick={() => setShowVoice(true)}
+            className="w-full flex items-center gap-3 mb-4 px-4 py-3 rounded-2xl border border-dashed border-[#D4A574] bg-[#F5EDE4] hover:bg-[#F0E4D6] transition-colors text-left"
+          >
+            <span className="w-9 h-9 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center flex-shrink-0">
+              <Mic className="w-4 h-4" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold text-[#1A1A1A]">Rather just talk? Spill it.</span>
+              <span className="block text-xs text-[#8A8580]">Tell me about your day and what you need help with — I'll fill in the rest.</span>
+            </span>
+          </button>
+        )}
+
+        {voiceExtras.summary && phase !== "confirm" && !showVoice && (
+          <div className="mb-4 px-4 py-3 rounded-2xl bg-[#E8F0EA] text-sm text-[#1A1A1A] flex gap-2">
+            <Sparkles className="w-4 h-4 text-[#7C9A82] flex-shrink-0 mt-0.5" />
+            <span>{voiceExtras.summary} <span className="text-[#8A8580]">I've filled in what I could — just confirm the rest.</span></span>
+          </div>
+        )}
+
+        {showVoice && <VoiceSpill onResult={handleVoiceResult} onClose={() => setShowVoice(false)} />}
+
         <AnimatePresence mode="wait">
           {/* Generating AI question loader */}
           {generatingQuestion && (
@@ -493,7 +556,7 @@ Return 5 habits as a JSON array with fields: title, description, duration_minute
           )}
 
           {/* Question step */}
-          {!generatingQuestion && step && phase !== "confirm" && (
+          {!generatingQuestion && !showVoice && step && phase !== "confirm" && (
             <motion.div
               key={`${phase}-${phase === "initial" ? initialStep : phase === "ai" ? aiStep : finalStep}`}
               initial={{ opacity: 0, x: 30 }}
@@ -582,7 +645,7 @@ Return 5 habits as a JSON array with fields: title, description, duration_minute
                 <h2 className="font-bold text-[#1A1A1A] text-base mb-1">Your Profile Summary</h2>
                 <p className="text-xs text-[#8A8580] mb-4">We'll also add 5 personalised habits to your backlog ✨</p>
                 <div className="space-y-2">
-                  {Object.entries(answers).slice(0, 10).map(([key, value]) => (
+                  {Object.entries(answers).slice(0, 12).map(([key, value]) => (
                     <div key={key} className="flex justify-between items-start gap-4 text-sm">
                       <span className="text-[#8A8580] flex-shrink-0 capitalize">{key.replace(/_/g, " ")}</span>
                       <span className="text-[#1A1A1A] font-medium text-right">
@@ -590,6 +653,18 @@ Return 5 habits as a JSON array with fields: title, description, duration_minute
                       </span>
                     </div>
                   ))}
+                  {voiceExtras.goals.length > 0 && (
+                    <div className="flex justify-between items-start gap-4 text-sm">
+                      <span className="text-[#8A8580] flex-shrink-0">What you want help with</span>
+                      <span className="text-[#1A1A1A] font-medium text-right">{voiceExtras.goals.join(", ")}</span>
+                    </div>
+                  )}
+                  {voiceExtras.challenges.length > 0 && (
+                    <div className="flex justify-between items-start gap-4 text-sm">
+                      <span className="text-[#8A8580] flex-shrink-0">What's got in the way</span>
+                      <span className="text-[#1A1A1A] font-medium text-right">{voiceExtras.challenges.join(", ")}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
