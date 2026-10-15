@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function Layout({ children, currentPageName }) {
   const [profile, setProfile] = useState(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
+  const [lookupFailed, setLookupFailed] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -22,20 +23,31 @@ export default function Layout({ children, currentPageName }) {
         setProfileLoaded(true);
         return;
       }
-      const me = await base44.auth.me();
-      const profiles = await base44.entities.UserProfile.filter({ created_by_id: me.id });
-      if (profiles.length > 0) setProfile(profiles[0]);
+      try {
+        const me = await base44.auth.me();
+        const profiles = await base44.entities.UserProfile.filter({ created_by_id: me.id });
+        const done = profiles.find((p) => p.onboarding_complete);
+        setProfile(done || profiles[0] || null);
+        setLookupFailed(false);
+      } catch (e) {
+        // Don't send returning users back to onboarding because of a failed lookup
+        setLookupFailed(true);
+      }
       setProfileLoaded(true);
     };
 
     useEffect(() => {
       if (!profileLoaded) return;
       if (!isAuthenticated) return;
-      if (currentPageName === "Onboarding") return;
+      if (lookupFailed) return;
+      if (currentPageName === "Onboarding") {
+        if (profile?.onboarding_complete) window.location.href = createPageUrl("Home");
+        return;
+      }
       if (!profile?.onboarding_complete) {
         window.location.href = createPageUrl("Onboarding");
       }
-    }, [profileLoaded, profile, currentPageName, isAuthenticated]);
+    }, [profileLoaded, profile, currentPageName, isAuthenticated, lookupFailed]);
 
   if (profileLoaded && !isAuthenticated) {
     return (
