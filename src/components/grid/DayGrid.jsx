@@ -2,11 +2,13 @@ import React from "react";
 import HourSquare from "./HourSquare";
 import { format } from "date-fns";
 
-export default function DayGrid({ date, unmovables, habits, sleepHours, onSquareClick }) {
+export default function DayGrid({ date, unmovables, habits, sleepHours, calendarBlocks = [], onSquareClick }) {
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const dayName = format(date, "EEEE").toLowerCase();
 
   const getUnmovableForHour = (hour) => {
+    const calendarBlock = calendarBlocks.find((b) => b.start_hour <= hour && b.end_hour > hour);
+    if (calendarBlock) return calendarBlock;
     return unmovables?.find(
       (u) => u.start_hour <= hour && u.end_hour > hour && (u.days?.includes(dayName) || u.days?.length === 0)
     );

@@ -42,6 +42,15 @@ export default function Home() {
   const profile = profiles[0];
   const dateStr = format(selectedDate, "yyyy-MM-dd");
 
+  const { data: calendarRes, isError: calendarError, refetch: refetchCalendar } = useQuery({
+    queryKey: ["calendarEvents", dateStr],
+    queryFn: () => base44.functions.invoke('getCalendarEvents', { date: dateStr }),
+    enabled: !!currentUser,
+    retry: false,
+  });
+  const calendarBlocks = calendarRes?.data?.blocks || [];
+  const calendarConnected = !calendarError && !!calendarRes?.data;
+
   const parseSleepHours = () => {
     if (!profile) return [];
     const hours = [];
@@ -201,6 +210,7 @@ export default function Home() {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#E8E4DF] text-[#8A8580] text-xs font-medium hover:bg-[#F5F0EB] transition-colors whitespace-nowrap"
             >
               <Calendar className="w-3.5 h-3.5" /> Sync
+              {calendarConnected && <span className="w-1.5 h-1.5 rounded-full bg-[#7C9A82]" />}
             </button>
             <button
               onClick={() => window.location.href = createPageUrl("Partner") + "?context=grid"}
@@ -232,6 +242,7 @@ export default function Home() {
           unmovables={unmovables}
           habits={habits}
           sleepHours={sleepHours}
+          calendarBlocks={calendarBlocks}
           onSquareClick={(hour) => setSelectedHour(hour)}
         />
       </div>
@@ -274,7 +285,12 @@ export default function Home() {
       {/* Calendar Sync */}
       <AnimatePresence>
         {showCalendarSync && (
-          <CalendarSync onClose={() => setShowCalendarSync(false)} />
+          <CalendarSync
+            onClose={() => setShowCalendarSync(false)}
+            connected={calendarConnected}
+            onRefresh={refetchCalendar}
+            blockCount={calendarBlocks.length}
+          />
         )}
       </AnimatePresence>
 
