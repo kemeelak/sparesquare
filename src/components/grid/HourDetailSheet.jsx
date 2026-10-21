@@ -15,7 +15,7 @@ const CATEGORY_EMOJIS = {
   sleep: "😴", productivity: "⚡", social: "👥", creative: "🎨",
 };
 
-export default function HourDetailSheet({ hour, date, habits, unmovables, sleepHours, profile, onClose, onConfirm, onComplete, onCompleteById }) {
+export default function HourDetailSheet({ hour, date, habits, unmovables, calendarBlocks = [], sleepHours, profile, onClose, onConfirm, onComplete, onCompleteById }) {
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [editingUnmovable, setEditingUnmovable] = useState(null); // { unmovable, index }
   const queryClient = useQueryClient();
@@ -32,8 +32,17 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, sleepH
   const hourHabits = habits?.filter(h => h.scheduled_hour === hour && h.scheduled_date === dateStr && h.status !== "backlog") || [];
   const habit = hourHabits[0] || null;
   const unmovable = unmovables?.find(u => u.start_hour <= hour && u.end_hour > hour && (u.days?.includes(dayName) || u.days?.length === 0));
+  const hourEvents = calendarBlocks?.filter(b => b.start_hour <= hour && b.end_hour > hour) || [];
   const isSleep = sleepHours?.includes(hour);
-  const isSpare = !habit && !unmovable && !isSleep;
+  const isSpare = !habit && !unmovable && !isSleep && hourEvents.length === 0;
+
+  const formatHourLabel = (h) => {
+    if (h === 0 || h === 24) return "12:00 AM";
+    if (h === 12) return "12:00 PM";
+    if (h < 12) return `${h}:00 AM`;
+    return `${h - 12}:00 PM`;
+  };
+  const formatHourRange = (start, end) => `${formatHourLabel(start)} – ${formatHourLabel(end)}`;
 
   // Backlog habits for suggestions
   const backlogHabits = habits?.filter(h => h.status === "backlog") || [];
@@ -166,6 +175,25 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, sleepH
             onCancel={() => setShowAddEvent(false)}
             isPending={createEventMutation.isPending}
           />
+        )}
+
+        {hourEvents.length > 0 && (
+          <div className="space-y-2 mb-3">
+            <p className="text-xs font-semibold text-[#8A8580] uppercase tracking-wide">Calendar</p>
+            {hourEvents.map(ev => (
+              <div key={ev.id} className="bg-[#4A5568] text-white rounded-2xl p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-base flex-shrink-0">📅</span>
+                    <p className="text-sm font-bold truncate">{ev.label}</p>
+                  </div>
+                  <span className="text-xs font-mono text-white/70 flex-shrink-0">
+                    {formatHourRange(ev.start_hour, ev.end_hour)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
         {unmovable && (

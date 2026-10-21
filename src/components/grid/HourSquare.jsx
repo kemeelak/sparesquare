@@ -13,7 +13,7 @@ const categoryIcons = {
   creative: "🎨",
 };
 
-export default function HourSquare({ hour, unmovable, habit, habits = [], isSpare, isSleep, onSquareClick }) {
+export default function HourSquare({ hour, unmovable, habit, habits = [], calendarEventCount = 0, isSpare, isSleep, onSquareClick }) {
   const formatHour = (h) => {
     if (h === 0) return "12a";
     if (h === 12) return "12p";
@@ -61,6 +61,8 @@ export default function HourSquare({ hour, unmovable, habit, habits = [], isSpar
     emoji = "✨";
   }
 
+  const countBadge = multiCount || (calendarEventCount > 1 ? calendarEventCount : null);
+
   return (
     <motion.button
       whileHover={{ scale: 1.05 }}
@@ -73,9 +75,9 @@ export default function HourSquare({ hour, unmovable, habit, habits = [], isSpar
         {formatHour(hour)}
       </span>
       {emoji && <span className="text-base leading-none mt-1">{emoji}</span>}
-      {multiCount && (
+      {countBadge && (
         <span className="absolute top-0.5 right-1 text-[8px] font-bold bg-white/30 rounded-full px-1 leading-tight">
-          {multiCount}
+          {countBadge}
         </span>
       )}
     </motion.button>

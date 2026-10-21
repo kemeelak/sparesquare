@@ -11,6 +11,7 @@ import SpareCounter from "../components/grid/SpareCounter";
 import StatsRow from "../components/grid/StatsRow";
 import HourDetailSheet from "../components/grid/HourDetailSheet";
 import CalendarSync from "../components/calendar/CalendarSync";
+import AllDayEventsBanner from "../components/grid/AllDayEventsBanner";
 import AddEventForm from "../components/grid/AddEventForm";
 import GoalsOnboarding from "../components/onboarding/GoalsOnboarding";
 import StatsDetailSheet from "../components/grid/StatsDetailSheet";
@@ -49,6 +50,8 @@ export default function Home() {
     retry: false,
   });
   const calendarBlocks = calendarRes?.data?.blocks || [];
+  const allDayEvents = calendarBlocks.filter((b) => b.all_day);
+  const timedCalendarBlocks = calendarBlocks.filter((b) => !b.all_day);
   const calendarConnected = !calendarError && !!calendarRes?.data;
 
   const parseSleepHours = () => {
@@ -86,9 +89,10 @@ export default function Home() {
       const isUnmovable = unmovables.some(
         u => u.start_hour <= h && u.end_hour > h && (u.days?.includes(dayName) || u.days?.length === 0)
       );
+      const isCalendar = timedCalendarBlocks.some(b => b.start_hour <= h && b.end_hour > h);
       const isHabit = todayHabits.some(hab => hab.scheduled_hour === h);
       const isSleep = sleepHours.includes(h);
-      if (!isUnmovable && !isHabit && !isSleep) count++;
+      if (!isUnmovable && !isCalendar && !isHabit && !isSleep) count++;
     }
     return count;
   };
@@ -206,7 +210,7 @@ export default function Home() {
           <div className="flex items-center gap-2 mb-4">
             <SpareCounter count={getSpareCount()} />
             <button
-              onClick={() => setShowCalendarSync(true)}
+              onClick={() => { refetchCalendar(); setShowCalendarSync(true); }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#E8E4DF] text-[#8A8580] text-xs font-medium hover:bg-[#F5F0EB] transition-colors whitespace-nowrap"
             >
               <Calendar className="w-3.5 h-3.5" /> Sync
@@ -235,6 +239,9 @@ export default function Home() {
             />
           </div>
 
+      {/* All-day events banner */}
+      <AllDayEventsBanner events={allDayEvents} />
+
       {/* Grid */}
       <div className="bg-white rounded-2xl p-4 border border-[#E8E4DF] mb-4">
         <DayGrid
@@ -242,7 +249,7 @@ export default function Home() {
           unmovables={unmovables}
           habits={habits}
           sleepHours={sleepHours}
-          calendarBlocks={calendarBlocks}
+          calendarBlocks={timedCalendarBlocks}
           onSquareClick={(hour) => setSelectedHour(hour)}
         />
       </div>
@@ -302,6 +309,7 @@ export default function Home() {
             date={selectedDate}
             habits={habits}
             unmovables={unmovables}
+            calendarBlocks={timedCalendarBlocks}
             sleepHours={sleepHours}
             profile={profile}
             onClose={() => setSelectedHour(null)}

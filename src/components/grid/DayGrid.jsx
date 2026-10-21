@@ -6,9 +6,12 @@ export default function DayGrid({ date, unmovables, habits, sleepHours, calendar
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const dayName = format(date, "EEEE").toLowerCase();
 
+  const getCalendarForHour = (hour) =>
+    calendarBlocks.filter((b) => b.start_hour <= hour && b.end_hour > hour);
+
   const getUnmovableForHour = (hour) => {
-    const calendarBlock = calendarBlocks.find((b) => b.start_hour <= hour && b.end_hour > hour);
-    if (calendarBlock) return calendarBlock;
+    const calendar = getCalendarForHour(hour);
+    if (calendar.length > 0) return calendar[0];
     return unmovables?.find(
       (u) => u.start_hour <= hour && u.end_hour > hour && (u.days?.includes(dayName) || u.days?.length === 0)
     );
@@ -34,6 +37,7 @@ export default function DayGrid({ date, unmovables, habits, sleepHours, calendar
     <div className="grid grid-cols-6 gap-2">
       {hours.map((hour) => {
         const habitsForHour = getHabitsForHour(hour);
+        const calendarForHour = getCalendarForHour(hour);
         return (
           <HourSquare
             key={hour}
@@ -41,6 +45,7 @@ export default function DayGrid({ date, unmovables, habits, sleepHours, calendar
             unmovable={getUnmovableForHour(hour)}
             habit={habitsForHour[0] || null}
             habits={habitsForHour}
+            calendarEventCount={calendarForHour.length}
             isSpare={isSpareHour(hour)}
             isSleep={isSleepHour(hour)}
             onSquareClick={onSquareClick}
