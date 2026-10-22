@@ -195,7 +195,7 @@ export default function OnboardingChat({ onComplete }) {
           onKeyDown={(e) => e.key === "Enter" && send()}
           placeholder="Type your answer..."
           disabled={loading}
-          className="flex-1 rounded-xl border border-[#E8E4DF] bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 placeholder:text-[#B0AAA4] disabled:opacity-50"
+          className="flex-1 rounded-xl border border-[#E8E4DF] bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 placeholder:text-[#B0AAA4] disabled:opacity-50"
         />
         <button
           onClick={() => send()}
