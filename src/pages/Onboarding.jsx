@@ -207,15 +207,17 @@ Return 5 habits as JSON with fields: title, description, duration_minutes (15-60
             </motion.div>
           )}
 
-          {/* CHAT */}
+          {/* CHAT — fixed full-screen container so the soft keyboard never distorts the page */}
           {phase === "chat" && (
             <motion.div
               key="chat"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
+              className="fixed inset-0 z-50 flex flex-col bg-[#FAF8F5] px-4 pt-5"
+              style={{ height: "100dvh" }}
             >
-              <div className="flex items-center gap-1.5 mb-3 px-1">
+              <div className="flex items-center gap-1.5 mb-2 px-1">
                 <Sparkles className="w-3.5 h-3.5 text-[#D4A574]" />
                 <span className="text-xs font-medium text-[#D4A574]">Personalised onboarding</span>
               </div>

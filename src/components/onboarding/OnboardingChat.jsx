@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Loader2, Sparkles } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 
 const SYSTEM = `You are the onboarding guide for SpareSquare, an AI growth partner app that finds hidden time in a person's day and helps them build habits that actually stick.
 
 Have a warm, genuine, concise conversation to understand this person so you can personalize their experience and coach them well. You are NOT a form — you are a curious friend who happens to be setting them up for success.
 
 Gather ALL of the following through natural conversation — one question at a time, but group related things naturally (e.g. ask the three sleep times together, ask commute with work hours):
-1. Their daily rhythm + work/school hours (so we can map their "unmovables" — non-negotiable time blocks). Also whether they commute and roughly how long.
+1. Their daily rhythm + work/school hours (so we can map their "unmovable" — non-negotiable time blocks). Also whether they commute and roughly how long.
 2. Their sleep: when they actually fall asleep, when they wake, and their ideal sleep time.
 3. When they feel most energized and focused.
 4. THE DEEPER WHY — this matters most, spend a turn or two here:
@@ -29,9 +29,12 @@ Rules:
 
 Record captured fields in \`extracted\` as you go. Convert all times to 24-hour hour NUMBERS (0-23). Build \`unmovables\` as an array of {label, start_hour, end_hour, days} where days is lowercase day names (monday..sunday); use [] if it applies every day. growth_focus is a single value. goals, challenges are arrays of short strings. motivation is one sentence.
 
+Always include \`options\`: 2-4 short, clickable quick-replies the user can tap instead of typing, tailored to the current question so they feel like natural answers to what you just asked. Keep each one a few words. For open-ended "why" questions, offer evocative starting points rather than exhaustive choices.
+
 Return ONLY this JSON object:
 {
   "reply": "your message to the user — concise, markdown ok, max ~4 sentences",
+  "options": ["short clickable reply", "another reply"],
   "extracted": {
     "rhythm_type": "nine_to_five|student|night_shift|freelancer|parent|other",
     "unmovables": [{"label":"Work","start_hour":9,"end_hour":17,"days":["monday","tuesday","wednesday","thursday","friday"]}],
@@ -48,12 +51,15 @@ Return ONLY this JSON object:
   },
   "complete": false
 }
-Only include fields you have actually captured; keep previously captured fields stable. Set complete=true ONLY when rhythm_type, unmovables, sleep_hour, wake_hour, sleep_goal_hour, growth_focus, goals, challenges, motivation, partner_name, AND username are all present. On the completing turn your reply is a brief, warm wrap-up with no further questions.`;
+Only include fields you have actually captured; keep previously captured fields stable. Set complete=true ONLY when rhythm_type, unmovables, sleep_hour, wake_hour, sleep_goal_hour, growth_focus, goals, challenges, motivation, partner_name, AND username are all present. On the completing turn your reply is a brief, warm wrap-up with no further questions, and options can be an empty array.`;
 
 const OPENING = "Hey, I'm really glad you're here. 👋\n\nI'm going to ask a few quick questions to understand your life and what you're working toward — no forms, just a conversation. That way everything in SpareSquare gets tailored to *you*.\n\nLet's start easy: **what does a typical day look like?** Work, school, night shifts — tell me in your own words.";
 
+const OPENING_OPTIONS = ["9 to 5 job", "I'm a student", "Night shifts", "Freelance / flexible"];
+
 export default function OnboardingChat({ onComplete }) {
   const [messages, setMessages] = useState([{ role: "assistant", content: OPENING }]);
+  const [options, setOptions] = useState(OPENING_OPTIONS);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [extracted, setExtracted] = useState({});
@@ -62,7 +68,7 @@ export default function OnboardingChat({ onComplete }) {
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages, loading]);
+  }, [messages, loading, options]);
 
   const send = async (overrideText) => {
     const text = (overrideText ?? input).trim();
@@ -70,6 +76,7 @@ export default function OnboardingChat({ onComplete }) {
     const nextMessages = [...messages, { role: "user", content: text }];
     setMessages(nextMessages);
     setInput("");
+    setOptions([]);
     setLoading(true);
     try {
       const transcript = nextMessages
@@ -82,6 +89,7 @@ export default function OnboardingChat({ onComplete }) {
           type: "object",
           properties: {
             reply: { type: "string" },
+            options: { type: "array", items: { type: "string" } },
             extracted: { type: "object", additionalProperties: true },
             complete: { type: "boolean" },
           },
@@ -91,7 +99,9 @@ export default function OnboardingChat({ onComplete }) {
       const reply = res.reply || "Got it. Tell me a bit more?";
       const merged = { ...extracted, ...(res.extracted || {}) };
       setExtracted(merged);
+      const nextOptions = Array.isArray(res.options) ? res.options.slice(0, 4) : [];
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+      setOptions(nextOptions);
       if (res.complete) {
         setTimeout(() => onComplete(merged), 700);
       }
@@ -110,8 +120,8 @@ export default function OnboardingChat({ onComplete }) {
   const canWrap = userTurns >= 4 && !loading;
 
   return (
-    <div className="flex flex-col" style={{ minHeight: "60vh" }}>
-      <div className="flex-1 space-y-3 overflow-y-auto pb-4">
+    <div className="flex flex-col min-h-0 flex-1">
+      <div className="flex-1 space-y-3 overflow-y-auto min-h-0 pb-4">
         <AnimatePresence initial={false}>
           {messages.map((m, i) => (
             <motion.div
@@ -155,7 +165,29 @@ export default function OnboardingChat({ onComplete }) {
         </button>
       )}
 
-      <div className="flex gap-2 items-center sticky bottom-0 bg-[#FAF8F5] pt-2 pb-1">
+      {/* Suggested quick-replies — tap to send instead of typing */}
+      <AnimatePresence>
+        {options.length > 0 && !loading && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1"
+          >
+            {options.map((opt, i) => (
+              <button
+                key={i}
+                onClick={() => send(opt)}
+                className="flex-shrink-0 px-3.5 py-2 rounded-full bg-white border border-[#E8E4DF] text-sm text-[#1A1A1A] hover:border-[#1A1A1A] hover:bg-[#F5F0EB] transition-colors"
+              >
+                {opt}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="flex gap-2 items-center bg-[#FAF8F5] pt-1 pb-2">
         <input
           ref={inputRef}
           value={input}
