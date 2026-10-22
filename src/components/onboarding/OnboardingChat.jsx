@@ -85,6 +85,7 @@ export default function OnboardingChat({ onComplete }) {
       const prompt = `${SYSTEM}\n\nConversation so far:\n${transcript}\n\nGuide: (respond with JSON only)`;
       const res = await base44.integrations.Core.InvokeLLM({
         prompt,
+        model: "gpt_5_mini",
         response_json_schema: {
           type: "object",
           properties: {
