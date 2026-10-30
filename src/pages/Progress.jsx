@@ -8,6 +8,8 @@ import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from "recharts";
 import { motion } from "framer-motion";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import HealthCard from "@/components/health/HealthCard";
+import HealthWeek from "@/components/health/HealthWeek";
 
 export default function Progress() {
   const currentUser = useCurrentUser();
@@ -108,6 +110,10 @@ export default function Progress() {
           </motion.div>
         ))}
       </div>
+
+      {/* Wearable: sleep + activity */}
+      <HealthCard />
+      <HealthWeek />
 
       {/* 14-day chart */}
       <motion.div
