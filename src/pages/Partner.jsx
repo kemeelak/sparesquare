@@ -120,7 +120,8 @@ RESPONSE STYLE:
 
 USER PROFILE:
 - Rhythm: ${profile?.rhythm_type || "unknown"}
-- Growth Focus: ${profile?.growth_focus || "unknown"}
+- Growth Focus: ${(profile?.growth_focuses?.length ? profile.growth_focuses : [profile?.growth_focus]).filter(Boolean).join(", ") || "unknown"}
+- Energy: ${profile?.energy_pattern || "not shared"}
 - Sleep actual: ${sleepActual || "?"} | Sleep goal: ${sleepGoal || "?"} ${hasSleepGap ? `⚠️ GAP EXISTS — user is not hitting their sleep goal` : ""}
 - Wake time: ${profile?.wake_time || "?"}
 - Unmovables: ${unmovables.map(u => `${u.label} (${u.start_hour}–${u.end_hour}h, ${(u.days || []).join(",")})`).join("; ") || "None"}
@@ -128,6 +129,7 @@ USER PROFILE:
 - Motivation: ${profile?.motivation || "Not shared"}
 - Challenges: ${(profile?.challenges || []).join(", ") || "Not shared"}
 - Already does consistently (NEVER suggest these back, and don't re-teach them): ${(profile?.existing_habits || []).join(", ") || "Not shared"}
+- Other things they've told us about their life (use them naturally when relevant; don't recite them back): ${(profile?.extra_notes || []).join("; ") || "Nothing yet"}
 
 TODAY'S SCHEDULE (${today}, current hour: ${currentHour}:00):
 - Confirmed/Suggested: ${todayHabits.filter(h => ["confirmed","suggested"].includes(h.status)).map(h => `${h.scheduled_hour}:00 ${h.title} (${h.duration_minutes || "?"}min)`).join(", ") || "None"}

@@ -36,7 +36,33 @@
         "creativity",
         "relationships"
       ],
-      "description": "What the best version of user is working on"
+      "description": "Primary area the user is working on"
+    },
+    "growth_focuses": {
+      "type": "array",
+      "description": "Every area the user is working on \u2014 they can be growing in more than one at once",
+      "items": {
+        "type": "string",
+        "enum": [
+          "fitness",
+          "business",
+          "peace",
+          "learning",
+          "creativity",
+          "relationships"
+        ]
+      }
+    },
+    "energy_pattern": {
+      "type": "string",
+      "description": "When in the day the user feels most energized and focused, in their own words"
+    },
+    "extra_notes": {
+      "type": "array",
+      "description": "Anything else the user volunteered about their life \u2014 kept so coaching can use it instead of asking again",
+      "items": {
+        "type": "string"
+      }
     },
     "unmovables": {
       "type": "array",

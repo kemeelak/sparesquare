@@ -39,9 +39,10 @@ THEIR LIBRARY:
 ${libraryText}
 ${shelfText ? `\nALREADY WAITING ON THEIR SHELF (do not suggest these):\n${shelfText}\n` : ""}
 ABOUT THEM:
-Growth focus: ${profile?.growth_focus || "not stated"}
+Growth focus: ${(profile?.growth_focuses?.length ? profile.growth_focuses : [profile?.growth_focus]).filter(Boolean).join(", ") || "not stated"}
 Goals: ${(profile?.goals || []).join("; ") || "not stated"}
 Already does consistently: ${(profile?.existing_habits || []).join("; ") || "not stated"}
+Other things they've shared: ${(profile?.extra_notes || []).join("; ") || "not stated"}
 
 HOW TO CHOOSE — be strict:
 - Recommend at most ONE title. One is the expected answer. Return NONE if you cannot think of a specific work that genuinely builds on their library.

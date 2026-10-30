@@ -84,6 +84,7 @@ function roundHour(value, evening = false) {
   const hour = cleanHour(value, evening);
   if (hour === null) return null;
   const rounded = Math.round(hour);
+  if (rounded === 24) return 0; // "midnight" arrives as 24 — the grid reads it as 0
   return rounded >= 0 && rounded <= 24 ? rounded : null;
 }
 
@@ -145,6 +146,22 @@ function pickEnum(value, aliases) {
   return null;
 }
 
+// They can be working on several things at once — "fitness and peace", ["fitness",
+// "learning"], "business, creativity" — and every one of them gets kept.
+function cleanGrowthFocuses(value) {
+  const parts = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(/[,/&+]|\band\b/gi)
+      : [];
+  const out = [];
+  parts.forEach((part) => {
+    const focus = pickEnum(part, GROWTH_ALIASES);
+    if (focus && !out.includes(focus)) out.push(focus);
+  });
+  return out;
+}
+
 // If the model words the rhythm its own way ("night owl, office till 6"), fall back to
 // what their fixed blocks say — weekday daytime work is a 9-to-5 life.
 function inferRhythm(unmovables) {
@@ -167,10 +184,11 @@ export function normalizeExtracted(raw) {
   const rhythm = pickEnum(raw.rhythm_type, RHYTHM_ALIASES) || inferRhythm(unmovables);
   if (rhythm) out.rhythm_type = rhythm;
 
-  const growth = pickEnum(raw.growth_focus, GROWTH_ALIASES);
-  if (growth) out.growth_focus = Array.isArray(raw.growth_focus)
-    ? pickEnum(raw.growth_focus[0], GROWTH_ALIASES) || growth
-    : growth;
+  const growthFocuses = cleanGrowthFocuses(raw.growth_focus);
+  if (growthFocuses.length) {
+    out.growth_focus = growthFocuses[0];
+    out.growth_focuses = growthFocuses;
+  }
 
   const habits = cleanList(raw.existing_habits);
   if (habits.length) out.existing_habits = habits;
@@ -196,6 +214,11 @@ export function normalizeExtracted(raw) {
   const energy = cleanText(raw.energy_pattern);
   if (energy) out.energy_pattern = energy;
 
+  // Anything they volunteered beyond what onboarding strictly needs — kept, so later
+  // coaching can use it instead of asking them again.
+  const notes = cleanList(raw.notes);
+  if (notes.length) out.extra_notes = notes;
+
   const partner = cleanText(raw.partner_name);
   if (partner) out.partner_name = partner.slice(0, 12);
 
@@ -213,7 +236,7 @@ export function isOnboardingComplete(fields) {
   const hours = [fields.sleep_hour, fields.wake_hour, fields.sleep_goal_hour];
   return Boolean(
     fields.rhythm_type &&
-      fields.growth_focus &&
+      (fields.growth_focus || (fields.growth_focuses || []).length > 0) &&
       hours.every((hour) => typeof hour === "number") &&
       (fields.goals || []).length > 0 &&
       fields.motivation

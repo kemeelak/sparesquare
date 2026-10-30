@@ -26,6 +26,12 @@ const RHYTHM_LABELS = {
   other: "Other",
 };
 
+// Someone can be growing in several directions at once — show every one they named.
+function growthLabelList(extracted) {
+  const list = extracted.growth_focuses?.length ? extracted.growth_focuses : [extracted.growth_focus];
+  return list.filter(Boolean).map((g) => GROWTH_LABELS[g] || g);
+}
+
 function toTimeStr(h) {
   const hr = ((h % 24) + 24) % 24;
   if (hr === 0) return "12:00 AM";
@@ -72,13 +78,17 @@ export default function Onboarding() {
       "you"
     ).replace(/[^a-z0-9_]/gi, "").toLowerCase() || "you";
 
+    const growthLabels = growthLabelList(extracted);
+
     const profileSummary = {
       rhythm: RHYTHM_LABELS[extracted.rhythm_type] || "other",
-      growth: GROWTH_LABELS[extracted.growth_focus] || "learning",
+      growth: growthLabels.join(", ") || "learning",
       sleep: `${toTimeStr(extracted.sleep_hour ?? 23)} → wake ${toTimeStr(extracted.wake_hour ?? 7)}`,
+      energy: extracted.energy_pattern,
       goals: draft.goals,
       challenges: draft.challenges,
       motivation: draft.motivation,
+      notes: (extracted.extra_notes || []).join("; "),
     };
 
     const existingHabits = extracted.existing_habits || [];
@@ -146,7 +156,10 @@ Return JSON with a habits array (0-4 items), each with: title, description, dura
       sleep_actual: toTimeStr(sleepH),
       sleep_goal: toTimeStr(goalH),
       wake_time: toTimeStr(wakeH),
-      growth_focus: extracted.growth_focus || "learning",
+      growth_focus: extracted.growth_focus || growthLabels[0] || "learning",
+      growth_focuses: extracted.growth_focuses || (extracted.growth_focus ? [extracted.growth_focus] : []),
+      energy_pattern: extracted.energy_pattern || "",
+      extra_notes: extracted.extra_notes || [],
       onboarding_complete: true,
       timezone_offset: new Date().getTimezoneOffset() / -60,
       partner_name: draft.partner_name || "Partner",
@@ -266,7 +279,7 @@ Return JSON with a habits array (0-4 items), each with: title, description, dura
                 {/* Read-only summary */}
                 <div className="space-y-2 mb-4 pb-4 border-b border-[#F0EBE6]">
                   <Row label="Rhythm" value={RHYTHM_LABELS[extracted.rhythm_type] || extracted.rhythm_type || "—"} />
-                  <Row label="Growth focus" value={GROWTH_LABELS[extracted.growth_focus] || extracted.growth_focus || "—"} />
+                  <Row label="Working on" value={growthLabelList(extracted).join(" · ") || "—"} />
                   <Row label="Sleep" value={`${toTimeStr(sleepH)} → wake ${toTimeStr(wakeH)}`} />
                   <Row label="Sleep goal" value={toTimeStr(goalH)} />
                   {unmovables.length > 0 && (
@@ -275,6 +288,9 @@ Return JSON with a habits array (0-4 items), each with: title, description, dura
                   {extracted.energy_pattern && <Row label="Most energized" value={extracted.energy_pattern} />}
                   {extracted.existing_habits?.length > 0 && (
                     <Row label="Already consistent" value={extracted.existing_habits.join(" · ")} />
+                  )}
+                  {extracted.extra_notes?.length > 0 && (
+                    <Row label="Also noted" value={extracted.extra_notes.join(" · ")} />
                   )}
                 </div>
 

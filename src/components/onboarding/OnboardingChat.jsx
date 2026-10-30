@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
 import { invokeAI } from "@/lib/plans";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Loader2 } from "lucide-react";
@@ -7,68 +6,67 @@ import { normalizeExtracted, isOnboardingComplete } from "@/components/onboardin
 
 const MAX_WORDS = 1000;
 const MAX_CHARS = 7000;
+const SOFT_TURNS = 6;
 
-const SYSTEM = `You are the onboarding guide for SpareSquare, an AI growth partner app that finds hidden time in a person's day and helps them build habits that actually stick.
+const SYSTEM = `You are the person setting SpareSquare up for a new member. You are a warm, normal human — not an AI assistant, not a form, not a coach giving a speech.
 
-Have a warm, genuine, concise conversation to understand this person so you can personalize their experience and coach them well. You are NOT a form — you are a curious friend who happens to be setting them up for success.
+Your only job: learn enough about their real week to personalise their grid, then get out of the way. The whole thing should take five to seven exchanges.
 
-Gather ALL of the following through natural conversation — one question at a time, but group related things naturally (e.g. ask the three sleep times together, ask commute with work hours):
-1. Their daily rhythm + work/school hours (so we can map their "unmovable" — non-negotiable time blocks). Also whether they commute and roughly how long.
-2. What they ALREADY do consistently — any routine, workout, reading, journaling, meal prep, anything that already sticks, with rough times if they mention them. Ask this as its own turn and make them feel good about it. It matters as much as their goals: we must never suggest back what they already do.
-3. Their sleep: when they actually fall asleep, when they wake, and their ideal sleep time.
-4. When they feel most energized and focused.
-5. THE DEEPER WHY — this matters most, spend a turn or two here:
-   - What they want to grow toward (fitness, business, inner peace, learning, creativity, relationships, financial freedom — can be several)
-   - Specific, concrete goals they have
-   - What has blocked or derailed them before — including anything they tried and dropped, and why it didn't last
-   - Their deeper motivation — WHY this matters to them now
-6. What they'd like to call their AI partner (suggest 2-3 if unsure).
-7. A username (letters, numbers, underscores only) for leaderboards.
+How you talk:
+- Short, plain, everyday language. One or two sentences, plus the question.
+- No "as an AI", no "I'd be happy to help", no corporate warmth, no motivational filler, no emoji spam (one at most).
+- React to what they said in a few words before asking the next thing, so they feel heard.
+- Ask ONE thing at a time and make it easy to answer with a word or a tap.
+- Always offer 2-4 clickable answers. When more than one could genuinely be true for them, say so briefly ("all that apply") — they can tap several. Do not offer clickable answers for a real "why" question; give two or three evocative starting points instead.
+- If they answer in two words, take it and move on. Never dig for depth they didn't offer.
+- If they dump everything at once, that's ideal: take all of it, skip everything already answered, and wrap up on that same turn.
+- If they say "not sure", "skip", or clearly don't want to answer, accept it, leave that field out, and move on. Nothing here is mandatory.
+- Never repeat a question they already answered, and never ask for what their schedule already implies.
+- If they mention something you don't strictly need — a kid, an injury, a side project, a hobby, a bad week, a time of day they can't use — keep it in notes as a short fact. Do not ask about it.
 
-Rules:
-- One question at a time. Aim for ~10-12 exchanges total. Warm, empathetic, never robotic or corporate.
-- Ask tailored follow-ups based on their answers — dig into their why. If they say "I want to get fit," ask what that looks like and what's stopped them before.
-- Briefly reflect what you heard before the next question, so they feel understood.
-- Ask partner name + username together near the end.
-- Never over-explain the app. Keep it about THEM.
-- If they give short answers, that's fine — don't force depth, just move on.
-- People can write a LOT at once. If they send a long answer or a full brain dump (up to ~1000 words), treat it as gold: mine every field you can from it — rhythm and hours, existing habits, sleep times, energy, growth focus, goals, challenges, motivation. Never ask again for anything they already told you.
-- If one long answer already covers the essentials, do NOT keep interviewing them. Reflect back what you captured in a few short lines, then set complete=true — filling partner_name (pick something warm and short) and username (derive a short one from what they wrote) yourself if they didn't give them.
-- Otherwise keep to one question at a time, and skip whatever their answer already covered.
+What you actually need before wrapping up:
+1. The shape of their day: work, school, shifts, caregiving, and roughly when. Anything recurring they can't move.
+2. Sleep: when they actually go to bed, when they get up, and when they'd like to.
+3. What they're working on — one OR SEVERAL areas — and why it matters now.
+4. What has stopped them before.
 
-Record captured fields in \`extracted\` as you go. Convert all times to 24-hour hour NUMBERS (0-23). Build \`unmovables\` as an array of {label, start_hour, end_hour, days} where days is lowercase day names (monday..sunday); use [] if it applies every day. growth_focus is EXACTLY one of: fitness, business, peace, learning, creativity, relationships. rhythm_type is EXACTLY one of: nine_to_five, student, night_shift, freelancer, parent, other. goals, challenges are arrays of short strings. motivation is one sentence.
+Partner name and username are nice-to-have only: suggest both yourself at the end if they never mentioned them. Never spend a turn on them.
 
-Always include \`options\`: 2-4 short, clickable quick-replies the user can tap instead of typing, tailored to the current question so they feel like natural answers to what you just asked. Keep each one a few words. For open-ended "why" questions, offer evocative starting points rather than exhaustive choices.
+Record what you learn in extracted. Times become 24-hour hour NUMBERS (0-23). unmovables is [{label, start_hour, end_hour, days}] for time they genuinely can't move (work, class, commute, caregiving), with lowercase day names and [] meaning every day — a routine they already keep (dog walk, gym, journaling) belongs in existing_habits instead. growth_focus is comma-separated when there's more than one (e.g. "fitness, peace"). rhythm_type is exactly one of nine_to_five, student, night_shift, freelancer, parent, other. goals and challenges are short strings. motivation is one sentence in their words. notes is any other fact worth remembering about them — never repeat something already sitting in another field.
 
 Return ONLY this JSON object:
 {
-  "reply": "your message to the user — concise, markdown ok, max ~4 sentences",
-  "options": ["short clickable reply", "another reply"],
+  "reply": "your message — 1-2 sentences plus the question, markdown ok",
+  "options": ["short clickable answer", "another"],
   "extracted": {
     "rhythm_type": "nine_to_five|student|night_shift|freelancer|parent|other",
-    "unmovables": [{"label":"Work","start_hour":9,"end_hour":17,"days":["monday","tuesday","wednesday","thursday","friday"]}],
-    "existing_habits": ["Morning walk at 7am", "Gym 3x a week"],
+    "unmovables": [{"label":"Work","start_hour":9,"end_hour":17,"days":["monday"]}],
+    "existing_habits": ["Morning walk at 7am"],
     "sleep_hour": 23,
     "wake_hour": 7,
     "sleep_goal_hour": 22,
-    "growth_focus": "fitness|business|peace|learning|creativity|relationships",
+    "growth_focus": "fitness, peace",
+    "energy_pattern": "sharpest before 10am",
     "goals": ["..."],
     "challenges": ["..."],
     "motivation": "...",
-    "energy_pattern": "...",
+    "notes": ["has a 4-year-old", "left knee injury"],
     "partner_name": "...",
     "username": "..."
   },
   "complete": false
 }
-Only include fields you have actually captured; keep previously captured fields stable. existing_habits is a list of short phrases for routines they already keep — leave it out entirely if they genuinely have none, never invent them. Set complete=true as soon as you know rhythm_type, sleep_hour, wake_hour, sleep_goal_hour, growth_focus, goals, and motivation — at that point suggest partner_name and username yourself if they haven't given them, and don't ask for anything else. If a single long answer gave you all of it, wrap up immediately instead of inventing more questions. On the completing turn your reply is a brief, warm wrap-up with no further questions, and options can be an empty array.`;
+Only include fields you actually captured, and keep previously captured fields stable. existing_habits is short phrases for routines they already keep — leave it out entirely if they have none, never invent them. notes is anything else you learned about them, never invented.
 
-const OPENING = "Hey, I'm really glad you're here. 👋\n\nI'm going to ask a few quick questions to understand your life and what you're working toward — no forms, just a conversation. That way everything in SpareSquare gets tailored to *you*.\n\nLet's start easy: **what does a typical day look like?** Work, school, night shifts — tell me in your own words.\n\nAnd if you'd rather just write it *all* out in one go — your week, what you're working toward, what's gotten in the way — go for it. I'll pull out everything I need and skip the rest of the questions.";
+Set complete=true once you know the shape of their day, their sleep times, what they're working on and their why — filling in partner_name and username yourself if they never gave them. On that turn, reply is a one-line warm wrap-up with no new question, and options can be empty.`;
+
+const OPENING = "Hey — glad you're here. I'll ask a handful of quick things so SpareSquare fits your actual life, then get out of your way.\n\nTo start: **what does a typical weekday look like for you?** Work, school, shifts, kids — whatever takes the time.\n\nAnswer however you like. A few words is fine, or dump the whole thing at once — your week, what you're working on, what's gotten in the way — and I'll pull out what I need.";
 
 // Deliberately loose: the model reports what it actually heard ("9am", "around
-// midnight", "Mon-Fri") and normalizeExtracted turns it into the exact shapes the app
-// needs. Strict enums and partial `required` lists make the AI provider reject the whole
-// request, which killed a turn every time the model phrased something its own way.
+// midnight", "Mon-Fri", "fitness and peace") and normalizeExtracted turns it into the
+// exact shapes the app needs. Strict enums and partial `required` lists make the AI
+// provider reject the whole request, which killed a turn every time the model phrased
+// something its own way.
 const RESPONSE_SCHEMA = {
   type: "object",
   properties: {
@@ -100,13 +98,14 @@ const RESPONSE_SCHEMA = {
         challenges: { type: ["array", "null"], items: { type: "string" } },
         motivation: { type: ["string", "null"] },
         energy_pattern: { type: ["string", "null"] },
+        notes: { type: ["array", "null"], items: { type: "string" } },
         partner_name: { type: ["string", "null"] },
         username: { type: ["string", "null"] },
       },
       required: [
         "rhythm_type", "unmovables", "existing_habits", "sleep_hour", "wake_hour",
         "sleep_goal_hour", "growth_focus", "goals", "challenges", "motivation",
-        "energy_pattern", "partner_name", "username",
+        "energy_pattern", "notes", "partner_name", "username",
       ],
       additionalProperties: false,
     },
@@ -114,11 +113,22 @@ const RESPONSE_SCHEMA = {
   required: ["reply", "options", "complete", "extracted"],
 };
 
-const OPENING_OPTIONS = ["9 to 5 job", "I'm a student", "Night shifts", "Freelance / flexible"];
+const OPENING_OPTIONS = ["9 to 5 office job", "I'm a student", "Night shifts", "Freelance / flexible"];
+
+// Anything they mention twice keeps both facts, and nothing already learned is lost
+// when a later answer only covers part of a list.
+function mergeList(before, after) {
+  const out = [...(before || [])];
+  (after || []).forEach((item) => {
+    if (!out.includes(item)) out.push(item);
+  });
+  return out;
+}
 
 export default function OnboardingChat({ onComplete }) {
   const [messages, setMessages] = useState([{ role: "assistant", content: OPENING }]);
   const [options, setOptions] = useState(OPENING_OPTIONS);
+  const [picked, setPicked] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [extracted, setExtracted] = useState({});
@@ -137,27 +147,48 @@ export default function OnboardingChat({ onComplete }) {
     el.style.height = `${Math.min(el.scrollHeight, 220)}px`;
   }, [input]);
 
-  const send = async (overrideText) => {
-    const text = (overrideText ?? input).trim();
+  const togglePick = (option) => {
+    setPicked((prev) =>
+      prev.includes(option) ? prev.filter((item) => item !== option) : [...prev, option]
+    );
+  };
+
+  const send = async () => {
+    // Tapped answers and typed detail can be sent together — whatever they gave us counts.
+    const text = [input.trim(), ...picked].filter(Boolean).join(", ");
     if (!text || loading) return;
     const nextMessages = [...messages, { role: "user", content: text }];
+    const turnCount = nextMessages.filter((m) => m.role === "user").length;
     setMessages(nextMessages);
     setInput("");
+    setPicked([]);
     setOptions([]);
     setLoading(true);
     try {
       const transcript = nextMessages
         .map((m) => `${m.role === "user" ? "User" : "Guide"}: ${m.content}`)
         .join("\n\n");
-      const prompt = `${SYSTEM}\n\nConversation so far:\n${transcript}\n\nGuide: (respond with JSON only)`;
+      const nudge = turnCount >= SOFT_TURNS
+        ? " This is already a long conversation — wrap up on this turn unless something essential is still missing."
+        : "";
+      const prompt = `${SYSTEM}\n\nExchanges so far: ${turnCount}.${nudge}\n\nConversation so far:\n${transcript}\n\nGuide: (respond with JSON only)`;
       const res = await invokeAI("onboarding_chat", {
         prompt,
         model: "gpt_5_mini",
         response_json_schema: RESPONSE_SCHEMA,
       });
-      const reply = res?.reply || "Got it. Tell me a bit more?";
+      const reply = res?.reply || "Say a bit more?";
       // Cleaned into the exact shapes the app expects; nothing already captured is lost.
-      const merged = { ...extracted, ...normalizeExtracted(res?.extracted) };
+      const clean = normalizeExtracted(res?.extracted);
+      const merged = {
+        ...extracted,
+        ...clean,
+        existing_habits: mergeList(extracted.existing_habits, clean.existing_habits),
+        goals: mergeList(extracted.goals, clean.goals),
+        challenges: mergeList(extracted.challenges, clean.challenges),
+        extra_notes: mergeList(extracted.extra_notes, clean.extra_notes),
+        unmovables: clean.unmovables?.length ? clean.unmovables : extracted.unmovables,
+      };
       setExtracted(merged);
       const nextOptions = Array.isArray(res?.options) ? res.options.slice(0, 4) : [];
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
@@ -169,7 +200,7 @@ export default function OnboardingChat({ onComplete }) {
     } catch (e) {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Hmm, I didn't quite catch that — mind saying that again?" },
+        { role: "assistant", content: "Sorry — say that again?" },
       ]);
     } finally {
       setLoading(false);
@@ -223,35 +254,44 @@ export default function OnboardingChat({ onComplete }) {
           onClick={() => onComplete(extracted)}
           className="self-center text-xs text-[#8A8580] hover:text-[#1A1A1A] mb-2 underline underline-offset-2"
         >
-          I've said enough — wrap up
+          That's enough — take me in
         </button>
       )}
 
-      {/* Suggested quick-replies — tap to send instead of typing */}
+      {/* Suggested answers — tap one, or as many as fit, then send */}
       <AnimatePresence>
         {options.length > 0 && !loading && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
-            className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1"
+            className="flex flex-wrap gap-2 pb-2"
           >
-            {options.map((opt, i) => (
-              <button
-                key={i}
-                onClick={() => send(opt)}
-                className="flex-shrink-0 px-3.5 py-2 rounded-full bg-white border border-[#E8E4DF] text-sm text-[#1A1A1A] hover:border-[#1A1A1A] hover:bg-[#F5F0EB] transition-colors"
-              >
-                {opt}
-              </button>
-            ))}
+            {options.map((opt, i) => {
+              const active = picked.includes(opt);
+              return (
+                <button
+                  key={i}
+                  onClick={() => togglePick(opt)}
+                  aria-pressed={active}
+                  className={`px-3.5 py-2 rounded-full border text-sm transition-colors
+                    ${active
+                      ? "bg-[#1A1A1A] border-[#1A1A1A] text-white"
+                      : "bg-white border-[#E8E4DF] text-[#1A1A1A] hover:border-[#1A1A1A] hover:bg-[#F5F0EB]"}`}
+                >
+                  {opt}
+                </button>
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {wordCount > 12 && (
+      {(wordCount > 12 || picked.length > 0) && (
         <div className="text-[11px] text-[#B0AAA4] text-right pr-1 pb-1">
-          {wordCount} / {MAX_WORDS} words · no rush, say it all
+          {picked.length > 0 && `${picked.length} picked · tap more or send`}
+          {picked.length > 0 && wordCount > 12 && " · "}
+          {wordCount > 12 && `${wordCount} / ${MAX_WORDS} words · no rush, say it all`}
         </div>
       )}
 
@@ -268,13 +308,13 @@ export default function OnboardingChat({ onComplete }) {
           }}
           rows={1}
           maxLength={MAX_CHARS}
-          placeholder="Type your answer — or write everything about yourself at once"
+          placeholder="Type anything — a word, or everything at once"
           disabled={loading}
           className="flex-1 resize-none rounded-xl border border-[#E8E4DF] bg-white px-4 py-3 text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 placeholder:text-[#B0AAA4] disabled:opacity-50"
         />
         <button
-          onClick={() => send()}
-          disabled={loading || !input.trim()}
+          onClick={send}
+          disabled={loading || (!input.trim() && picked.length === 0)}
           className="w-11 h-11 flex-shrink-0 rounded-xl bg-[#1A1A1A] text-white flex items-center justify-center disabled:opacity-30 hover:bg-[#333] transition-colors"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
