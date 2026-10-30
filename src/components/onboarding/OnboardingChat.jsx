@@ -3,6 +3,10 @@ import { base44 } from "@/api/base44Client";
 import { invokeAI } from "@/lib/plans";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Loader2 } from "lucide-react";
+import { normalizeExtracted, isOnboardingComplete } from "@/components/onboarding/normalizeExtracted";
+
+const MAX_WORDS = 1000;
+const MAX_CHARS = 7000;
 
 const SYSTEM = `You are the onboarding guide for SpareSquare, an AI growth partner app that finds hidden time in a person's day and helps them build habits that actually stick.
 
@@ -28,8 +32,11 @@ Rules:
 - Ask partner name + username together near the end.
 - Never over-explain the app. Keep it about THEM.
 - If they give short answers, that's fine — don't force depth, just move on.
+- People can write a LOT at once. If they send a long answer or a full brain dump (up to ~1000 words), treat it as gold: mine every field you can from it — rhythm and hours, existing habits, sleep times, energy, growth focus, goals, challenges, motivation. Never ask again for anything they already told you.
+- If one long answer already covers the essentials, do NOT keep interviewing them. Reflect back what you captured in a few short lines, then set complete=true — filling partner_name (pick something warm and short) and username (derive a short one from what they wrote) yourself if they didn't give them.
+- Otherwise keep to one question at a time, and skip whatever their answer already covered.
 
-Record captured fields in \`extracted\` as you go. Convert all times to 24-hour hour NUMBERS (0-23). Build \`unmovables\` as an array of {label, start_hour, end_hour, days} where days is lowercase day names (monday..sunday); use [] if it applies every day. growth_focus is a single value. goals, challenges are arrays of short strings. motivation is one sentence.
+Record captured fields in \`extracted\` as you go. Convert all times to 24-hour hour NUMBERS (0-23). Build \`unmovables\` as an array of {label, start_hour, end_hour, days} where days is lowercase day names (monday..sunday); use [] if it applies every day. growth_focus is EXACTLY one of: fitness, business, peace, learning, creativity, relationships. rhythm_type is EXACTLY one of: nine_to_five, student, night_shift, freelancer, parent, other. goals, challenges are arrays of short strings. motivation is one sentence.
 
 Always include \`options\`: 2-4 short, clickable quick-replies the user can tap instead of typing, tailored to the current question so they feel like natural answers to what you just asked. Keep each one a few words. For open-ended "why" questions, offer evocative starting points rather than exhaustive choices.
 
@@ -54,12 +61,14 @@ Return ONLY this JSON object:
   },
   "complete": false
 }
-Only include fields you have actually captured; keep previously captured fields stable. existing_habits is a list of short phrases for routines they already keep — leave it out entirely if they genuinely have none, never invent them. Set complete=true ONLY when rhythm_type, unmovables, sleep_hour, wake_hour, sleep_goal_hour, growth_focus, goals, challenges, motivation, partner_name, AND username are all present (existing_habits is optional). On the completing turn your reply is a brief, warm wrap-up with no further questions, and options can be an empty array.`;
+Only include fields you have actually captured; keep previously captured fields stable. existing_habits is a list of short phrases for routines they already keep — leave it out entirely if they genuinely have none, never invent them. Set complete=true as soon as you know rhythm_type, sleep_hour, wake_hour, sleep_goal_hour, growth_focus, goals, and motivation — at that point suggest partner_name and username yourself if they haven't given them, and don't ask for anything else. If a single long answer gave you all of it, wrap up immediately instead of inventing more questions. On the completing turn your reply is a brief, warm wrap-up with no further questions, and options can be an empty array.`;
 
-const OPENING = "Hey, I'm really glad you're here. 👋\n\nI'm going to ask a few quick questions to understand your life and what you're working toward — no forms, just a conversation. That way everything in SpareSquare gets tailored to *you*.\n\nLet's start easy: **what does a typical day look like?** Work, school, night shifts — tell me in your own words.";
+const OPENING = "Hey, I'm really glad you're here. 👋\n\nI'm going to ask a few quick questions to understand your life and what you're working toward — no forms, just a conversation. That way everything in SpareSquare gets tailored to *you*.\n\nLet's start easy: **what does a typical day look like?** Work, school, night shifts — tell me in your own words.\n\nAnd if you'd rather just write it *all* out in one go — your week, what you're working toward, what's gotten in the way — go for it. I'll pull out everything I need and skip the rest of the questions.";
 
-// Every property has to be listed in `required` (the model returns null for anything it
-// hasn't captured yet) — a partial list makes the AI provider reject the whole request.
+// Deliberately loose: the model reports what it actually heard ("9am", "around
+// midnight", "Mon-Fri") and normalizeExtracted turns it into the exact shapes the app
+// needs. Strict enums and partial `required` lists make the AI provider reject the whole
+// request, which killed a turn every time the model phrased something its own way.
 const RESPONSE_SCHEMA = {
   type: "object",
   properties: {
@@ -69,32 +78,24 @@ const RESPONSE_SCHEMA = {
     extracted: {
       type: "object",
       properties: {
-        rhythm_type: {
-          type: ["string", "null"],
-          enum: ["nine_to_five", "student", "night_shift", "freelancer", "parent", "other", null],
-        },
+        rhythm_type: { type: ["string", "null"] },
         unmovables: {
           type: ["array", "null"],
           items: {
             type: "object",
             properties: {
-              label: { type: "string" },
-              start_hour: { type: "number" },
-              end_hour: { type: "number" },
-              days: { type: "array", items: { type: "string" } },
+              label: { type: ["string", "null"] },
+              start_hour: { type: ["number", "string", "null"] },
+              end_hour: { type: ["number", "string", "null"] },
+              days: { type: ["array", "null"], items: { type: "string" } },
             },
-            required: ["label", "start_hour", "end_hour", "days"],
-            additionalProperties: false,
           },
         },
         existing_habits: { type: ["array", "null"], items: { type: "string" } },
-        sleep_hour: { type: ["number", "null"] },
-        wake_hour: { type: ["number", "null"] },
-        sleep_goal_hour: { type: ["number", "null"] },
-        growth_focus: {
-          type: ["string", "null"],
-          enum: ["fitness", "business", "peace", "learning", "creativity", "relationships", null],
-        },
+        sleep_hour: { type: ["number", "string", "null"] },
+        wake_hour: { type: ["number", "string", "null"] },
+        sleep_goal_hour: { type: ["number", "string", "null"] },
+        growth_focus: { type: ["string", "null"] },
         goals: { type: ["array", "null"], items: { type: "string" } },
         challenges: { type: ["array", "null"], items: { type: "string" } },
         motivation: { type: ["string", "null"] },
@@ -128,6 +129,14 @@ export default function OnboardingChat({ onComplete }) {
     scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, loading, options]);
 
+  // The box grows with what they write, so a long answer stays readable while typing.
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 220)}px`;
+  }, [input]);
+
   const send = async (overrideText) => {
     const text = (overrideText ?? input).trim();
     if (!text || loading) return;
@@ -147,20 +156,14 @@ export default function OnboardingChat({ onComplete }) {
         response_json_schema: RESPONSE_SCHEMA,
       });
       const reply = res?.reply || "Got it. Tell me a bit more?";
-      // Nulls and empty lists mean "not captured yet" — never overwrite an earlier answer.
-      const fresh = {};
-      Object.entries(res?.extracted || {}).forEach(([key, value]) => {
-        if (value === null || value === undefined) return;
-        if (typeof value === "string" && !value.trim()) return;
-        if (Array.isArray(value) && value.length === 0) return;
-        fresh[key] = value;
-      });
-      const merged = { ...extracted, ...fresh };
+      // Cleaned into the exact shapes the app expects; nothing already captured is lost.
+      const merged = { ...extracted, ...normalizeExtracted(res?.extracted) };
       setExtracted(merged);
-      const nextOptions = Array.isArray(res.options) ? res.options.slice(0, 4) : [];
+      const nextOptions = Array.isArray(res?.options) ? res.options.slice(0, 4) : [];
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
       setOptions(nextOptions);
-      if (res.complete) {
+      // A long, complete answer can cover everything at once — no need to finish the questions.
+      if (res?.complete || isOnboardingComplete(merged)) {
         setTimeout(() => onComplete(merged), 700);
       }
     } catch (e) {
@@ -175,7 +178,8 @@ export default function OnboardingChat({ onComplete }) {
   };
 
   const userTurns = messages.filter((m) => m.role === "user").length;
-  const canWrap = userTurns >= 4 && !loading;
+  const canWrap = userTurns >= 1 && !loading;
+  const wordCount = input.trim() ? input.trim().split(/\s+/).length : 0;
 
   return (
     <div className="flex flex-col min-h-0 flex-1">
@@ -245,15 +249,28 @@ export default function OnboardingChat({ onComplete }) {
         )}
       </AnimatePresence>
 
-      <div className="flex gap-2 items-center bg-[#FAF8F5] pt-1 pb-2">
-        <input
+      {wordCount > 12 && (
+        <div className="text-[11px] text-[#B0AAA4] text-right pr-1 pb-1">
+          {wordCount} / {MAX_WORDS} words · no rush, say it all
+        </div>
+      )}
+
+      <div className="flex gap-2 items-end bg-[#FAF8F5] pt-1 pb-2">
+        <textarea
           ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && send()}
-          placeholder="Type your answer..."
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              send();
+            }
+          }}
+          rows={1}
+          maxLength={MAX_CHARS}
+          placeholder="Type your answer — or write everything about yourself at once"
           disabled={loading}
-          className="flex-1 rounded-xl border border-[#E8E4DF] bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 placeholder:text-[#B0AAA4] disabled:opacity-50"
+          className="flex-1 resize-none rounded-xl border border-[#E8E4DF] bg-white px-4 py-3 text-base leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 placeholder:text-[#B0AAA4] disabled:opacity-50"
         />
         <button
           onClick={() => send()}

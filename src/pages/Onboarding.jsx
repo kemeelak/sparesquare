@@ -62,7 +62,15 @@ export default function Onboarding() {
 
   const handleConfirm = async () => {
     setSaving(true);
-    const username = (draft.username || "").replace(/[^a-z0-9_]/gi, "").toLowerCase();
+    const me = await base44.auth.me();
+    // Nothing here is mandatory — someone who already told us everything shouldn't have to
+    // fill in the rest, so a username falls back to their email handle.
+    const username = (
+      draft.username ||
+      me?.email?.split("@")[0] ||
+      me?.full_name ||
+      "you"
+    ).replace(/[^a-z0-9_]/gi, "").toLowerCase() || "you";
 
     const profileSummary = {
       rhythm: RHYTHM_LABELS[extracted.rhythm_type] || "other",
@@ -109,7 +117,6 @@ Return JSON with a habits array (0-4 items), each with: title, description, dura
       },
     });
 
-    const me = await base44.auth.me();
     if (me && username) {
       const existingPub = await base44.entities.UserPublicProfile.filter({ created_by_id: me.id });
       if (existingPub.length > 0) {
@@ -301,11 +308,11 @@ Return JSON with a habits array (0-4 items), each with: title, description, dura
                     />
                   </Field>
                   <div className="grid grid-cols-2 gap-3">
-                    <Field label="Username">
+                    <Field label="Username (optional)">
                       <input
                         value={draft.username}
                         onChange={(e) => setDraft({ ...draft, username: e.target.value.replace(/[^a-z0-9_]/gi, "").toLowerCase().slice(0, 20) })}
-                        placeholder="alex_builds"
+                        placeholder="picked for you"
                         className="w-full rounded-xl border border-[#E8E4DF] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10"
                       />
                     </Field>
@@ -331,7 +338,7 @@ Return JSON with a habits array (0-4 items), each with: title, description, dura
                 </Button>
                 <Button
                   onClick={handleConfirm}
-                  disabled={saving || !draft.username}
+                  disabled={saving}
                   className="flex-1 bg-[#7C9A82] hover:bg-[#6B8A71] text-white rounded-xl"
                 >
                   {saving ? (
