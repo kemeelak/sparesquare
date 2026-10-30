@@ -1,3 +1,5 @@
+import { SYNC_DAYS, isoDay, saveSnapshots, recordSyncError } from "./healthStore.ts";
+
 const AUTHORIZE_URL = "https://cloud.ouraring.com/oauth/authorize";
 // Oura moved OAuth onto moi.ouraring.com — the legacy api.ouraring.com/oauth/token
 // answers every exchange with 400 invalid_request.
@@ -6,36 +8,13 @@ const API_BASE = "https://api.ouraring.com/v2/usercollection";
 const USER_AGENT = "SpareSquare/1.0";
 
 export const OURA_SCOPES = "daily personal";
-export const SYNC_DAYS = 14;
 
-// Oura only accepts the exact redirect address registered in its developer portal,
-// so the callback is pinned to the published app — never to whatever host the user
-// happened to open (the preview host is refused with "400 Invalid request").
-export const APP_URL = "https://spare-square-grow.base44.app";
-
-export function callbackUrl() {
-  return `${APP_URL}/functions/healthCallback`;
-}
-
-const encoder = new TextEncoder();
-
-async function sign(secret, payload) {
-  const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
-  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-// OAuth state carries who started the link, signed so nobody can attach their Oura to someone else.
-export async function signState(userId, secret) {
-  const payload = `${userId}.${crypto.randomUUID()}`;
-  return `${payload}.${await sign(secret, payload)}`;
-}
-
-export async function verifyState(state, secret) {
-  const [userId, nonce, sig] = (state || "").split(".");
-  if (!userId || !nonce || !sig) return null;
-  const expected = await sign(secret, `${userId}.${nonce}`);
-  return expected === sig ? userId : null;
+export function buildAuthorizeUrl({ clientId, redirectUri, state }) {
+  return `${AUTHORIZE_URL}?response_type=code` +
+    `&client_id=${encodeURIComponent(clientId)}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&scope=${encodeURIComponent(OURA_SCOPES)}` +
+    `&state=${encodeURIComponent(state)}`;
 }
 
 async function tokenRequest(body) {
@@ -80,12 +59,6 @@ export async function fetchCollection(resource, accessToken, startDate, endDate)
   if (!res.ok) throw new Error(`Oura ${resource} failed (${res.status})`);
   const json = await res.json();
   return Array.isArray(json?.data) ? json.data : [];
-}
-
-export function isoDay(offsetDays = 0) {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() + offsetDays);
-  return d.toISOString().slice(0, 10);
 }
 
 const minutes = (seconds) => Math.round((seconds ?? 0) / 60);
@@ -165,40 +138,9 @@ export async function syncConnection(base44, connection, clientId, clientSecret)
     ]);
     collections = { sleepPeriods, dailySleep, dailyActivity, dailyReadiness };
   } catch (error) {
-    const revoked = error?.status === 401;
-    await base44.asServiceRole.entities.HealthConnection.update(connection.id, {
-      status: revoked ? "revoked" : "connected",
-      last_error: revoked ? "Oura access expired — reconnect needed." : String(error?.message ?? error),
-    });
+    await recordSyncError(base44, connection, error);
     throw error;
   }
 
-  const snapshots = buildSnapshots(connection.user_id, collections);
-
-  if (snapshots.length) {
-    const dates = snapshots.map((s) => s.date);
-    const existing = await base44.asServiceRole.entities.HealthSnapshot.filter(
-      { user_id: connection.user_id, date: { $in: dates } },
-      { limit: 100 }
-    );
-    const idByDate = new Map((existing?.items || []).map((r) => [r.date, r.id]));
-    const updates = [];
-    const creates = [];
-    for (const snap of snapshots) {
-      const id = idByDate.get(snap.date);
-      if (id) updates.push({ id, ...snap });
-      else creates.push(snap);
-    }
-    if (updates.length) await base44.asServiceRole.entities.HealthSnapshot.bulkUpdate(updates);
-    if (creates.length) await base44.asServiceRole.entities.HealthSnapshot.bulkCreate(creates);
-  }
-
-  const syncedAt = new Date().toISOString();
-  await base44.asServiceRole.entities.HealthConnection.update(connection.id, {
-    status: "connected",
-    last_error: "",
-    last_synced_at: syncedAt,
-  });
-
-  return { days: snapshots.length, lastSyncedAt: syncedAt };
+  return await saveSnapshots(base44, connection, buildSnapshots(connection.user_id, collections));
 }
