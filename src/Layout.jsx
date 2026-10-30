@@ -4,6 +4,7 @@ import { createPageUrl } from "./utils";
 import { base44 } from "@/api/base44Client";
 import AppSplash from "@/components/shared/AppSplash";
 import UpgradeModal from "@/components/account/UpgradeModal";
+import MobileMenu from "@/components/shared/MobileMenu";
 import { Grid3X3, MessageCircle, BookOpen, Layers, TrendingUp, Users, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -124,6 +125,10 @@ export default function Layout({ children, currentPageName }) {
     { name: "Account", icon: User, page: "Account", label: "Account" },
     ];
 
+  // Account and the rest of the "me" pages live behind the top menu on phones,
+  // so the bottom bar stays to the six things you use daily.
+  const mobileNavItems = navItems.filter((item) => item.page !== "Account");
+
   return (
     <div className="min-h-screen bg-[#FAF8F5]">
       <style>{`
@@ -166,10 +171,13 @@ export default function Layout({ children, currentPageName }) {
         </nav>
       </aside>
 
+      {/* Mobile top bar with the account menu */}
+      <MobileMenu />
+
       {/* Mobile Bottom Nav */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-[#E8E4DF] z-50 pb-safe">
         <div className="flex overflow-x-auto scrollbar-hide py-2 px-2 gap-1">
-          {navItems.map((item) => {
+          {mobileNavItems.map((item) => {
             const isActive = currentPageName === item.page;
             return (
               <Link
@@ -187,7 +195,7 @@ export default function Layout({ children, currentPageName }) {
       </nav>
 
       {/* Main Content */}
-      <main className="lg:ml-20 min-h-screen pb-20 lg:pb-0">
+      <main className="lg:ml-20 min-h-screen pt-14 pb-20 lg:pt-0 lg:pb-0">
         {children}
       </main>
 
