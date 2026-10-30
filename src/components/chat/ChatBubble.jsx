@@ -63,7 +63,7 @@ export default function ChatBubble({ message }) {
           </div>
         </div>
         {actions.map((action, i) => (
-          <ActionCard key={i} action={action} source={message.thread_id ? "Thread suggestion" : "Partner suggestion"} />
+          <ActionCard key={i} action={action} source={action.source || (message.thread_id ? "Thread suggestion" : "Partner suggestion")} />
         ))}
       </div>
     </motion.div>
