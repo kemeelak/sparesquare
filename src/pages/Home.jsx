@@ -275,7 +275,7 @@ export default function Home() {
   };
 
   return (
-    <div className="p-3 lg:p-8 max-w-2xl mx-auto">
+    <div className="p-3 lg:p-8 max-w-2xl mx-auto flex flex-col h-[calc(100dvh-8.5rem)] overflow-hidden lg:block lg:h-auto lg:overflow-visible">
       {/* Header */}
           <div className="flex items-center justify-between mb-2.5">
             <div className="min-w-0">
@@ -390,8 +390,9 @@ export default function Home() {
       <AllDayEventsBanner events={allDayEvents} />
 
       {/* Grid */}
-      <div className="bg-white rounded-2xl p-3 border border-[#E8E4DF] mb-2">
+      <div className="bg-white rounded-2xl p-3 border border-[#E8E4DF] mb-2 flex-1 min-h-0 lg:flex-none">
         <DayGrid
+          className="h-full grid-rows-4 lg:h-auto lg:grid-rows-none"
           date={selectedDate}
           unmovables={unmovables}
           habits={habits}

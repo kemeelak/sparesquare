@@ -176,18 +176,20 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Mobile Bottom Nav */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-[#E8E4DF] z-50 pb-safe">
-        <div className="flex overflow-x-auto scrollbar-hide py-2 px-2 gap-1">
+        <div className="flex items-stretch justify-between px-1.5 py-1.5">
           {mobileNavItems.map((item) => {
             const isActive = currentPageName === item.page;
             return (
               <Link
                 key={item.name}
                 to={createPageUrl(item.page)}
-                className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all flex-shrink-0 min-w-[60px]
+                className={`flex-1 min-w-0 flex flex-col items-center gap-0.5 px-0.5 py-1 rounded-lg transition-all
                   ${isActive ? "text-[#1A1A1A]" : "text-[#8A8580]"}`}
               >
-                <item.icon className={`w-5 h-5 ${isActive ? "stroke-[2.5]" : ""}`} />
-                <span className="text-[10px] font-medium">{item.label}</span>
+                <item.icon className={`w-[18px] h-[18px] ${isActive ? "stroke-[2.5]" : ""}`} />
+                <span className="text-[9px] font-medium leading-none whitespace-nowrap truncate w-full text-center">
+                  {item.label}
+                </span>
               </Link>
             );
           })}

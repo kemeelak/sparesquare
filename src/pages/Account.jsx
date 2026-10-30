@@ -2,7 +2,7 @@ import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { LogOut, ChevronRight, Sparkles } from "lucide-react";
+import { LogOut, ChevronRight, Sparkles, Settings as SettingsIcon } from "lucide-react";
 import { fetchUsage, PLAN_INFO } from "@/lib/plans";
 import CreditMeter from "@/components/account/CreditMeter";
 
@@ -56,6 +56,17 @@ export default function Account() {
 
         <CreditMeter usage={usage} />
       </div>
+
+      {/* Settings & legal */}
+      <Link
+        to="/Settings"
+        className="mt-4 w-full bg-white rounded-2xl border border-[#E8E4DF] p-4 flex items-center justify-between text-sm font-medium text-[#1A1A1A] hover:bg-[#F5F0EB] transition-colors"
+      >
+        <span className="flex items-center gap-2">
+          <SettingsIcon className="w-4 h-4 text-[#8A8580]" /> Settings &amp; legal
+        </span>
+        <ChevronRight className="w-4 h-4 text-[#B0AAA4]" />
+      </Link>
 
       {/* Sign out */}
       <button

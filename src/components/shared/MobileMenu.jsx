@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Menu, User, Sparkles, LogOut } from "lucide-react";
+import { Menu, User, Sparkles, LogOut, Settings } from "lucide-react";
 
 const LINKS = [
   { to: "/Account", label: "Account", icon: User },
   { to: "/Subscription", label: "Plan & credits", icon: Sparkles },
+  { to: "/Settings", label: "Settings & legal", icon: Settings },
 ];
 
 export default function MobileMenu() {
