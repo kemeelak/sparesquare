@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { secrets } from 'base44:runtime';
-import { syncConnection } from '../../shared/oura.ts';
+import { PROVIDERS, credentials } from '../../shared/health.ts';
 
 export default async function (req) {
   try {
@@ -8,28 +8,31 @@ export default async function (req) {
     const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
     const body = await req.json().catch(() => ({}));
 
-    const clientId = secrets.get('OURA_CLIENT_ID');
-    const clientSecret = secrets.get('OURA_CLIENT_SECRET');
-    if (!clientId || !clientSecret) return Response.json({ error: 'Oura app credentials are not set' }, { status: 500 });
+    const syncOne = async (connection) => {
+      const { clientId, clientSecret } = credentials(connection.provider, secrets);
+      if (!clientId || !clientSecret) {
+        throw new Error(`${PROVIDERS[connection.provider]?.label || connection.provider} is not set up yet`);
+      }
+      return await PROVIDERS[connection.provider].syncConnection(base44, connection, clientId, clientSecret);
+    };
 
     // Called by the nightly workflow: refresh every connected wearable.
     if (body.all === true) {
       if (!user || user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
       const { items } = await base44.asServiceRole.entities.HealthConnection.filter(
-        { provider: 'oura', status: 'connected' },
+        { status: 'connected' },
         { limit: 200 }
       );
 
       const results = [];
       for (let i = 0; i < items.length; i += 4) {
         const batch = items.slice(i, i + 4);
-        const settled = await Promise.allSettled(
-          batch.map((connection) => syncConnection(base44, connection, clientId, clientSecret))
-        );
+        const settled = await Promise.allSettled(batch.map((connection) => syncOne(connection)));
         settled.forEach((outcome, index) => {
           results.push({
             user_id: batch[index].user_id,
+            provider: batch[index].provider,
             ok: outcome.status === 'fulfilled',
             error: outcome.status === 'rejected' ? String(outcome.reason?.message ?? outcome.reason) : null,
           });
@@ -40,15 +43,28 @@ export default async function (req) {
 
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { items } = await base44.asServiceRole.entities.HealthConnection.filter(
-      { user_id: user.id, provider: 'oura' },
-      { limit: 1 }
-    );
-    const connection = items[0];
-    if (!connection || connection.status !== 'connected') return Response.json({ connected: false });
+    const query = body.provider
+      ? { user_id: user.id, provider: body.provider, status: 'connected' }
+      : { user_id: user.id, status: 'connected' };
 
-    const summary = await syncConnection(base44, connection, clientId, clientSecret);
-    return Response.json({ connected: true, ...summary });
+    const { items } = await base44.asServiceRole.entities.HealthConnection.filter(query, { limit: 10 });
+    if (!items.length) {
+      return Response.json({ connected: false, provider: body.provider ?? null });
+    }
+
+    const summaries = [];
+    for (const connection of items) {
+      const summary = await syncOne(connection);
+      summaries.push({ provider: connection.provider, ...summary });
+    }
+
+    return Response.json({
+      connected: true,
+      provider: body.provider ?? null,
+      days: summaries.reduce((sum, s) => sum + (s.days || 0), 0),
+      lastSyncedAt: summaries[0]?.lastSyncedAt ?? null,
+      providers: summaries.map((s) => s.provider),
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

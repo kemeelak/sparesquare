@@ -35,7 +35,10 @@ export default function HealthWeek() {
   const tiles = [
     { label: "Last night", value: typeof lastNight.sleep_minutes === "number" ? asHours(lastNight.sleep_minutes) : "—" },
     { label: "7-night avg", value: avgSleep ? asHours(avgSleep) : "—" },
-    { label: "Readiness", value: lastNight.readiness_score ?? "—" },
+    // Fitbit reports no readiness score — show its sleep efficiency instead.
+    lastNight.readiness_score != null
+      ? { label: "Readiness", value: lastNight.readiness_score }
+      : { label: "Efficiency", value: lastNight.efficiency != null ? `${lastNight.efficiency}%` : "—" },
   ];
 
   return (

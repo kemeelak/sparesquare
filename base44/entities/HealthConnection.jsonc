@@ -9,7 +9,8 @@
     "provider": {
       "type": "string",
       "enum": [
-        "oura"
+        "oura",
+        "fitbit"
       ],
       "description": "Which wearable provider this link is for"
     },

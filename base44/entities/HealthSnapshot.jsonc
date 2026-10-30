@@ -14,7 +14,8 @@
     "source": {
       "type": "string",
       "enum": [
-        "oura"
+        "oura",
+        "fitbit"
       ],
       "default": "oura"
     },
