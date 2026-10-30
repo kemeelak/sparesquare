@@ -73,10 +73,9 @@ export function consumptionLabel(commute) {
   return CONSUME_OPTIONS.find((o) => o.value === commute?.consumes)?.label || "Whatever is easy";
 }
 
-export function habitFitsCommute(habit, mode) {
-  const m = COMMUTE_MODES[mode] || COMMUTE_MODES.drive;
-  if (!m.canRead && habit.category === "fitness") return false;
-  return true;
+export function habitFitsCommute(habit) {
+  // Nobody can train while travelling, whatever the mode
+  return habit.category !== "fitness";
 }
 
 export function contentLink(platform, query) {
