@@ -9,12 +9,20 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import PluginCard from "../components/plugins/PluginCard";
 import AddSourceSheet from "../components/plugins/AddSourceSheet";
+import NextReads from "../components/plugins/NextReads";
 
 export default function Plugins() {
   const currentUser = useCurrentUser();
-  const [showAdd, setShowAdd] = useState(false);
+  const [showAdd, setShowAdd] = useState(null);
+  const [addedTitle, setAddedTitle] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const queryClient = useQueryClient();
+
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["userProfile"],
+    queryFn: () => base44.entities.UserProfile.filter({ created_by_id: currentUser.id }),
+    enabled: !!currentUser,
+  });
 
   const { data: sources, isLoading } = useQuery({
     queryKey: ["pluginSources"],
@@ -44,7 +52,7 @@ export default function Plugins() {
           <p className="text-sm text-[#8A8580]">Feed your Partner the principles you live by</p>
         </div>
         <Button
-          onClick={() => setShowAdd(true)}
+          onClick={() => setShowAdd({})}
           className="bg-[#1A1A1A] hover:bg-[#333] text-white rounded-xl"
         >
           <Plus className="w-4 h-4 mr-2" /> Add Source
@@ -81,14 +89,27 @@ export default function Plugins() {
         </div>
       )}
 
+      {/* What to consume next — quiet, at the bottom */}
+      <NextReads
+        sources={sources}
+        profile={profiles[0]}
+        addedTitle={addedTitle}
+        onAdd={(suggestion) => {
+          setAddedTitle(suggestion.title);
+          setShowAdd(suggestion);
+        }}
+      />
+
       {/* Add Source Sheet */}
       <AnimatePresence>
         {showAdd && (
           <AddSourceSheet
-            onClose={() => setShowAdd(false)}
+            initialTitle={showAdd.title}
+            initialType={showAdd.type}
+            onClose={() => setShowAdd(null)}
             onAdded={() => {
               queryClient.invalidateQueries({ queryKey: ["pluginSources"] });
-              setShowAdd(false);
+              setShowAdd(null);
             }}
           />
         )}

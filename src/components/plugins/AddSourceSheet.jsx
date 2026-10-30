@@ -17,11 +17,11 @@ const types = [
 
 const isYouTubeUrl = (str) => /youtube\.com|youtu\.be/.test(str);
 
-export default function AddSourceSheet({ onClose, onAdded }) {
+export default function AddSourceSheet({ onClose, onAdded, initialTitle = "", initialType = "book" }) {
   const currentUser = useCurrentUser();
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(initialTitle);
   const [url, setUrl] = useState("");
-  const [type, setType] = useState("book");
+  const [type, setType] = useState(initialType);
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
   const [extractedData, setExtractedData] = useState(null);
