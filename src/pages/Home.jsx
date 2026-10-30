@@ -274,6 +274,9 @@ export default function Home() {
     setShowAddEvent(false);
   };
 
+  // One ride, one line: while the live commute bar is showing, the generic ride button steps aside.
+  const showCommuteNudge = !!(commute && liveWindow && !liveWindow.oneOff && !nudgeDismissed);
+
   return (
     <div className="p-3 lg:p-8 max-w-2xl mx-auto">
       {/* Header */}
@@ -347,7 +350,7 @@ export default function Home() {
 
       {/* Commute */}
       {commute ? (
-        liveWindow && !liveWindow.oneOff && !nudgeDismissed && (
+        showCommuteNudge && (
           <CommuteNudge
             commute={commute}
             minutesLeft={liveMinutesLeft}
@@ -366,6 +369,7 @@ export default function Home() {
       )}
 
       {/* Ride now — any time, any length */}
+      {!showCommuteNudge && (
       <button
         onClick={() => {
           if (liveWindow) setRideSheet({ hour: now.getHours(), window: liveWindow });
@@ -385,6 +389,7 @@ export default function Home() {
           {liveWindow ? "Open ride" : "Whenever you leave"}
         </span>
       </button>
+      )}
 
       {/* All-day events banner */}
       <AllDayEventsBanner events={allDayEvents} />
