@@ -2,12 +2,50 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ClipboardPaste, Loader2, Smartphone, ExternalLink } from "lucide-react";
 
-const STEPS = [
-  { title: "Open your Calendar", body: "We'll switch you straight to it." },
-  { title: "Tap Calendars at the bottom", body: "Then pick the calendar that holds your events." },
-  { title: "Tap the ⓘ, turn on Public Calendar", body: "Then tap Share Link." },
-  { title: "Tap Copy Link", body: "Apple copies the share link for you." },
-  { title: "Come back and tap Paste", body: "We connect it and check that it reads." },
+const PHONE_STEPS = [
+  {
+    title: "Open the Calendar app",
+    body: "The white calendar with the red date on your home screen.",
+  },
+  {
+    title: "Tap Calendars at the bottom, then ⓘ",
+    body: "Tap Calendars, find the calendar that holds your events, and tap the ⓘ circle beside its name. That's the only ⓘ — it's on the calendar's row, not on an event.",
+  },
+  {
+    title: "Switch on Public Calendar",
+    body: "Near the bottom of that menu, above Delete Calendar. The menu turns into a Share Link option — tap it.",
+  },
+  {
+    title: "Tap Copy Link",
+    body: "You get a long link beginning webcal:// — that is the public calendar link.",
+  },
+  {
+    title: "Come back here and tap Paste",
+    body: "We connect it and check that it reads.",
+  },
+];
+
+const DESKTOP_STEPS = [
+  {
+    title: "Open iCloud Calendar in a browser",
+    body: "Sign in with the same Apple ID as your phone if it asks.",
+  },
+  {
+    title: "Find the calendar in the left sidebar",
+    body: "Hover over its name — a share icon appears to the right of it. Click that icon (not the calendar's name).",
+  },
+  {
+    title: "Tick Public Calendar",
+    body: "That's the first section of the share panel. A long link appears underneath, starting webcal://",
+  },
+  {
+    title: "Click Copy Link",
+    body: "Right beside that link. Copied, it's your public calendar link.",
+  },
+  {
+    title: "Come back here and click Paste",
+    body: "We connect it and check that it reads.",
+  },
 ];
 
 const isPhone = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -18,6 +56,7 @@ export default function AppleCalendarGuide({ onBack, onConnect, connecting, erro
   const [hint, setHint] = useState("");
   const [pasting, setPasting] = useState(false);
   const phone = isPhone();
+  const steps = phone ? PHONE_STEPS : DESKTOP_STEPS;
 
   const openCalendar = () => {
     setOpened(true);
@@ -68,7 +107,7 @@ export default function AppleCalendarGuide({ onBack, onConnect, connecting, erro
       </p>
 
       <div className="space-y-2 mb-4">
-        {STEPS.map((step, i) => {
+        {steps.map((step, i) => {
           const active = opened ? i >= 0 : i === 0;
           return (
             <div key={step.title} className="flex gap-2.5">
@@ -111,8 +150,12 @@ export default function AppleCalendarGuide({ onBack, onConnect, connecting, erro
       </Button>
 
       <p className="text-[11px] text-[#B0AAA4] mt-2">
-        Don't see Public Calendar? That calendar lives only on your phone — pick one that's in
-        iCloud.
+        The right link always starts with webcal:// and is long. Copied something short, or an
+        ordinary web address? That was the wrong button — go back to step 3.
+      </p>
+      <p className="text-[11px] text-[#B0AAA4] mt-1">
+        No Public Calendar option? That calendar is stored only on your phone, not in iCloud — pick
+        one that syncs to iCloud.
       </p>
 
       {opened && (
