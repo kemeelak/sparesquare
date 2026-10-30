@@ -58,6 +58,61 @@ Only include fields you have actually captured; keep previously captured fields 
 
 const OPENING = "Hey, I'm really glad you're here. 👋\n\nI'm going to ask a few quick questions to understand your life and what you're working toward — no forms, just a conversation. That way everything in SpareSquare gets tailored to *you*.\n\nLet's start easy: **what does a typical day look like?** Work, school, night shifts — tell me in your own words.";
 
+// Every property has to be listed in `required` (the model returns null for anything it
+// hasn't captured yet) — a partial list makes the AI provider reject the whole request.
+const RESPONSE_SCHEMA = {
+  type: "object",
+  properties: {
+    reply: { type: "string" },
+    options: { type: "array", items: { type: "string" } },
+    complete: { type: "boolean" },
+    extracted: {
+      type: "object",
+      properties: {
+        rhythm_type: {
+          type: ["string", "null"],
+          enum: ["nine_to_five", "student", "night_shift", "freelancer", "parent", "other", null],
+        },
+        unmovables: {
+          type: ["array", "null"],
+          items: {
+            type: "object",
+            properties: {
+              label: { type: "string" },
+              start_hour: { type: "number" },
+              end_hour: { type: "number" },
+              days: { type: "array", items: { type: "string" } },
+            },
+            required: ["label", "start_hour", "end_hour", "days"],
+            additionalProperties: false,
+          },
+        },
+        existing_habits: { type: ["array", "null"], items: { type: "string" } },
+        sleep_hour: { type: ["number", "null"] },
+        wake_hour: { type: ["number", "null"] },
+        sleep_goal_hour: { type: ["number", "null"] },
+        growth_focus: {
+          type: ["string", "null"],
+          enum: ["fitness", "business", "peace", "learning", "creativity", "relationships", null],
+        },
+        goals: { type: ["array", "null"], items: { type: "string" } },
+        challenges: { type: ["array", "null"], items: { type: "string" } },
+        motivation: { type: ["string", "null"] },
+        energy_pattern: { type: ["string", "null"] },
+        partner_name: { type: ["string", "null"] },
+        username: { type: ["string", "null"] },
+      },
+      required: [
+        "rhythm_type", "unmovables", "existing_habits", "sleep_hour", "wake_hour",
+        "sleep_goal_hour", "growth_focus", "goals", "challenges", "motivation",
+        "energy_pattern", "partner_name", "username",
+      ],
+      additionalProperties: false,
+    },
+  },
+  required: ["reply", "options", "complete", "extracted"],
+};
+
 const OPENING_OPTIONS = ["9 to 5 job", "I'm a student", "Night shifts", "Freelance / flexible"];
 
 export default function OnboardingChat({ onComplete }) {
@@ -89,19 +144,18 @@ export default function OnboardingChat({ onComplete }) {
       const res = await invokeAI("onboarding_chat", {
         prompt,
         model: "gpt_5_mini",
-        response_json_schema: {
-          type: "object",
-          properties: {
-            reply: { type: "string" },
-            options: { type: "array", items: { type: "string" } },
-            extracted: { type: "object", additionalProperties: true },
-            complete: { type: "boolean" },
-          },
-          required: ["reply", "complete"],
-        },
+        response_json_schema: RESPONSE_SCHEMA,
       });
       const reply = res?.reply || "Got it. Tell me a bit more?";
-      const merged = { ...extracted, ...(res.extracted || {}) };
+      // Nulls and empty lists mean "not captured yet" — never overwrite an earlier answer.
+      const fresh = {};
+      Object.entries(res?.extracted || {}).forEach(([key, value]) => {
+        if (value === null || value === undefined) return;
+        if (typeof value === "string" && !value.trim()) return;
+        if (Array.isArray(value) && value.length === 0) return;
+        fresh[key] = value;
+      });
+      const merged = { ...extracted, ...fresh };
       setExtracted(merged);
       const nextOptions = Array.isArray(res.options) ? res.options.slice(0, 4) : [];
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
