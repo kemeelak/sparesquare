@@ -14,13 +14,13 @@ export default function CreditMeter({ usage, className }) {
         <p className="text-xs font-medium text-[#4A5568]">
           {used.toLocaleString()} of {limit.toLocaleString()} credits used
         </p>
-        <p className={cn("text-xs font-semibold", low ? "text-[#C0703F]" : "text-[#5C8D89]")}>
+        <p className={cn("text-xs font-semibold", low ? "text-[#C0703F]" : "text-[#4A5568]")}>
           {remaining.toLocaleString()} left
         </p>
       </div>
       <div className="h-2 rounded-full bg-[#F0EBE5] overflow-hidden">
         <div
-          className={cn("h-full rounded-full transition-all", low ? "bg-[#C0703F]" : "bg-[#5C8D89]")}
+          className={cn("h-full rounded-full transition-all", low ? "bg-[#C0703F]" : "bg-[#4A5568]")}
           style={{ width: `${pct}%` }}
         />
       </div>

@@ -19,8 +19,8 @@ export default function UpgradeModal() {
   return (
     <Dialog open={!!info} onOpenChange={(open) => !open && setInfo(null)}>
       <DialogContent className="max-w-sm rounded-3xl">
-        <div className="w-11 h-11 rounded-2xl bg-[#E8F0EA] flex items-center justify-center mb-4">
-          <Sparkles className="w-5 h-5 text-[#5C8D89]" />
+        <div className="w-11 h-11 rounded-2xl bg-[#E2E8F0] flex items-center justify-center mb-4">
+          <Sparkles className="w-5 h-5 text-[#4A5568]" />
         </div>
         <DialogTitle className="text-lg font-bold text-[#1A1A1A]">
           You've used all {limit.toLocaleString()} credits this month

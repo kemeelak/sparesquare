@@ -10,7 +10,7 @@ export default function CommuteNudge({ commute, minutesLeft, onOpen, onDismiss }
     <motion.div
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative bg-[#5C8D89] rounded-2xl p-4 mb-4 text-white overflow-hidden"
+      className="relative bg-[#4A5568] rounded-2xl p-4 mb-4 text-white overflow-hidden"
     >
       <button
         onClick={onDismiss}

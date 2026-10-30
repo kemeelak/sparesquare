@@ -373,7 +373,7 @@ export default function Home() {
         }}
         className={`w-full flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 mb-2 border transition-colors ${
           liveWindow
-            ? "bg-[#5C8D89] border-[#5C8D89] text-white"
+            ? "bg-[#4A5568] border-[#4A5568] text-white"
             : "bg-white border-[#E8E4DF] text-[#1A1A1A] hover:bg-[#F5F0EB]"
         }`}
       >

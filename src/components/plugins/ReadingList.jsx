@@ -108,7 +108,7 @@ export default function ReadingList({ items = [], onFinish, onAddToLibrary, onRe
                     setFinishingId(item.id);
                     setNote("");
                   }}
-                  className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#5C8D89] hover:text-[#4A7A76] transition-colors"
+                  className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#4A5568] hover:text-[#3A4250] transition-colors"
                 >
                   <Check className="w-3.5 h-3.5" /> I finished it
                 </button>

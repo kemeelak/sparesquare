@@ -85,7 +85,7 @@ export default function Subscription() {
           <ul className="mt-4 space-y-2 flex-1">
             {PLUS_INCLUDES.map((item) => (
               <li key={item} className="flex items-start gap-2 text-xs text-white/70 leading-relaxed">
-                <Check className="w-3.5 h-3.5 text-[#8FBF9A] mt-0.5 flex-shrink-0" />
+                <Check className="w-3.5 h-3.5 text-[#9BA8B8] mt-0.5 flex-shrink-0" />
                 {item}
               </li>
             ))}

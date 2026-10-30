@@ -69,7 +69,7 @@ export default function HealthCard() {
   return (
     <div className="bg-white rounded-2xl p-5 border border-[#E8E4DF] mb-6">
       <div className="flex items-center gap-2 mb-1">
-        <Moon className="w-4 h-4 text-[#5C8D89]" />
+        <Moon className="w-4 h-4 text-[#4A5568]" />
         <p className="font-semibold text-[#1A1A1A] text-sm">Sleep &amp; activity</p>
       </div>
       <p className="text-xs text-[#8A8580] mb-4">
@@ -84,7 +84,7 @@ export default function HealthCard() {
           <div key={p.provider} className="rounded-xl border border-[#E8E4DF] px-3 py-2.5 mb-2">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <Icon className="w-4 h-4 text-[#5C8D89] flex-shrink-0" />
+                <Icon className="w-4 h-4 text-[#4A5568] flex-shrink-0" />
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-[#1A1A1A] leading-tight">{p.label}</p>
                   <p className="text-[10px] text-[#8A8580] truncate">
@@ -147,7 +147,7 @@ export default function HealthCard() {
                   className="w-full flex items-center justify-between gap-2 rounded-xl border border-[#E8E4DF] px-3 py-2.5 text-left hover:border-[#1A1A1A] hover:bg-[#FAF8F5] transition-colors disabled:opacity-50 disabled:hover:border-[#E8E4DF] disabled:hover:bg-transparent"
                 >
                   <span className="flex items-center gap-2 min-w-0">
-                    <Icon className="w-4 h-4 text-[#5C8D89] flex-shrink-0" />
+                    <Icon className="w-4 h-4 text-[#4A5568] flex-shrink-0" />
                     <span className="min-w-0">
                       <span className="block text-sm font-medium text-[#1A1A1A] leading-tight">
                         {p.label}

@@ -58,7 +58,7 @@ export default function HourSquare({ hour, unmovable, habit, habits = [], calend
     emoji = isCompleted ? "✅" : (habit.emoji || categoryIcons[habit.category] || "✨");
     multiCount = habits.length > 1 ? habits.length : null;
   } else if (isCommute) {
-    bgClass = "bg-[#5C8D89] border-[#5C8D89]";
+    bgClass = "bg-[#4A5568] border-[#4A5568]";
     textClass = "text-white";
     emoji = commuteEmoji || "🚗";
   } else if (isSpare) {

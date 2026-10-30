@@ -48,7 +48,7 @@ export default function Account() {
           </div>
           <Link
             to="/Subscription"
-            className="flex items-center gap-1 text-xs font-semibold text-[#5C8D89] hover:text-[#4A7A76] px-3 h-9 rounded-xl hover:bg-[#F5F0EB] transition-colors"
+            className="flex items-center gap-1 text-xs font-semibold text-[#4A5568] hover:text-[#3A4250] px-3 h-9 rounded-xl hover:bg-[#F5F0EB] transition-colors"
           >
             <Sparkles className="w-3.5 h-3.5" /> Change plan
           </Link>

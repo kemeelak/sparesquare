@@ -8,7 +8,7 @@ export default function StatsRow({ completed, total, streak, mood, onClickComple
     { label: "Done", value: completed, icon: Check, color: "text-[#7C9A82] bg-[#E8F0EA]", onClick: onClickCompleted },
     { label: "Planned", value: total, icon: Target, color: "text-[#4A5568] bg-[#E2E8F0]", onClick: onClickScheduled },
     { label: "Streak", value: `${streak}d`, icon: Flame, color: "text-[#D4A574] bg-[#F5EDE4]", onClick: () => window.location.href = createPageUrl("Progress") },
-    { label: "Mood", value: moodEmoji(mood), icon: Smile, color: "text-[#5C8D89] bg-[#E8F0EA]", onClick: onClickMood },
+    { label: "Mood", value: moodEmoji(mood), icon: Smile, color: "text-[#4A5568] bg-[#E2E8F0]", onClick: onClickMood },
   ];
 
   return (

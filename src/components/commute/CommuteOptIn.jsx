@@ -18,7 +18,7 @@ export default function CommuteOptIn({ onSetUp, onDismiss }) {
       </button>
       <div className="flex items-start gap-3">
         <div className="w-9 h-9 rounded-xl bg-[#E9F1F0] flex items-center justify-center flex-shrink-0">
-          <Car className="w-4 h-4 text-[#5C8D89]" />
+          <Car className="w-4 h-4 text-[#4A5568]" />
         </div>
         <div className="flex-1 pr-4">
           <p className="text-sm font-semibold text-[#1A1A1A]">Turn on Commute</p>

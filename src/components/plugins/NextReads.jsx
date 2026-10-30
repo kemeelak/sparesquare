@@ -107,7 +107,7 @@ Return verdict "none" when there is no honest recommendation, "pick" when there 
             {titles.length >= 2 && (
               <button
                 onClick={findNext}
-                className="flex items-center gap-1.5 text-xs font-medium text-[#5C8D89] hover:text-[#4A7A76] transition-colors"
+                className="flex items-center gap-1.5 text-xs font-medium text-[#4A5568] hover:text-[#3A4250] transition-colors"
               >
                 Find my next one <ArrowRight className="w-3.5 h-3.5" />
               </button>
@@ -128,7 +128,7 @@ Return verdict "none" when there is no honest recommendation, "pick" when there 
             {pick.verdict === "pick" ? (
               <div className="bg-white rounded-2xl border border-[#E8E4DF] p-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#E8F0EA] text-[#5C8D89] flex items-center justify-center flex-shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-[#E2E8F0] text-[#4A5568] flex items-center justify-center flex-shrink-0">
                     <Icon className="w-4 h-4" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -148,7 +148,7 @@ Return verdict "none" when there is no honest recommendation, "pick" when there 
                     onClick={saveToShelf}
                     disabled={saved || saving}
                     className={`flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-medium transition-colors ${
-                      saved ? "bg-[#E8F0EA] text-[#5C8D89]" : "bg-[#1A1A1A] text-white hover:bg-[#333]"
+                      saved ? "bg-[#E2E8F0] text-[#4A5568]" : "bg-[#1A1A1A] text-white hover:bg-[#333]"
                     }`}
                   >
                     {saved ? (
@@ -180,7 +180,7 @@ Return verdict "none" when there is no honest recommendation, "pick" when there 
                 {skipped.length > 0 && (
                   <button
                     onClick={findNext}
-                    className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#5C8D89] hover:text-[#4A7A76] transition-colors"
+                    className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#4A5568] hover:text-[#3A4250] transition-colors"
                   >
                     Try again <ArrowRight className="w-3.5 h-3.5" />
                   </button>
