@@ -45,9 +45,11 @@ export default function HealthCard() {
     const params = new URLSearchParams(window.location.search);
     const result = params.get("oura");
     if (!result) return;
+    const reason = params.get("reason");
     window.history.replaceState({}, "", window.location.pathname);
     if (result === "connected") sync();
-    else setNote("Oura connection was cancelled.");
+    else if (result === "denied") setNote("Oura connection was cancelled.");
+    else setNote(reason ? `Couldn't connect Oura — ${reason}` : "Couldn't connect Oura. Please try again.");
   }, []);
 
   return (

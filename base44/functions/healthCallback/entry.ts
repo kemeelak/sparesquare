@@ -1,29 +1,30 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { secrets } from 'base44:runtime';
-import { callbackUrl, exchangeCode, verifyState, OURA_SCOPES } from '../../shared/oura.ts';
+import { APP_URL, callbackUrl, exchangeCode, verifyState, OURA_SCOPES } from '../../shared/oura.ts';
 
 // Oura sends the browser here after consent — no app login on this request, so the
 // signed state is what tells us which user just connected.
 export default async function (req) {
   const requestUrl = new URL(req.url);
-  const appUrl = req.headers.get('x-base44-app-url') || requestUrl.origin;
-  const back = (query) => new Response(null, { status: 302, headers: { Location: `${appUrl}/Progress?${query}` } });
+  const back = (query) => new Response(null, { status: 302, headers: { Location: `${APP_URL}/Progress?${query}` } });
 
   try {
     const code = requestUrl.searchParams.get('code');
     const state = requestUrl.searchParams.get('state');
-    if (requestUrl.searchParams.get('error') || !code || !state) return back('oura=denied');
+    if (requestUrl.searchParams.get('error') || !code || !state) {
+      return back(`oura=denied&reason=${encodeURIComponent(requestUrl.searchParams.get('error_description') || '')}`);
+    }
 
     const clientId = secrets.get('OURA_CLIENT_ID');
     const clientSecret = secrets.get('OURA_CLIENT_SECRET');
-    if (!clientId || !clientSecret) return back('oura=error');
+    if (!clientId || !clientSecret) return back('oura=error&reason=missing-credentials');
 
     const userId = await verifyState(state, clientSecret);
-    if (!userId) return back('oura=error');
+    if (!userId) return back('oura=error&reason=invalid-state');
 
     const tokens = await exchangeCode({
       code,
-      redirectUri: callbackUrl(appUrl),
+      redirectUri: callbackUrl(),
       clientId,
       clientSecret,
     });
@@ -49,6 +50,7 @@ export default async function (req) {
 
     return back('oura=connected');
   } catch (error) {
-    return back('oura=error');
+    const reason = String(error?.message ?? error).slice(0, 140);
+    return back(`oura=error&reason=${encodeURIComponent(reason)}`);
   }
 }

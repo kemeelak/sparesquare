@@ -8,8 +8,13 @@ const USER_AGENT = "SpareSquare/1.0";
 export const OURA_SCOPES = "daily personal";
 export const SYNC_DAYS = 14;
 
-export function callbackUrl(appUrl) {
-  return `${appUrl}/functions/healthCallback`;
+// Oura only accepts the exact redirect address registered in its developer portal,
+// so the callback is pinned to the published app — never to whatever host the user
+// happened to open (the preview host is refused with "400 Invalid request").
+export const APP_URL = "https://spare-square-grow.base44.app";
+
+export function callbackUrl() {
+  return `${APP_URL}/functions/healthCallback`;
 }
 
 const encoder = new TextEncoder();

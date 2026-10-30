@@ -12,12 +12,11 @@ export default async function (req) {
     const clientSecret = secrets.get('OURA_CLIENT_SECRET');
     if (!clientId || !clientSecret) return Response.json({ error: 'Oura app credentials are not set' }, { status: 500 });
 
-    const appUrl = req.headers.get('x-base44-app-url') || new URL(req.url).origin;
     const state = await signState(user.id, clientSecret);
 
     const url = `${'https://cloud.ouraring.com/oauth/authorize'}?response_type=code` +
       `&client_id=${encodeURIComponent(clientId)}` +
-      `&redirect_uri=${encodeURIComponent(callbackUrl(appUrl))}` +
+      `&redirect_uri=${encodeURIComponent(callbackUrl())}` +
       `&scope=${encodeURIComponent(OURA_SCOPES)}` +
       `&state=${encodeURIComponent(state)}`;
 
