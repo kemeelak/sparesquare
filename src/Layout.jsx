@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "./utils";
 import { base44 } from "@/api/base44Client";
+import AppSplash from "@/components/shared/AppSplash";
 import { Grid3X3, MessageCircle, BookOpen, Layers, TrendingUp, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Layout({ children, currentPageName }) {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [lookupFailed, setLookupFailed] = useState(false);
@@ -41,15 +43,18 @@ export default function Layout({ children, currentPageName }) {
       if (!isAuthenticated) return;
       if (lookupFailed) return;
       if (currentPageName === "Onboarding") {
-        if (profile?.onboarding_complete) window.location.href = createPageUrl("Home");
+        if (profile?.onboarding_complete) navigate(createPageUrl("Home"), { replace: true });
         return;
       }
       if (!profile?.onboarding_complete) {
-        window.location.href = createPageUrl("Onboarding");
+        navigate(createPageUrl("Onboarding"), { replace: true });
       }
-    }, [profileLoaded, profile, currentPageName, isAuthenticated, lookupFailed]);
+    }, [profileLoaded, profile, currentPageName, isAuthenticated, lookupFailed, navigate]);
 
-  if (profileLoaded && !isAuthenticated) {
+  // We don't know yet who this is — hold a neutral screen instead of flashing the wrong page.
+  if (!profileLoaded) return <AppSplash />;
+
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#FAF8F5] flex flex-col items-center justify-center p-6">
         <style>{`
@@ -83,6 +88,8 @@ export default function Layout({ children, currentPageName }) {
   }
 
   if (currentPageName === "Onboarding") {
+      // A returning user should never paint the onboarding screens
+      if (isAuthenticated && !lookupFailed && profile?.onboarding_complete) return <AppSplash />;
       return (
         <div className="min-h-screen bg-[#FAF8F5]">
           <style>{`
