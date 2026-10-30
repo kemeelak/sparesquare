@@ -165,15 +165,20 @@ export default function Home() {
       ? "evening"
       : null;
 
+  // A sheet the user opened takes priority — never pop the check-in on top of it
+  const sheetOpen =
+    showCalendarSync || showAddEvent || selectedHour !== null || !!rideSheet ||
+    showCommuteSetup || showStartCommute || !!statsSheet || showGoalsOnboarding;
+
   useEffect(() => {
-    if (moodPrompted || !isToday || !moodSlot || !currentUser) return;
+    if (moodPrompted || !isToday || !moodSlot || !currentUser || sheetOpen) return;
     if (moodSlot === "morning" ? morningMood : eveningMood) return;
     const timer = setTimeout(() => {
       setMoodPopup(moodSlot);
       setMoodPrompted(true);
     }, 1500);
     return () => clearTimeout(timer);
-  }, [moodPrompted, isToday, moodSlot, morningMood, eveningMood, currentUser]);
+  }, [moodPrompted, isToday, moodSlot, morningMood, eveningMood, currentUser, sheetOpen]);
 
   const updateHabitMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.HabitBlock.update(id, data),

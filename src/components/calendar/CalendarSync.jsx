@@ -14,12 +14,17 @@ export default function CalendarSync({ onClose, connected, onRefresh, blockCount
   const [errorMsg, setErrorMsg] = useState("");
   const queryClient = useQueryClient();
 
-  // App-user OAuth: open popup, poll for close, then refresh
+  // App-user OAuth: popup on desktop, full redirect on phones (popups are blocked there)
   const handleConnect = async () => {
     setConnecting(true);
     try {
       const url = await base44.connectors.connectAppUser(CONNECTOR_ID);
-      const popup = window.open(url, "_blank");
+      const isPhone = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const popup = isPhone ? null : window.open(url, "_blank");
+      if (!popup) {
+        window.location.href = url;
+        return;
+      }
       const timer = setInterval(async () => {
         if (!popup || popup.closed) {
           clearInterval(timer);
@@ -86,7 +91,7 @@ Only extract recurring, fixed commitments — not one-off events.`,
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-end lg:items-center justify-center"
+      className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60] flex items-end lg:items-center justify-center"
       onClick={onClose}
     >
       <motion.div
@@ -94,7 +99,7 @@ Only extract recurring, fixed commitments — not one-off events.`,
         animate={{ y: 0 }}
         exit={{ y: 100 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-t-3xl lg:rounded-3xl w-full max-w-md p-6"
+        className="bg-white rounded-t-3xl lg:rounded-3xl w-full max-w-md p-6 pb-24 lg:pb-6 max-h-[90vh] overflow-y-auto"
       >
         <div className="flex justify-between items-center mb-5">
           <div className="flex items-center gap-2">
