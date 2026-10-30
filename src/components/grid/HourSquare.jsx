@@ -74,9 +74,8 @@ export default function HourSquare({ hour, unmovable, habit, habits = [], calend
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={() => onSquareClick?.(hour)}
-      className={`relative w-full h-full min-h-0 overflow-hidden rounded-xl border-2 ${bgClass} ${textClass} 
-        flex flex-col items-center justify-center transition-colors duration-200 cursor-pointer p-1
-        lg:h-auto lg:aspect-square`}
+      className={`relative w-full aspect-square rounded-xl border-2 ${bgClass} ${textClass} 
+        flex flex-col items-center justify-center transition-colors duration-200 cursor-pointer p-1`}
     >
       <span className={`absolute top-0.5 left-1 text-[8px] font-mono opacity-50 ${textClass}`}>
         {formatHour(hour)}

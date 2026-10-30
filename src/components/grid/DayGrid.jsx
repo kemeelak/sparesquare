@@ -3,7 +3,7 @@ import HourSquare from "./HourSquare";
 import { format } from "date-fns";
 import { commuteMode, windowsForDay, windowForHour } from "@/lib/commute";
 
-export default function DayGrid({ date, unmovables, habits, sleepHours, calendarBlocks = [], commute, sessions = [], onSquareClick, className = "" }) {
+export default function DayGrid({ date, unmovables, habits, sleepHours, calendarBlocks = [], commute, sessions = [], onSquareClick }) {
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const dayName = format(date, "EEEE").toLowerCase();
 
@@ -48,7 +48,7 @@ export default function DayGrid({ date, unmovables, habits, sleepHours, calendar
   };
 
   return (
-    <div className={`grid grid-cols-6 gap-1.5 ${className}`}>
+    <div className="grid grid-cols-6 gap-1.5">
       {hours.map((hour) => {
         const habitsForHour = getHabitsForHour(hour);
         const calendarForHour = getCalendarForHour(hour);
