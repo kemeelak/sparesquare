@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { partitionNewHabits } from "@/lib/habitDedupe";
+import { invokeAI } from "@/lib/plans";
 
 const types = [
   { value: "book", label: "Book", icon: BookOpen },
@@ -109,7 +110,7 @@ Extract 0-7 habits — only what genuinely exists in this source, and never anyt
       ? `\n\nWHAT STAYED WITH THEM, IN THEIR OWN WORDS: "${reflection.trim()}"\nWeight the extraction toward what actually landed with them. Do not invent anything beyond the source itself.`
       : "";
 
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await invokeAI("library_extract", {
       prompt: `${prompt}${lived}`,
       add_context_from_internet: !transcriptContext,
       response_json_schema: {
@@ -146,6 +147,10 @@ Extract 0-7 habits — only what genuinely exists in this source, and never anyt
         }
       }
     });
+
+    setLoading(false);
+    setLoadingStep("");
+    if (!result) return;
 
     // Drop anything they already do, or that this source repeated
     const { fresh, duplicates } = partitionNewHabits(result.habits || [], knownHabitTitles);

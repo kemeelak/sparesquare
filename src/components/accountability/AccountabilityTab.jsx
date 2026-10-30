@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { invokeAI } from "@/lib/plans";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Shield, Flame, UserCheck, Bell, AlertTriangle, ChevronDown, ChevronUp, Loader2, Send, X } from "lucide-react";
@@ -86,10 +87,10 @@ export default function AccountabilityTab({ accountabilityPartners, me, publicPr
     if (nudgeType === "motivation") {
       setGeneratingMotivation(true);
       const partnerPub = publicProfiles.find(p => p.user_id === toUserId);
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = await invokeAI("nudge_motivation", {
         prompt: `Write a short (2-3 sentences), genuine and warm motivational message for an accountability partner named ${toName || "your partner"} who has a ${partnerPub?.current_streak || 0}-day habit streak. Make it personal, energizing, and not cheesy. Just the message text, no quotes.`,
       });
-      message = result;
+      if (result) message = result;
       setGeneratingMotivation(false);
     }
 

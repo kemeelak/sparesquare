@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Calendar, X, CheckCircle, Loader2, Smartphone, RefreshCw, Unlink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
+import { invokeAI } from "@/lib/plans";
 import { useQueryClient } from "@tanstack/react-query";
 
 const CONNECTOR_ID = "6ad815231cdd9de033a79a50";
@@ -45,7 +46,7 @@ export default function CalendarSync({ onClose, connected, onRefresh, blockCount
 
   const handleManualDescribe = async (text) => {
     setStatus("parsing");
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await invokeAI("schedule_parse", {
       prompt: `A user described their weekly schedule: "${text}"
 
 Extract all recurring time blocks from this description and convert them into structured unmovable schedule blocks. Be precise about start/end hours (24h format integers) and which days of the week.
@@ -69,7 +70,7 @@ Only extract recurring, fixed commitments — not one-off events.`,
         }
       }
     });
-    await saveBlocks(result.blocks || []);
+    await saveBlocks(result?.blocks || []);
   };
 
   const saveBlocks = async (blocks) => {

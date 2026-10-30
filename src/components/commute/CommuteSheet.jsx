@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { base44 } from "@/api/base44Client";
+import { invokeAI } from "@/lib/plans";
 import { X, ExternalLink, Loader2, Plus, Check, RefreshCw, Settings2 } from "lucide-react";
 import {
   commuteMode,
@@ -62,7 +63,7 @@ export default function CommuteSheet({
       commute?.apps?.reading && commute.apps.reading !== "none" ? appLabel(commute.apps.reading) : null;
 
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
+      const res = await invokeAI("commute_plan", {
         model: "gemini_3_flash",
         add_context_from_internet: true,
         prompt: `Someone wants to use their commute as growth time. Suggest what they could do in the next ${minutes} minutes.

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { invokeAI } from "@/lib/plans";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, Headphones, Video, Sparkles, Loader2, ArrowRight, Plus, Check } from "lucide-react";
 
@@ -31,7 +32,7 @@ export default function NextReads({ sources = [], profile, queuedTitles = [], on
       })
       .join("\n");
 
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await invokeAI("next_read", {
       prompt: `You are choosing the single next book or documentary for one person, based on what is already in their library.
 
 THEIR LIBRARY:
@@ -68,6 +69,7 @@ Return verdict "none" when there is no honest recommendation, "pick" when there 
     });
 
     setLoading(false);
+    if (!result) return;
     if (result?.verdict === "pick" && result.title) {
       setPick(result);
       setSkipped((prev) => [...prev, result.title]);

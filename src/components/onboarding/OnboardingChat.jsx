@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { invokeAI } from "@/lib/plans";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Loader2 } from "lucide-react";
 
@@ -85,7 +86,7 @@ export default function OnboardingChat({ onComplete }) {
         .map((m) => `${m.role === "user" ? "User" : "Guide"}: ${m.content}`)
         .join("\n\n");
       const prompt = `${SYSTEM}\n\nConversation so far:\n${transcript}\n\nGuide: (respond with JSON only)`;
-      const res = await base44.integrations.Core.InvokeLLM({
+      const res = await invokeAI("onboarding_chat", {
         prompt,
         model: "gpt_5_mini",
         response_json_schema: {
@@ -99,7 +100,7 @@ export default function OnboardingChat({ onComplete }) {
           required: ["reply", "complete"],
         },
       });
-      const reply = res.reply || "Got it. Tell me a bit more?";
+      const reply = res?.reply || "Got it. Tell me a bit more?";
       const merged = { ...extracted, ...(res.extracted || {}) };
       setExtracted(merged);
       const nextOptions = Array.isArray(res.options) ? res.options.slice(0, 4) : [];

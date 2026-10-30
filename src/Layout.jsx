@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "./utils";
 import { base44 } from "@/api/base44Client";
 import AppSplash from "@/components/shared/AppSplash";
-import { Grid3X3, MessageCircle, BookOpen, Layers, TrendingUp, Users } from "lucide-react";
+import UpgradeModal from "@/components/account/UpgradeModal";
+import { Grid3X3, MessageCircle, BookOpen, Layers, TrendingUp, Users, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Layout({ children, currentPageName }) {
@@ -120,6 +121,7 @@ export default function Layout({ children, currentPageName }) {
     { name: "Backlog", icon: Layers, page: "Backlog", label: "Backlog" },
     { name: "Progress", icon: TrendingUp, page: "Progress", label: "Progress" },
     { name: "Friends", icon: Users, page: "Friends", label: "Friends" },
+    { name: "Account", icon: User, page: "Account", label: "Account" },
     ];
 
   return (
@@ -188,6 +190,8 @@ export default function Layout({ children, currentPageName }) {
       <main className="lg:ml-20 min-h-screen pb-20 lg:pb-0">
         {children}
       </main>
+
+      <UpgradeModal />
     </div>
   );
 }

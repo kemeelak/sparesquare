@@ -1,0 +1,43 @@
+{
+  "name": "AiUsage",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "The app user this usage belongs to"
+    },
+    "period": {
+      "type": "string",
+      "description": "Billing period, YYYY-MM (UTC)"
+    },
+    "credits_used": {
+      "type": "number",
+      "default": 0,
+      "description": "AI credits spent in this period"
+    }
+  },
+  "required": [
+    "user_id",
+    "period"
+  ],
+  "rls": {
+    "read": {
+      "data.user_id": "{{user.id}}"
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

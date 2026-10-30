@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { invokeAI } from "@/lib/plans";
 import { createPageUrl } from "../utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Sparkles, Loader2, MessageCircle, ArrowRight } from "lucide-react";
@@ -74,7 +75,7 @@ export default function Onboarding() {
 
     const existingHabits = extracted.existing_habits || [];
 
-    const backlogSuggestions = await base44.integrations.Core.InvokeLLM({
+    const backlogSuggestions = await invokeAI("onboarding_plan", {
       prompt: `Suggest habits for this person's backlog — only ones genuinely missing from their life.
 
 Be ruthless about relevance:

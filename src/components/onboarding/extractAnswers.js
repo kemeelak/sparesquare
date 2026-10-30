@@ -1,4 +1,4 @@
-import { base44 } from "@/api/base44Client";
+import { invokeAI } from "@/lib/plans";
 
 // Allowed chip values per field so extracted answers match the existing options exactly
 export const CHIP_OPTIONS = {
@@ -17,7 +17,7 @@ export async function extractAnswersFromTranscript(transcript) {
     .map(([k, v]) => `- ${k}: ${v.map((o) => `"${o}"`).join(" | ")}`)
     .join("\n");
 
-  const result = await base44.integrations.Core.InvokeLLM({
+  const result = await invokeAI("onboarding_extract", {
     prompt: `A new user of a time-and-habit app just told us about themselves by voice. Extract what they said into structured answers.
 
 Transcript:

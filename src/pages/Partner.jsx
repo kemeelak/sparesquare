@@ -10,6 +10,7 @@ import LoadingDots from "../components/shared/LoadingDots";
 import ThreadSidebar from "../components/chat/ThreadSidebar";
 import QuickPrompts from "../components/chat/QuickPrompts";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { invokeAI } from "@/lib/plans";
 
 const categoryColors = {
   fitness: "text-orange-600", mindfulness: "text-purple-600", learning: "text-blue-600",
@@ -225,10 +226,16 @@ export default function Partner() {
     const systemPrompt = buildSystemPrompt(partnerName, activeThread?.category, profile, habits, pluginSources);
     const needsInternet = text.toLowerCase().includes("book") || text.toLowerCase().includes("research") || text.toLowerCase().includes("study");
 
-    const response = await base44.integrations.Core.InvokeLLM({
+    const response = await invokeAI("coach", {
       prompt: `${systemPrompt}\n\nConversation:\n${recentHistory}\n\nRespond as ${partnerName}:`,
       ...(needsInternet ? { add_context_from_internet: true, model: "gemini_3_flash" } : {}),
     });
+
+    // Out of credits — the upgrade prompt is already showing.
+    if (!response) {
+      setLoading(false);
+      return;
+    }
 
     const assistantMsg = { role: "assistant", content: response, context: "partner", thread_id: activeThread?.id || null };
     await base44.entities.ChatMessage.create(assistantMsg);
