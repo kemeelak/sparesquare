@@ -1,5 +1,7 @@
 const AUTHORIZE_URL = "https://cloud.ouraring.com/oauth/authorize";
-const TOKEN_URL = "https://api.ouraring.com/oauth/token";
+// Oura moved OAuth onto moi.ouraring.com — the legacy api.ouraring.com/oauth/token
+// answers every exchange with 400 invalid_request.
+const TOKEN_URL = "https://moi.ouraring.com/oauth/v2/ext/oauth-token";
 const API_BASE = "https://api.ouraring.com/v2/usercollection";
 const USER_AGENT = "SpareSquare/1.0";
 
@@ -38,7 +40,10 @@ async function tokenRequest(body) {
     body,
     signal: AbortSignal.timeout(15000),
   });
-  if (!res.ok) throw new Error(`Oura token request failed (${res.status})`);
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`Oura token request failed (${res.status}) ${detail.slice(0, 200)}`);
+  }
   return await res.json();
 }
 
