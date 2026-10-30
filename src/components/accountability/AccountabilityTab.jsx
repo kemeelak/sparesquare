@@ -58,19 +58,14 @@ export default function AccountabilityTab({ accountabilityPartners, me, publicPr
   const unreadCount = inboxNudges.filter(n => !n.read).length;
 
   const sendNudgeMutation = useMutation({
-    mutationFn: ({ toUserId, toName, type, message }) =>
-      base44.entities.AccountabilityNudge.create({
-        from_user_id: me.id,
-        to_user_id: toUserId,
-        from_name: me.full_name || "Your partner",
-        type,
-        message,
-        read: false,
-      }),
+    // Sent server-side so the recipient is checked against an accepted connection.
+    mutationFn: ({ toUserId, type, message }) =>
+      base44.functions.invoke("sendNudge", { to_user_id: toUserId, type, message }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["nudges"] });
       setSendingNudge(null);
     },
+    onError: () => setSendingNudge(null),
   });
 
   const handleSendNudge = async (toUserId, toName, nudgeType) => {
@@ -113,13 +108,10 @@ export default function AccountabilityTab({ accountabilityPartners, me, publicPr
   const handleSendReply = async () => {
     if (!replyText.trim() || !replyTarget) return;
     setSendingReply(true);
-    await base44.entities.AccountabilityNudge.create({
-      from_user_id: me.id,
+    await base44.functions.invoke("sendNudge", {
       to_user_id: replyTarget.from_user_id,
-      from_name: me.full_name || "Your partner",
       type: "custom",
       message: replyText.trim(),
-      read: false,
     });
     queryClient.invalidateQueries({ queryKey: ["nudges"] });
     setReplyTarget(null);

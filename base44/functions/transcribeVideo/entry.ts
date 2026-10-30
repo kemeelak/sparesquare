@@ -1,11 +1,14 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 
-// Per-user in-memory throttle (sliding 1-hour window). Caps paid Supadata calls
-// per signed-in user; resets on isolate cold start but blocks tight loops.
+// Caps paid Supadata calls per signed-in user, per hour. The count lives in the
+// database (an AiUsage row keyed by the hour) instead of isolate memory, so it holds
+// across concurrent isolates and cold starts.
 const YOUTUBE_RE = /^(https?:\/\/)?(www\.|m\.)?(youtube\.com|youtu\.be)\//i;
-const WINDOW_MS = 60 * 60 * 1000;
 const MAX_CALLS = 10;
-const recentCalls = new Map<string, number[]>();
+
+function hourKey() {
+  return `transcripts:${new Date().toISOString().slice(0, 13)}`;
+}
 
 Deno.serve(async (req) => {
   try {
@@ -22,14 +25,24 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Only YouTube URLs are supported" }, { status: 400 });
     }
 
-    // Per-user throttle: keep only calls within the last hour.
-    const now = Date.now();
-    const times = (recentCalls.get(user.id) || []).filter((t) => now - t < WINDOW_MS);
-    if (times.length >= MAX_CALLS) {
-      return Response.json({ error: "Too many transcript requests. Try again later." }, { status: 429 });
+    // Claim this call's slot with a guarded increment: the under-the-cap test is part of
+    // the query, so the database decides — concurrent calls can't all spend the same
+    // remaining slot, and nothing here depends on a read being fresh.
+    const db = base44.asServiceRole;
+    const period = hourKey();
+    const claim = await db.entities.AiUsage.updateMany(
+      { user_id: user.id, period, credits_used: { $lt: MAX_CALLS } },
+      { $inc: { credits_used: 1 } }
+    );
+
+    if (!claim?.updated) {
+      const existing = await db.entities.AiUsage.filter({ user_id: user.id, period }, { limit: 1 });
+      if (existing?.items?.length) {
+        return Response.json({ error: "Too many transcript requests. Try again later." }, { status: 429 });
+      }
+      // First paid call of the hour for this member.
+      await db.entities.AiUsage.create({ user_id: user.id, period, credits_used: 1 });
     }
-    times.push(now);
-    recentCalls.set(user.id, times);
 
     const apiKey = Deno.env.get("SUPADATA_API_KEY");
     const res = await fetch(`https://api.supadata.ai/v1/transcript?url=${encodeURIComponent(url)}&text=true`, {

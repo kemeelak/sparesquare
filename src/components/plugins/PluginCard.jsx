@@ -67,10 +67,8 @@ export default function PluginCard({ source, queryClient, existingTitles = [] })
     });
     // We need to create the record as the friend — instead, we'll store as a shared notification
     // by creating an AccountabilityNudge of type "motivation" with the plugin source embedded
-    await base44.entities.AccountabilityNudge.create({
-      from_user_id: currentUser.id,
+    await base44.functions.invoke("sendNudge", {
       to_user_id: friend.user_id,
-      from_name: currentUser.full_name || "A friend",
       type: "motivation",
       message: `📚 Shared a ${source.type} with you: "${source.title}"${source.author ? ` by ${source.author}` : ""}. ${source.summary ? source.summary.slice(0, 120) + "…" : ""}`,
     });

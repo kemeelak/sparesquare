@@ -58,6 +58,8 @@ export default function VoiceSpill({ onResult, onClose }) {
       const ext = type.includes("mp4") ? "m4a" : "webm";
       const file = new File([new Blob(chunksRef.current, { type })], `voice.${ext}`, { type });
       const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
+      // Records who this recording belongs to, so only this member can have it transcribed.
+      await base44.entities.VoiceNote.create({ file_uri });
       const res = await base44.functions.invoke("transcribeAudio", { file_uri });
       const text = (res?.data?.transcript || "").trim();
       if (!text) throw new Error("empty");

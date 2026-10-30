@@ -3,7 +3,10 @@ import { secrets } from 'base44:runtime';
 import { APP_URL, PROVIDERS, callbackUrl, credentials, stateProvider, verifyState } from '../../shared/health.ts';
 
 // Every wearable sends the browser here after consent — no app login on this
-// request, so the signed state is what tells us which user and provider it was.
+// request. So this handler never stores tokens: it parks the authorization code in a
+// short-lived ticket and hands the browser back to the app, where the signed-in member
+// claims it. Tokens can then only ever land on the account that actually completed the
+// flow in that browser, never on whoever's state was in the URL.
 export default async function (req) {
   const requestUrl = new URL(req.url);
   const provider = stateProvider(requestUrl.searchParams.get('state')) || 'oura';
@@ -25,34 +28,14 @@ export default async function (req) {
     const verified = await verifyState(state, clientSecret);
     if (!verified || verified.provider !== provider) return back('health=error&reason=invalid-state');
 
-    const tokens = await PROVIDERS[provider].exchangeCode({
+    const base44 = createClientFromRequest(req);
+    const ticket = await base44.asServiceRole.entities.HealthLinkTicket.create({
       code,
-      redirectUri: callbackUrl(),
-      clientId,
-      clientSecret,
+      provider,
+      state_user_id: verified.userId,
     });
 
-    const base44 = createClientFromRequest(req);
-    const record = {
-      user_id: verified.userId,
-      provider,
-      provider_user_id: tokens.user_id ? String(tokens.user_id) : '',
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-      expires_at: new Date(Date.now() + (tokens.expires_in ?? 86400) * 1000).toISOString(),
-      scope: tokens.scope || '',
-      status: 'connected',
-      last_error: '',
-    };
-
-    const { items } = await base44.asServiceRole.entities.HealthConnection.filter(
-      { user_id: verified.userId, provider },
-      { limit: 1 }
-    );
-    if (items[0]) await base44.asServiceRole.entities.HealthConnection.update(items[0].id, record);
-    else await base44.asServiceRole.entities.HealthConnection.create(record);
-
-    return back('health=connected');
+    return back(`health=pending&ticket=${encodeURIComponent(ticket.id)}`);
   } catch (error) {
     const reason = String(error?.message ?? error).slice(0, 140);
     return back(`health=error&reason=${encodeURIComponent(reason || `${label} would not connect`)}`);

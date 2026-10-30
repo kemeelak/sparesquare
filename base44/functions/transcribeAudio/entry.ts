@@ -18,6 +18,15 @@ export default async function(req) {
       return Response.json({ error: 'file_uri is required' }, { status: 400 });
     }
 
+    // Only transcribe a recording this member uploaded. Owning the VoiceNote row is the
+    // proof — the user-scoped client applies the entity's own ownership rule, so another
+    // member's path simply reads as nothing.
+    const { items } = await base44.entities.VoiceNote.filter({ file_uri: fileUri }, { limit: 1 });
+    if (!items?.length) {
+      console.log('transcribeAudio_not_owner');
+      return Response.json({ error: 'That recording is not yours.' }, { status: 403 });
+    }
+
     const { signed_url } = await base44.asServiceRole.integrations.Core.CreateFileSignedUrl({
       file_uri: fileUri,
       expires_in: 300,

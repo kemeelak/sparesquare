@@ -58,6 +58,24 @@ export default function HealthCard() {
     const label = providers.find((p) => p.provider === provider)?.label || "Wearable";
     const reason = params.get("reason");
     window.history.replaceState({}, "", window.location.pathname);
+    if (result === "pending") {
+      // The consent screen just finished; finish the link here, signed in as this member.
+      const ticket = params.get("ticket");
+      if (!ticket) {
+        setNote(`Couldn't connect ${label}. Please try again.`);
+        return;
+      }
+      setBusy(provider);
+      base44.functions
+        .invoke("healthFinish", { ticket })
+        .then((res) => {
+          if (res.data?.connected) sync(provider);
+          else setNote(res.data?.error || `Couldn't connect ${label}. Please try again.`);
+        })
+        .catch((e) => setNote(e?.response?.data?.error || `Couldn't connect ${label}. Please try again.`))
+        .finally(() => setBusy(null));
+      return;
+    }
     if (result === "connected") sync(provider);
     else if (result === "denied") setNote(`${label} connection was cancelled.`);
     else setNote(reason ? `Couldn't connect ${label} — ${reason}` : `Couldn't connect ${label}. Please try again.`);
