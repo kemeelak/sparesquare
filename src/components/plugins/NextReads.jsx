@@ -9,16 +9,20 @@ const TYPE_META = {
   podcast: { label: "Podcast", icon: Headphones },
 };
 
-export default function NextReads({ sources = [], profile, onAdd, addedTitle }) {
+export default function NextReads({ sources = [], profile, queuedTitles = [], onQueue }) {
   const [pick, setPick] = useState(null);
   const [loading, setLoading] = useState(false);
   const [skipped, setSkipped] = useState([]);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const titles = sources.map((s) => s.title).filter(Boolean);
+  const shelfText = queuedTitles.filter(Boolean).join("; ");
 
   const findNext = async () => {
     setLoading(true);
     setPick(null);
+    setSaved(false);
 
     const libraryText = sources
       .map((s) => {
@@ -32,7 +36,7 @@ export default function NextReads({ sources = [], profile, onAdd, addedTitle }) 
 
 THEIR LIBRARY:
 ${libraryText}
-
+${shelfText ? `\nALREADY WAITING ON THEIR SHELF (do not suggest these):\n${shelfText}\n` : ""}
 ABOUT THEM:
 Growth focus: ${profile?.growth_focus || "not stated"}
 Goals: ${(profile?.goals || []).join("; ") || "not stated"}
@@ -74,7 +78,14 @@ Return verdict "none" when there is no honest recommendation, "pick" when there 
 
   const meta = pick?.verdict === "pick" ? TYPE_META[pick.type] || TYPE_META.book : null;
   const Icon = meta?.icon || BookOpen;
-  const isAdded = pick?.verdict === "pick" && addedTitle === pick.title;
+
+  const saveToShelf = async () => {
+    if (!pick) return;
+    setSaving(true);
+    await onQueue?.({ ...pick, type: pick.type === "documentary" ? "video" : pick.type });
+    setSaving(false);
+    setSaved(true);
+  };
 
   return (
     <div className="mt-10 pt-6 border-t border-[#E8E4DF]">
@@ -88,7 +99,7 @@ Return verdict "none" when there is no honest recommendation, "pick" when there 
           <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <p className="text-xs text-[#8A8580] mb-3 leading-relaxed">
               {titles.length >= 2
-                ? `One book or documentary that builds on what you already have — chosen from your ${titles.length} sources, not a list.`
+                ? `One book or documentary that builds on what you already have — chosen from your ${titles.length} sources. It goes to your shelf, not your knowledge base.`
                 : "Add a couple more sources and this will point you to something that builds on them."}
             </p>
             {titles.length >= 2 && (
@@ -132,21 +143,34 @@ Return verdict "none" when there is no honest recommendation, "pick" when there 
 
                 <div className="flex items-center gap-2 mt-4">
                   <button
-                    onClick={() => onAdd?.({ title: pick.title, type: pick.type === "documentary" ? "video" : pick.type })}
-                    disabled={isAdded}
+                    onClick={saveToShelf}
+                    disabled={saved || saving}
                     className={`flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-medium transition-colors ${
-                      isAdded ? "bg-[#E8F0EA] text-[#5C8D89]" : "bg-[#1A1A1A] text-white hover:bg-[#333]"
+                      saved ? "bg-[#E8F0EA] text-[#5C8D89]" : "bg-[#1A1A1A] text-white hover:bg-[#333]"
                     }`}
                   >
-                    {isAdded ? <><Check className="w-3.5 h-3.5" /> Added</> : <><Plus className="w-3.5 h-3.5" /> Add to library</>}
+                    {saved ? (
+                      <><Check className="w-3.5 h-3.5" /> On your shelf</>
+                    ) : saving ? (
+                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving</>
+                    ) : (
+                      <><Plus className="w-3.5 h-3.5" /> Save to my shelf</>
+                    )}
                   </button>
-                  <button
-                    onClick={findNext}
-                    className="px-3 h-9 rounded-xl text-xs font-medium text-[#8A8580] hover:bg-[#F5F0EB] transition-colors"
-                  >
-                    Not this one
-                  </button>
+                  {!saved && (
+                    <button
+                      onClick={findNext}
+                      className="px-3 h-9 rounded-xl text-xs font-medium text-[#8A8580] hover:bg-[#F5F0EB] transition-colors"
+                    >
+                      Not this one
+                    </button>
+                  )}
                 </div>
+                {saved && (
+                  <p className="text-[11px] text-[#8A8580] mt-2 leading-relaxed">
+                    Nothing goes into your knowledge base yet — that waits until you've actually been through it.
+                  </p>
+                )}
               </div>
             ) : (
               <div>

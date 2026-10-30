@@ -1,0 +1,67 @@
+{
+  "name": "ReadingItem",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "The book, documentary, podcast or article waiting on the shelf"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "book",
+        "podcast",
+        "video",
+        "article"
+      ],
+      "default": "book"
+    },
+    "creator": {
+      "type": "string",
+      "description": "Author or creator"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Why this was put in front of them"
+    },
+    "builds_on": {
+      "type": "string",
+      "description": "Which of their existing sources it extends"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "finished"
+      ],
+      "default": "queued",
+      "description": "queued = not yet been through it; finished = they have, and may now add it to their knowledge base"
+    },
+    "note": {
+      "type": "string",
+      "description": "What stayed with them once finished, in their own words"
+    },
+    "finished_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "source_id": {
+      "type": "string",
+      "description": "The library source created from it, once they add it to their knowledge base"
+    }
+  },
+  "required": [
+    "title"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

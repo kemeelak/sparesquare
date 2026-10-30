@@ -17,7 +17,7 @@ const types = [
 
 const isYouTubeUrl = (str) => /youtube\.com|youtu\.be/.test(str);
 
-export default function AddSourceSheet({ onClose, onAdded, initialTitle = "", initialType = "book" }) {
+export default function AddSourceSheet({ onClose, onAdded, initialTitle = "", initialType = "book", reflection = "" }) {
   const currentUser = useCurrentUser();
   const [title, setTitle] = useState(initialTitle);
   const [url, setUrl] = useState("");
@@ -104,8 +104,13 @@ Extract 0-7 habits — only what genuinely exists in this source, and never anyt
 
 3. SUMMARY: One paragraph capturing the core philosophy.`;
 
+    // What they said stayed with them: frames the extraction around what actually landed.
+    const lived = reflection.trim()
+      ? `\n\nWHAT STAYED WITH THEM, IN THEIR OWN WORDS: "${reflection.trim()}"\nWeight the extraction toward what actually landed with them. Do not invent anything beyond the source itself.`
+      : "";
+
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt,
+      prompt: `${prompt}${lived}`,
       add_context_from_internet: !transcriptContext,
       response_json_schema: {
         type: "object",
@@ -154,7 +159,7 @@ Extract 0-7 habits — only what genuinely exists in this source, and never anyt
     const selectedHabits = (extractedData.habits || []).filter((_, i) => selectedIndices.includes(i));
     const sourceName = extractedData.title || title;
 
-    await base44.entities.PluginSource.create({
+    const created = await base44.entities.PluginSource.create({
       title: sourceName,
       type,
       author: extractedData.author || "",
@@ -178,7 +183,7 @@ Extract 0-7 habits — only what genuinely exists in this source, and never anyt
       );
     }
 
-    onAdded();
+    onAdded(created);
   };
 
   return (

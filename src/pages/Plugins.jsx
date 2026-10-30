@@ -9,12 +9,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import PluginCard from "../components/plugins/PluginCard";
 import AddSourceSheet from "../components/plugins/AddSourceSheet";
+import ReadingList from "../components/plugins/ReadingList";
 import NextReads from "../components/plugins/NextReads";
 
 export default function Plugins() {
   const currentUser = useCurrentUser();
   const [showAdd, setShowAdd] = useState(null);
-  const [addedTitle, setAddedTitle] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const queryClient = useQueryClient();
 
@@ -37,6 +37,41 @@ export default function Plugins() {
     enabled: !!currentUser,
   });
   const existingTitles = habits.map((h) => h.title).filter(Boolean);
+
+  // The shelf: what they've been pointed at, separate from what they've learned.
+  const { data: readingItems = [] } = useQuery({
+    queryKey: ["readingItems"],
+    queryFn: () => base44.entities.ReadingItem.filter({ created_by_id: currentUser.id }, "-created_date"),
+    initialData: [],
+    enabled: !!currentUser,
+  });
+  const refreshShelf = () => queryClient.invalidateQueries({ queryKey: ["readingItems"] });
+
+  const queueSuggestion = async (suggestion) => {
+    await base44.entities.ReadingItem.create({
+      title: suggestion.title,
+      type: suggestion.type,
+      creator: suggestion.creator || "",
+      reason: suggestion.reason || "",
+      builds_on: suggestion.builds_on || "",
+      status: "queued",
+    });
+    refreshShelf();
+  };
+
+  const finishItem = async (item, note) => {
+    await base44.entities.ReadingItem.update(item.id, {
+      status: "finished",
+      note: (note || "").trim(),
+      finished_date: format(new Date(), "yyyy-MM-dd"),
+    });
+    refreshShelf();
+  };
+
+  const removeItem = async (item) => {
+    await base44.entities.ReadingItem.delete(item.id);
+    refreshShelf();
+  };
 
   const filtered = sources.filter(
     (s) => s.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -89,15 +124,27 @@ export default function Plugins() {
         </div>
       )}
 
+      {/* Your shelf — read it first, decide afterwards */}
+      <ReadingList
+        items={readingItems}
+        onFinish={finishItem}
+        onRemove={removeItem}
+        onAddToLibrary={(item) =>
+          setShowAdd({
+            title: item.title,
+            type: item.type,
+            reflection: item.note || "",
+            readingItemId: item.id,
+          })
+        }
+      />
+
       {/* What to consume next — quiet, at the bottom */}
       <NextReads
         sources={sources}
         profile={profiles[0]}
-        addedTitle={addedTitle}
-        onAdd={(suggestion) => {
-          setAddedTitle(suggestion.title);
-          setShowAdd(suggestion);
-        }}
+        queuedTitles={readingItems.map((i) => i.title)}
+        onQueue={queueSuggestion}
       />
 
       {/* Add Source Sheet */}
@@ -106,8 +153,17 @@ export default function Plugins() {
           <AddSourceSheet
             initialTitle={showAdd.title}
             initialType={showAdd.type}
+            reflection={showAdd.reflection}
             onClose={() => setShowAdd(null)}
-            onAdded={() => {
+            onAdded={async (created) => {
+              if (showAdd.readingItemId) {
+                await base44.entities.ReadingItem.update(showAdd.readingItemId, {
+                  status: "finished",
+                  source_id: created?.id || "",
+                  finished_date: format(new Date(), "yyyy-MM-dd"),
+                });
+                refreshShelf();
+              }
               queryClient.invalidateQueries({ queryKey: ["pluginSources"] });
               setShowAdd(null);
             }}
