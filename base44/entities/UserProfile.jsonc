@@ -139,6 +139,14 @@
           "type": "number",
           "description": "Hour the commute ends \u2014 decimal hours, 30-minute steps (9.5 = 9:30 AM)"
         },
+        "return_start_hour": {
+          "type": "number",
+          "description": "Hour the ride home starts \u2014 decimal hours, 30-minute steps (17.5 = 5:30 PM)"
+        },
+        "return_end_hour": {
+          "type": "number",
+          "description": "Hour the ride home ends \u2014 decimal hours, 30-minute steps (18.5 = 6:30 PM)"
+        },
         "apps": {
           "type": "object",
           "description": "The apps the user consumes content in, so suggestions open in the right place",
