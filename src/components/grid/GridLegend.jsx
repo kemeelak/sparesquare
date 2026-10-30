@@ -1,8 +1,9 @@
 import React from "react";
-import { Lock, Sparkles, Leaf, Moon } from "lucide-react";
+import { Lock, Sparkles, Leaf, Moon, Car } from "lucide-react";
 
 const items = [
   { label: "Unmovable", color: "bg-[#4A5568]", icon: Lock },
+  { label: "Commute", color: "bg-[#5C8D89]", icon: Car },
   { label: "Habit", color: "bg-[#7C9A82]", icon: Leaf },
   { label: "Spare", color: "bg-[#F5EDE4] border border-dashed border-[#D4A574]", icon: Sparkles },
   { label: "Sleep", color: "bg-[#2D3748]", icon: Moon },

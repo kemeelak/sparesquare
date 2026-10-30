@@ -15,6 +15,11 @@ import AllDayEventsBanner from "../components/grid/AllDayEventsBanner";
 import AddEventForm from "../components/grid/AddEventForm";
 import GoalsOnboarding from "../components/onboarding/GoalsOnboarding";
 import StatsDetailSheet from "../components/grid/StatsDetailSheet";
+import CommuteSetup from "../components/commute/CommuteSetup";
+import CommuteSheet from "../components/commute/CommuteSheet";
+import CommuteOptIn from "../components/commute/CommuteOptIn";
+import CommuteNudge from "../components/commute/CommuteNudge";
+import { getCommute, isCommuteHour } from "../lib/commute";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 
 export default function Home() {
@@ -25,6 +30,10 @@ export default function Home() {
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [showGoalsOnboarding, setShowGoalsOnboarding] = useState(false);
   const [statsSheet, setStatsSheet] = useState(null); // "completed" | "scheduled" | null
+  const [showCommuteSetup, setShowCommuteSetup] = useState(false);
+  const [commuteHour, setCommuteHour] = useState(null);
+  const [commuteOptInHidden, setCommuteOptInHidden] = useState(false);
+  const [nudgeDismissed, setNudgeDismissed] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: profiles = [] } = useQuery({
@@ -83,6 +92,14 @@ export default function Home() {
   const dayName = format(selectedDate, "EEEE").toLowerCase();
   const todayHabits = habits.filter(h => h.scheduled_date === dateStr && h.status !== "backlog");
 
+  const commute = getCommute(profile);
+  const now = new Date();
+  const isToday = format(selectedDate, "yyyy-MM-dd") === format(now, "yyyy-MM-dd");
+  const commutingNow = !!commute && isToday && isCommuteHour(commute, now, now.getHours());
+  const commuteMinutesLeft = commute
+    ? Math.max(0, (commute.end_hour - now.getHours()) * 60 - now.getMinutes())
+    : 0;
+
   const getSpareCount = () => {
     let count = 0;
     for (let h = 0; h < 24; h++) {
@@ -92,7 +109,8 @@ export default function Home() {
       const isCalendar = timedCalendarBlocks.some(b => b.start_hour <= h && b.end_hour > h);
       const isHabit = todayHabits.some(hab => hab.scheduled_hour === h);
       const isSleep = sleepHours.includes(h);
-      if (!isUnmovable && !isCalendar && !isHabit && !isSleep) count++;
+      const onCommute = isCommuteHour(commute, selectedDate, h);
+      if (!isUnmovable && !isCalendar && !isHabit && !isSleep && !onCommute) count++;
     }
     return count;
   };
@@ -115,6 +133,11 @@ export default function Home() {
   const createEventMutation = useMutation({
     mutationFn: (data) => base44.entities.HabitBlock.create(data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["habits"] }),
+  });
+
+  const saveCommuteMutation = useMutation({
+    mutationFn: (commuteData) => base44.entities.UserProfile.update(profile.id, { commute: commuteData }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["userProfile"] }),
   });
 
   const DAY_MAP = { mon: "monday", tue: "tuesday", wed: "wednesday", thu: "thursday", fri: "friday", sat: "saturday", sun: "sunday" };
@@ -239,6 +262,26 @@ export default function Home() {
             />
           </div>
 
+      {/* Commute */}
+      {commute ? (
+        commutingNow && !nudgeDismissed && (
+          <CommuteNudge
+            commute={commute}
+            minutesLeft={commuteMinutesLeft}
+            onOpen={() => setCommuteHour(now.getHours())}
+            onDismiss={() => setNudgeDismissed(true)}
+          />
+        )
+      ) : (
+        !commuteOptInHidden &&
+        profile?.onboarding_complete && (
+          <CommuteOptIn
+            onSetUp={() => setShowCommuteSetup(true)}
+            onDismiss={() => setCommuteOptInHidden(true)}
+          />
+        )
+      )}
+
       {/* All-day events banner */}
       <AllDayEventsBanner events={allDayEvents} />
 
@@ -250,7 +293,11 @@ export default function Home() {
           habits={habits}
           sleepHours={sleepHours}
           calendarBlocks={timedCalendarBlocks}
-          onSquareClick={(hour) => setSelectedHour(hour)}
+          commute={commute}
+          onSquareClick={(hour) => {
+            if (commute && isCommuteHour(commute, selectedDate, hour)) setCommuteHour(hour);
+            else setSelectedHour(hour);
+          }}
         />
       </div>
 
@@ -331,6 +378,59 @@ export default function Home() {
             habits={todayHabits}
             date={selectedDate}
             onClose={() => setStatsSheet(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Commute setup */}
+      <AnimatePresence>
+        {showCommuteSetup && profile && (
+          <CommuteSetup
+            profile={profile}
+            isSaving={saveCommuteMutation.isPending}
+            onClose={() => setShowCommuteSetup(false)}
+            onSave={async (commuteData) => {
+              await saveCommuteMutation.mutateAsync(commuteData);
+              setShowCommuteSetup(false);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Commute hour sheet */}
+      <AnimatePresence>
+        {commuteHour !== null && commute && (
+          <CommuteSheet
+            commute={commute}
+            date={selectedDate}
+            hour={commuteHour}
+            profile={profile}
+            habits={habits}
+            onClose={() => setCommuteHour(null)}
+            onQueue={(item) =>
+              createEventMutation.mutate({
+                title: item.title,
+                status: "confirmed",
+                scheduled_date: dateStr,
+                scheduled_hour: commuteHour,
+                duration_minutes: item.minutes,
+                category: item.category,
+                emoji: item.emoji,
+              })
+            }
+            onQueueBacklog={(habit) =>
+              updateHabitMutation.mutate({
+                id: habit.id,
+                data: {
+                  status: "confirmed",
+                  scheduled_date: dateStr,
+                  scheduled_hour: commuteHour,
+                },
+              })
+            }
+            onComplete={(habit) =>
+              updateHabitMutation.mutate({ id: habit.id, data: { status: "completed" } })
+            }
           />
         )}
       </AnimatePresence>

@@ -105,6 +105,59 @@
       "items": {
         "type": "string"
       }
+    },
+    "commute": {
+      "type": "object",
+      "description": "Opt-in commute setup: when and how the user travels, and what they like to consume on the way",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "drive",
+            "transit",
+            "passenger",
+            "walk_bike"
+          ],
+          "description": "How they travel \u2014 decides whether reading and watching are possible"
+        },
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Days of the week they commute"
+        },
+        "start_hour": {
+          "type": "number",
+          "description": "Hour the commute starts (0-23)"
+        },
+        "end_hour": {
+          "type": "number",
+          "description": "Hour the commute ends (0-23)"
+        },
+        "consumes": {
+          "type": "string",
+          "enum": [
+            "in_app",
+            "podcasts",
+            "youtube",
+            "read",
+            "nothing"
+          ],
+          "description": "Where and how they currently consume content on the way"
+        },
+        "topics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Content topics they actually enjoy"
+        }
+      }
     }
   },
   "required": [],

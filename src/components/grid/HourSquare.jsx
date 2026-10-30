@@ -13,7 +13,9 @@ const categoryIcons = {
   creative: "🎨",
 };
 
-export default function HourSquare({ hour, unmovable, habit, habits = [], calendarEventCount = 0, isSpare, isSleep, onSquareClick }) {
+export default function HourSquare({ hour, unmovable, habit, habits = [], calendarEventCount = 0, isSpare, isSleep, isCommute, commuteEmoji, isCalendarUnmovable, onSquareClick }) {
+  // A commute the user declared as a fixed block shouldn't hide the usable commute hour
+  const hideDeclaredUnmovable = isCommute && unmovable && !isCalendarUnmovable;
   const formatHour = (h) => {
     if (h === 0) return "12a";
     if (h === 12) return "12p";
@@ -30,7 +32,7 @@ export default function HourSquare({ hour, unmovable, habit, habits = [], calend
     bgClass = "bg-[#2D3748] border-[#2D3748]";
     textClass = "text-[#718096]";
     emoji = "😴";
-  } else if (unmovable) {
+  } else if (unmovable && !hideDeclaredUnmovable) {
     bgClass = "bg-[#4A5568] border-[#4A5568]";
     textClass = "text-white";
     if (unmovable.emoji) {
@@ -55,6 +57,10 @@ export default function HourSquare({ hour, unmovable, habit, habits = [], calend
     textClass = isConfirmed ? "text-white" : "text-[#7C9A82]";
     emoji = isCompleted ? "✅" : (habit.emoji || categoryIcons[habit.category] || "✨");
     multiCount = habits.length > 1 ? habits.length : null;
+  } else if (isCommute) {
+    bgClass = "bg-[#5C8D89] border-[#5C8D89]";
+    textClass = "text-white";
+    emoji = commuteEmoji || "🚗";
   } else if (isSpare) {
     bgClass = "bg-[#F5EDE4] border-[#D4A574] border-dashed";
     textClass = "text-[#D4A574]";
