@@ -37,6 +37,14 @@ export default function Friends() {
     base44.auth.me().then(setMe).catch(() => {});
   }, []);
 
+  // Invites sent to my email before I had an account become real requests now
+  useEffect(() => {
+    if (!me) return;
+    base44.functions.invoke("claimFriendInvites", {}).then((res) => {
+      if (res?.data?.claimed > 0) queryClient.invalidateQueries({ queryKey: ["friendships"] });
+    }).catch(() => {});
+  }, [me]);
+
   const { data: myHabits } = useQuery({
     queryKey: ["habits"],
     queryFn: () => me ? base44.entities.HabitBlock.filter({ created_by_id: me.id }) : Promise.resolve([]),
@@ -142,19 +150,42 @@ export default function Friends() {
     }
 
     if (!targetProfile) {
-      // Try to invite via email if that method selected
+      // Not on SpareSquare yet — the invite doubles as a sign-up invite
       if (addMethod === "email") {
+        const email = addValue.trim().toLowerCase();
+        const alreadyInvited = myFriendships.some(
+          f => f.recipient_email?.toLowerCase() === email && f.status === "pending"
+        );
+        if (alreadyInvited) {
+          setAddError("You've already invited this email.");
+          setSending(false);
+          return;
+        }
+
+        let invitedByEmail = false;
+        try {
+          await base44.users.inviteUser(email, "user");
+          invitedByEmail = true;
+        } catch (e) {
+          // Already a member (or invites are admin-only) — the request below still reaches them
+        }
+
         await base44.entities.Friendship.create({
           requester_id: me.id,
           requester_name: me.full_name || "A SpareSquare user",
           requester_email: me.email,
           recipient_id: "pending_" + Date.now(),
-          recipient_email: addValue.trim(),
+          recipient_email: email,
           status: "pending",
           type: addType,
         });
-        setAddSuccess(`Invite sent to ${addValue.trim()}!`);
+        setAddSuccess(
+          invitedByEmail
+            ? `Invite sent to ${email} — they'll get an email to join SpareSquare.`
+            : `Request saved for ${email} — it'll be waiting when they join.`
+        );
         setAddValue("");
+        queryClient.invalidateQueries({ queryKey: ["friendships"] });
       } else {
         setAddError("User not found. Ask them to set a username in their profile.");
       }
@@ -369,6 +400,13 @@ export default function Friends() {
                 placeholder={addMethod === "email" ? "friend@email.com" : addMethod === "username" ? "@username" : "+1 555 0123"}
                 className="w-full rounded-xl border border-[#E8E4DF] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 mb-3"
               />
+
+              {addMethod === "email" && (
+                <p className="text-[11px] text-[#8A8580] -mt-1 mb-3">
+                  Not on SpareSquare yet? We email them an invite to join, and your request is
+                  waiting for them once they do.
+                </p>
+              )}
 
               {/* Type */}
               <p className="text-xs font-semibold text-[#8A8580] uppercase tracking-wide mb-2">Connection type</p>
