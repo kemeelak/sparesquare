@@ -3,14 +3,17 @@ import { motion } from "framer-motion";
 import { X, ChevronLeft, Loader2 } from "lucide-react";
 import {
   COMMUTE_MODES,
-  CONSUME_OPTIONS,
-  TOPIC_OPTIONS,
+  LISTEN_APPS,
+  READ_APPS,
   WEEK_DAYS,
-  hourLabel,
+  START_SLOTS,
+  END_SLOTS,
+  TOPIC_OPTIONS,
+  slotLabel,
+  formatsForMode,
 } from "@/lib/commute";
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 
 function Chip({ active, onClick, children, className = "" }) {
   return (
@@ -28,6 +31,22 @@ function Chip({ active, onClick, children, className = "" }) {
   );
 }
 
+function SlotSelect({ value, onChange, slots }) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="flex-1 h-12 rounded-xl border border-[#E8E4DF] bg-white px-3 text-sm text-[#1A1A1A]"
+    >
+      {slots.map((slot) => (
+        <option key={slot} value={slot}>
+          {slotLabel(slot)}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 export default function CommuteSetup({ profile, onSave, onClose, isSaving }) {
   const existing = profile?.commute || {};
   const [step, setStep] = useState(0);
@@ -37,16 +56,23 @@ export default function CommuteSetup({ profile, onSave, onClose, isSaving }) {
   );
   const [startHour, setStartHour] = useState(existing.start_hour ?? 8);
   const [endHour, setEndHour] = useState(existing.end_hour ?? 9);
-  const [consumes, setConsumes] = useState(existing.consumes || "podcasts");
+  const [audioApp, setAudioApp] = useState(existing.apps?.audio || "spotify");
+  const [readingApp, setReadingApp] = useState(existing.apps?.reading || "kindle");
+  const [formats, setFormats] = useState(existing.formats || ["podcasts"]);
   const [topics, setTopics] = useState(existing.topics || []);
+
+  const modeMeta = COMMUTE_MODES[mode] || COMMUTE_MODES.drive;
+  const availableFormats = formatsForMode(modeMeta);
 
   const toggleDay = (value) =>
     setDays((prev) => (prev.includes(value) ? prev.filter((d) => d !== value) : [...prev, value]));
   const toggleTopic = (value) =>
     setTopics((prev) => (prev.includes(value) ? prev.filter((t) => t !== value) : [...prev, value]));
+  const toggleFormat = (value) =>
+    setFormats((prev) => (prev.includes(value) ? prev.filter((f) => f !== value) : [...prev, value]));
 
   const canContinue =
-    step === 1 ? days.length > 0 : step === 2 ? endHour > startHour : step === 4 ? topics.length > 0 : true;
+    step === 1 ? days.length > 0 : step === 2 ? endHour > startHour : step === 4 ? formats.length > 0 : step === 5 ? topics.length > 0 : true;
 
   const next = () => {
     if (step < TOTAL_STEPS - 1) return setStep(step + 1);
@@ -56,7 +82,8 @@ export default function CommuteSetup({ profile, onSave, onClose, isSaving }) {
       days,
       start_hour: startHour,
       end_hour: endHour,
-      consumes,
+      apps: { audio: audioApp, reading: modeMeta.canRead ? readingApp : "none" },
+      formats,
       topics,
     });
   };
@@ -138,35 +165,15 @@ export default function CommuteSetup({ profile, onSave, onClose, isSaving }) {
         {step === 2 && (
           <>
             <h2 className="text-xl font-bold text-[#1A1A1A] mb-1">When do you travel?</h2>
-            <p className="text-sm text-[#8A8580] mb-5">Your usual window, start to end.</p>
+            <p className="text-sm text-[#8A8580] mb-5">Your usual window — half hours welcome.</p>
             <div className="flex items-center gap-3">
-              <select
-                value={startHour}
-                onChange={(e) => setStartHour(Number(e.target.value))}
-                className="flex-1 h-12 rounded-xl border border-[#E8E4DF] bg-white px-3 text-sm text-[#1A1A1A]"
-              >
-                {HOURS.map((h) => (
-                  <option key={h} value={h}>
-                    {hourLabel(h)}
-                  </option>
-                ))}
-              </select>
+              <SlotSelect value={startHour} onChange={setStartHour} slots={START_SLOTS} />
               <span className="text-[#8A8580] text-sm">to</span>
-              <select
-                value={endHour}
-                onChange={(e) => setEndHour(Number(e.target.value))}
-                className="flex-1 h-12 rounded-xl border border-[#E8E4DF] bg-white px-3 text-sm text-[#1A1A1A]"
-              >
-                {HOURS.map((h) => (
-                  <option key={h} value={h}>
-                    {hourLabel(h)}
-                  </option>
-                ))}
-              </select>
+              <SlotSelect value={endHour} onChange={setEndHour} slots={END_SLOTS} />
             </div>
             {endHour > startHour && (
               <p className="text-xs text-[#7C9A82] mt-3">
-                {(endHour - startHour) * 60} minutes of commute time per travel day.
+                {Math.round((endHour - startHour) * 60)} minutes of commute time per travel day.
               </p>
             )}
           </>
@@ -174,21 +181,56 @@ export default function CommuteSetup({ profile, onSave, onClose, isSaving }) {
 
         {step === 3 && (
           <>
-            <h2 className="text-xl font-bold text-[#1A1A1A] mb-1">Where do you listen?</h2>
+            <h2 className="text-xl font-bold text-[#1A1A1A] mb-1">Where do you already listen?</h2>
+            <p className="text-sm text-[#8A8580] mb-4">
+              Suggestions open straight into your app — nothing new to install.
+            </p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#B0AAA4] mb-2">Audio</p>
+            <div className="flex flex-wrap gap-2">
+              {LISTEN_APPS.map((app) => (
+                <Chip key={app.value} active={audioApp === app.value} onClick={() => setAudioApp(app.value)}>
+                  {app.label}
+                </Chip>
+              ))}
+            </div>
+            {modeMeta.canRead && (
+              <>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#B0AAA4] mt-5 mb-2">
+                  Reading
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {READ_APPS.map((app) => (
+                    <Chip key={app.value} active={readingApp === app.value} onClick={() => setReadingApp(app.value)}>
+                      {app.label}
+                    </Chip>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
+
+        {step === 4 && (
+          <>
+            <h2 className="text-xl font-bold text-[#1A1A1A] mb-1">What keeps you interested?</h2>
             <p className="text-sm text-[#8A8580] mb-5">
-              So suggestions meet you where you already are — no forced player.
+              Not everything has to be a podcast. Pick anything you'd genuinely do on a ride.
             </p>
             <div className="flex flex-wrap gap-2">
-              {CONSUME_OPTIONS.map((option) => (
-                <Chip key={option.value} active={consumes === option.value} onClick={() => setConsumes(option.value)}>
-                  {option.label}
+              {availableFormats.map((format) => (
+                <Chip
+                  key={format.value}
+                  active={formats.includes(format.value)}
+                  onClick={() => toggleFormat(format.value)}
+                >
+                  {format.label}
                 </Chip>
               ))}
             </div>
           </>
         )}
 
-        {step === 4 && (
+        {step === 5 && (
           <>
             <h2 className="text-xl font-bold text-[#1A1A1A] mb-1">What do you like hearing about?</h2>
             <p className="text-sm text-[#8A8580] mb-5">Pick a few — we'll only suggest things in this zone.</p>

@@ -95,10 +95,14 @@ export default function Home() {
   const commute = getCommute(profile);
   const now = new Date();
   const isToday = format(selectedDate, "yyyy-MM-dd") === format(now, "yyyy-MM-dd");
-  const commutingNow = !!commute && isToday && isCommuteHour(commute, now, now.getHours());
-  const commuteMinutesLeft = commute
-    ? Math.max(0, (commute.end_hour - now.getHours()) * 60 - now.getMinutes())
-    : 0;
+  const nowDecimal = now.getHours() + now.getMinutes() / 60;
+  const commutingNow =
+    !!commute &&
+    isToday &&
+    isCommuteHour(commute, now, now.getHours()) &&
+    nowDecimal >= commute.start_hour &&
+    nowDecimal < commute.end_hour;
+  const commuteMinutesLeft = commute ? Math.max(0, Math.round((commute.end_hour - nowDecimal) * 60)) : 0;
 
   const getSpareCount = () => {
     let count = 0;
@@ -407,6 +411,10 @@ export default function Home() {
             profile={profile}
             habits={habits}
             onClose={() => setCommuteHour(null)}
+            onEdit={() => {
+              setCommuteHour(null);
+              setShowCommuteSetup(true);
+            }}
             onQueue={(item) =>
               createEventMutation.mutate({
                 title: item.title,

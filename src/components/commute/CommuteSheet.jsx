@@ -2,13 +2,14 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { base44 } from "@/api/base44Client";
-import { X, ExternalLink, Loader2, Plus, Check, RefreshCw } from "lucide-react";
+import { X, ExternalLink, Loader2, Plus, Check, RefreshCw, Settings2 } from "lucide-react";
 import {
   commuteMode,
   minutesLeftInCommute,
-  contentLink,
+  resolveOpen,
   habitFitsCommute,
-  consumptionLabel,
+  appLabel,
+  formatLabels,
 } from "@/lib/commute";
 
 const KIND_META = {
@@ -28,6 +29,7 @@ export default function CommuteSheet({
   onQueue,
   onQueueBacklog,
   onComplete,
+  onEdit,
 }) {
   const mode = commuteMode(commute);
   const dateStr = format(date, "yyyy-MM-dd");
@@ -50,26 +52,31 @@ export default function CommuteSheet({
       ? "listening, watching, reading, or a voice-only action"
       : "listening or a voice-only action ONLY — their eyes and hands are busy, so never suggest reading or watching";
 
+    const formats = formatLabels(commute.formats).join(", ") || "open to anything";
+    const readApp = commute.apps?.reading && commute.apps.reading !== "none" ? appLabel(commute.apps.reading) : null;
+
     try {
       const res = await base44.integrations.Core.InvokeLLM({
         model: "gemini_3_flash",
         add_context_from_internet: true,
         prompt: `Someone wants to use their commute as growth time. Suggest what they could do in the next ${minutes} minutes.
 
-Their commute: ${mode.label}, about ${minutes} minutes left.
-They normally consume content via: ${consumptionLabel(commute)}.
+Their ride: ${mode.label}, about ${minutes} minutes.
 They can do: ${allowed}.
+They listen in: ${appLabel(commute.apps?.audio)}.${readApp ? ` They read in: ${readApp}.` : ""}
+Formats they actually enjoy on a ride: ${formats}.
 Content topics they enjoy: ${(commute.topics || []).join(", ") || "no preference"}.
 Their growth focus: ${profile?.growth_focus || "not set"}.
 Their goals: ${(profile?.goals || []).join("; ") || "not set"}.
 They ALREADY do these consistently, never suggest them back: ${(profile?.existing_habits || []).join("; ") || "none recorded"}.
 
-Give 4 suggestions:
-- 2 of them should be real, currently existing podcasts, episodes, YouTube channels or videos that genuinely match their topics and fit the length. Be accurate — if unsure of an exact episode, name the show/channel and give a search query instead.
-- 1 should be something they can DO using only their voice or ears, tied to their goals (e.g. call someone, voice-memo an idea, rehearse something out loud, a breathing exercise).
-- 1 wildcard that is genuinely interesting but on-topic.
+Give 4 suggestions that mix formats to match what they enjoy — never four podcasts in a row:
+- If they picked music, video, audiobooks, reading, thinking drills, mind games, courses or talking it out, at least two suggestions must use those formats instead of audio shows.
+- 1 must be real, currently existing content (a podcast episode, YouTube video or channel, article, book, album or course) matching their topics and fitting the length. Be accurate — if unsure of an exact episode, name the show/channel and give a search query instead.
+- 1 must be hands-free: something they can do with only ears and voice — a thinking drill, an observation game, a memory challenge, rehearsing something out loud, a voice memo to someone. Concrete and genuinely engaging, never generic advice.
+- 1 wildcard that is interesting and on-topic.
 
-For every suggestion give: a short title; kind (listen/watch/read/do); minutes as a number that fits in ${minutes}; why — one specific sentence explaining why it suits THIS person on THIS ride; search_query — the exact words to paste into a search box to find it; platform (youtube/spotify/podcast/none; use none for do).`,
+For every suggestion give: a short title; kind (listen/watch/read/do); minutes as a number that fits in ${minutes}; why — one specific sentence explaining why it suits THIS person on THIS ride; search_query — the exact words to paste into a search box (empty for hands-free activities); platform (youtube/spotify/podcast/none; use none for do).`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -129,9 +136,18 @@ For every suggestion give: a short title; kind (listen/watch/read/do); minutes a
               <p className="text-xs text-[#8A8580]">{minutes} minutes to use</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-[#F5F0EB] text-[#8A8580]">
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onEdit}
+              className="p-2 rounded-xl hover:bg-[#F5F0EB] text-[#8A8580]"
+              aria-label="Commute settings"
+            >
+              <Settings2 className="w-4 h-4" />
+            </button>
+            <button onClick={onClose} className="p-2 rounded-xl hover:bg-[#F5F0EB] text-[#8A8580]">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         <div className="p-5 space-y-5">
@@ -246,7 +262,7 @@ For every suggestion give: a short title; kind (listen/watch/read/do); minutes a
               <div className="space-y-2">
                 {suggestions.map((s, i) => {
                   const meta = KIND_META[s.kind] || KIND_META.listen;
-                  const link = contentLink(s.platform, s.search_query);
+                  const open = resolveOpen(s, commute);
                   return (
                     <div key={i} className="rounded-2xl border border-[#E8E4DF] p-4">
                       <div className="flex items-start gap-2.5">
@@ -259,14 +275,14 @@ For every suggestion give: a short title; kind (listen/watch/read/do); minutes a
                           </p>
                           <p className="text-xs text-[#8A8580] mt-1.5 leading-relaxed">{s.why}</p>
                           <div className="flex gap-2 mt-3">
-                            {link && (
+                            {open && (
                               <a
-                                href={link}
+                                href={open.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E8E4DF] text-xs font-semibold text-[#1A1A1A] hover:bg-[#F5F0EB]"
                               >
-                                Open <ExternalLink className="w-3 h-3" />
+                                Open in {open.label} <ExternalLink className="w-3 h-3" />
                               </a>
                             )}
                             <button

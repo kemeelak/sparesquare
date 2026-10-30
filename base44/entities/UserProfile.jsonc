@@ -133,11 +133,43 @@
         },
         "start_hour": {
           "type": "number",
-          "description": "Hour the commute starts (0-23)"
+          "description": "Hour the commute starts \u2014 decimal hours, 30-minute steps (8.5 = 8:30 AM)"
         },
         "end_hour": {
           "type": "number",
-          "description": "Hour the commute ends (0-23)"
+          "description": "Hour the commute ends \u2014 decimal hours, 30-minute steps (9.5 = 9:30 AM)"
+        },
+        "apps": {
+          "type": "object",
+          "description": "The apps the user consumes content in, so suggestions open in the right place",
+          "properties": {
+            "audio": {
+              "type": "string",
+              "enum": [
+                "spotify",
+                "apple_podcasts",
+                "youtube_music",
+                "youtube",
+                "in_app"
+              ]
+            },
+            "reading": {
+              "type": "string",
+              "enum": [
+                "kindle",
+                "audible",
+                "youtube",
+                "none"
+              ]
+            }
+          }
+        },
+        "formats": {
+          "type": "array",
+          "description": "Content formats they actually enjoy on a ride \u2014 podcasts, music, video, books, thinking drills, mind games, talking it out, courses",
+          "items": {
+            "type": "string"
+          }
         },
         "consumes": {
           "type": "string",
@@ -148,7 +180,7 @@
             "read",
             "nothing"
           ],
-          "description": "Where and how they currently consume content on the way"
+          "description": "Legacy: where they consumed content before app preferences existed"
         },
         "topics": {
           "type": "array",
