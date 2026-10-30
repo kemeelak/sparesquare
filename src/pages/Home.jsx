@@ -80,6 +80,7 @@ export default function Home() {
   const allDayEvents = calendarBlocks.filter((b) => b.all_day);
   const timedCalendarBlocks = calendarBlocks.filter((b) => !b.all_day);
   const calendarConnected = !calendarError && !!calendarRes?.data;
+  const googleConnected = !!calendarRes?.data?.google_connected;
 
   const { data: moods = [] } = useQuery({
     queryKey: ["mood", dateStr],
@@ -452,9 +453,10 @@ export default function Home() {
         {showCalendarSync && (
           <CalendarSync
             onClose={() => setShowCalendarSync(false)}
-            connected={calendarConnected}
+            connected={googleConnected}
             onRefresh={refetchCalendar}
             blockCount={calendarBlocks.length}
+            icsUrl={profile?.calendar_feed_url || ""}
           />
         )}
       </AnimatePresence>

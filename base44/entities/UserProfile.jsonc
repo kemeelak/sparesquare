@@ -81,6 +81,10 @@
       "type": "string",
       "description": "User's chosen name for their AI partner"
     },
+    "calendar_feed_url": {
+      "type": "string",
+      "description": "Read-only calendar feed (iCloud / Apple Calendar public share link) mapped onto the grid"
+    },
     "goals": {
       "type": "array",
       "description": "User's specific life goals",

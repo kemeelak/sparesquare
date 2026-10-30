@@ -5,14 +5,18 @@ import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import { invokeAI } from "@/lib/plans";
 import { useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
 
 const CONNECTOR_ID = "6ad815231cdd9de033a79a50";
 
-export default function CalendarSync({ onClose, connected, onRefresh, blockCount = 0 }) {
+export default function CalendarSync({ onClose, connected, onRefresh, blockCount = 0, icsUrl = "" }) {
   const [status, setStatus] = useState("idle");
   const [connecting, setConnecting] = useState(false);
   const [imported, setImported] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
+  const [feedInput, setFeedInput] = useState(icsUrl);
+  const [feedStatus, setFeedStatus] = useState("idle"); // idle | saving | error
+  const [feedError, setFeedError] = useState("");
   const queryClient = useQueryClient();
 
   // App-user OAuth: popup on desktop, full redirect on phones (popups are blocked there)
@@ -41,6 +45,48 @@ export default function CalendarSync({ onClose, connected, onRefresh, blockCount
 
   const handleDisconnect = async () => {
     await base44.connectors.disconnectAppUser(CONNECTOR_ID);
+    await onRefresh?.();
+  };
+
+  // Apple/iCloud has no OAuth — a public calendar share link is read instead (read-only)
+  const saveFeed = async (value) => {
+    const me = await base44.auth.me();
+    const profiles = await base44.entities.UserProfile.filter({ created_by_id: me.id });
+    if (!profiles.length) throw new Error("Finish your profile setup first");
+    await base44.entities.UserProfile.update(profiles[0].id, { calendar_feed_url: value });
+    queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+  };
+
+  const handleConnectFeed = async () => {
+    const value = feedInput.trim();
+    if (!value) return;
+    setFeedStatus("saving");
+    setFeedError("");
+    try {
+      await saveFeed(value);
+      const test = await base44.functions.invoke("getCalendarEvents", {
+        date: format(new Date(), "yyyy-MM-dd"),
+      });
+      if (test?.data?.ics_error) {
+        await saveFeed("");
+        setFeedInput("");
+        setFeedError(`${test.data.ics_error}. Check that it's the public share link.`);
+        setFeedStatus("error");
+        return;
+      }
+      await onRefresh?.();
+      setFeedStatus("idle");
+    } catch (e) {
+      setFeedError(e.message || "Could not connect that link");
+      setFeedStatus("error");
+    }
+  };
+
+  const handleRemoveFeed = async () => {
+    await saveFeed("");
+    setFeedInput("");
+    setFeedError("");
+    setFeedStatus("idle");
     await onRefresh?.();
   };
 
@@ -171,6 +217,53 @@ Only extract recurring, fixed commitments — not one-off events.`,
             >
               Don't use Google? Describe your schedule →
             </button>
+          </div>
+        )}
+
+        {/* Apple / iCloud — read-only public calendar link */}
+        {status === "idle" && (
+          <div className="mt-4 rounded-2xl border border-[#E8E4DF] p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-base">🍎</span>
+              <p className="text-sm font-semibold text-[#1A1A1A]">Apple / iCloud Calendar</p>
+            </div>
+            {icsUrl ? (
+              <>
+                <p className="text-xs text-[#8A8580] mb-3">
+                  Read-only feed connected. Apple events show on your grid as 📅 blocks.
+                </p>
+                <div className="flex gap-2">
+                  <Button onClick={() => onRefresh?.()} variant="outline" className="flex-1 rounded-xl">
+                    <RefreshCw className="w-4 h-4 mr-2" /> Refresh
+                  </Button>
+                  <Button onClick={handleRemoveFeed} variant="ghost" className="rounded-xl text-[#8A8580]">
+                    <Unlink className="w-4 h-4 mr-1" /> Remove
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-[#8A8580] mb-2">
+                  In Apple Calendar: Share Calendar → Public Calendar → Copy Link, then paste it here.
+                  Read-only, no password needed.
+                </p>
+                <input
+                  value={feedInput}
+                  onChange={(e) => setFeedInput(e.target.value)}
+                  placeholder="webcal://p01-calendarws.icloud.com/ca/..."
+                  className="w-full rounded-xl border border-[#E8E4DF] p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 placeholder:text-[#B0AAA4]"
+                />
+                <Button
+                  onClick={handleConnectFeed}
+                  disabled={!feedInput.trim() || feedStatus === "saving"}
+                  className="w-full mt-2 h-11 rounded-xl bg-[#1A1A1A] hover:bg-[#333] text-white"
+                >
+                  {feedStatus === "saving" && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {feedStatus === "saving" ? "Checking link..." : "Connect feed"}
+                </Button>
+              </>
+            )}
+            {feedError && <p className="text-xs text-red-500 mt-2">{feedError}</p>}
           </div>
         )}
 
