@@ -1,0 +1,81 @@
+{
+  "name": "HealthConnection",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "The app user this wearable account belongs to"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "oura"
+      ],
+      "description": "Which wearable provider this link is for"
+    },
+    "provider_user_id": {
+      "type": "string",
+      "description": "The provider's own id/email for this person, for support and de-duplication"
+    },
+    "access_token": {
+      "type": "string",
+      "description": "OAuth access token \u2014 server only, never sent to the browser"
+    },
+    "refresh_token": {
+      "type": "string",
+      "description": "OAuth refresh token \u2014 single use, rotated on every refresh"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the access token stops working"
+    },
+    "scope": {
+      "type": "string",
+      "description": "Scopes the user actually granted"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "connected",
+        "revoked"
+      ],
+      "default": "connected"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last successful pull from the provider"
+    },
+    "last_error": {
+      "type": "string",
+      "description": "Why the last sync failed, if it did"
+    }
+  },
+  "required": [
+    "user_id",
+    "provider"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

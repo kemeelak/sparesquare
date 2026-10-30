@@ -1,0 +1,91 @@
+{
+  "name": "HealthSnapshot",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "The app user this night of data belongs to"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "The day this sleep/activity belongs to"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "oura"
+      ],
+      "default": "oura"
+    },
+    "sleep_minutes": {
+      "type": "number",
+      "description": "Total time asleep, in minutes"
+    },
+    "deep_minutes": {
+      "type": "number",
+      "description": "Deep sleep, in minutes"
+    },
+    "rem_minutes": {
+      "type": "number",
+      "description": "REM sleep, in minutes"
+    },
+    "efficiency": {
+      "type": "number",
+      "description": "Share of time in bed actually asleep, 0-100"
+    },
+    "sleep_score": {
+      "type": "number",
+      "description": "Provider sleep score, 0-100"
+    },
+    "readiness_score": {
+      "type": "number",
+      "description": "Provider readiness score, 0-100"
+    },
+    "activity_score": {
+      "type": "number",
+      "description": "Provider activity score, 0-100"
+    },
+    "steps": {
+      "type": "number"
+    },
+    "active_calories": {
+      "type": "number"
+    },
+    "resting_hr": {
+      "type": "number",
+      "description": "Lowest heart rate during sleep, bpm"
+    },
+    "hrv": {
+      "type": "number",
+      "description": "Average HRV during sleep, ms"
+    },
+    "bedtime_start": {
+      "type": "string",
+      "description": "When they fell asleep (ISO)"
+    },
+    "bedtime_end": {
+      "type": "string",
+      "description": "When they woke up (ISO)"
+    }
+  },
+  "required": [
+    "user_id",
+    "date",
+    "source"
+  ],
+  "rls": {
+    "read": {
+      "data.user_id": "{{user.id}}"
+    },
+    "create": {
+      "data.user_id": "{{user.id}}"
+    },
+    "update": {
+      "data.user_id": "{{user.id}}"
+    },
+    "delete": {
+      "data.user_id": "{{user.id}}"
+    }
+  }
+}
