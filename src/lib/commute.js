@@ -70,22 +70,69 @@ export function commuteMode(commute) {
   return COMMUTE_MODES[commute?.mode] || COMMUTE_MODES.drive;
 }
 
-export function isCommuteHour(commute, date, hour) {
-  if (!commute?.enabled) return false;
+// The saved morning/evening windows plus any ride started on the spot
+export function windowsForDay(commute, sessions = [], date = new Date()) {
   const day = format(date, "EEEE").toLowerCase();
-  if (!commute.days?.includes(day)) return false;
-  // a 8:30 start still touches the 8 o'clock block
-  return hour + 1 > commute.start_hour && hour < commute.end_hour;
+  const dayStr = format(date, "yyyy-MM-dd");
+  const windows = [];
+
+  if (commute?.enabled && commute.days?.includes(day)) {
+    const mode = commuteMode(commute);
+    windows.push({
+      key: "out",
+      label: "Heading in",
+      oneOff: false,
+      mode,
+      start_hour: commute.start_hour,
+      end_hour: commute.end_hour,
+    });
+    if (commute.return_end_hour > commute.return_start_hour) {
+      windows.push({
+        key: "back",
+        label: "Heading home",
+        oneOff: false,
+        mode,
+        start_hour: commute.return_start_hour,
+        end_hour: commute.return_end_hour,
+      });
+    }
+  }
+
+  (sessions || []).forEach((session) => {
+    if (!session?.start_time) return;
+    const started = new Date(session.start_time);
+    if (format(started, "yyyy-MM-dd") !== dayStr) return;
+    const start = started.getHours() + started.getMinutes() / 60;
+    windows.push({
+      key: `ride-${session.id}`,
+      label: "On the move",
+      oneOff: true,
+      mode: COMMUTE_MODES[session.mode] || commuteMode(commute),
+      start_hour: start,
+      end_hour: start + (session.duration_minutes || 30) / 60,
+      session,
+    });
+  });
+
+  return windows;
 }
 
-export function minutesLeftInCommute(commute, hour) {
-  if (!commute) return 0;
-  const from = Math.max(hour, commute.start_hour);
-  return Math.max(0, Math.round((commute.end_hour - from) * 60));
+// A 8:30 start still touches the 8 o'clock block
+export function windowForHour(windows, hour) {
+  return (windows || []).find((w) => hour + 1 > w.start_hour && hour < w.end_hour) || null;
 }
 
-export function isCommutingNow(commute, now = new Date()) {
-  return isCommuteHour(commute, now, now.getHours());
+export function isCommuteHour(commute, date, hour, sessions = []) {
+  return !!windowForHour(windowsForDay(commute, sessions, date), hour);
+}
+
+export function minutesLeftInWindow(rideWindow, hour) {
+  if (!rideWindow) return 0;
+  return Math.max(0, Math.round((rideWindow.end_hour - Math.max(hour, rideWindow.start_hour)) * 60));
+}
+
+export function isCommutingNow(commute, now = new Date(), sessions = []) {
+  return isCommuteHour(commute, now, now.getHours(), sessions);
 }
 
 export function hourLabel(hour) {
@@ -148,6 +195,14 @@ export function resolveOpen(suggestion, commute) {
   const build = APP_SEARCH[app];
   if (!build) return null;
   return { url: build(encodeURIComponent(query)), label: appLabel(app) };
+}
+
+// Rest is a legitimate use of a ride — no lesson required
+export function restLink(commute) {
+  const app = commute?.apps?.audio || "spotify";
+  const build = APP_SEARCH[app];
+  if (!build) return null;
+  return { url: build(encodeURIComponent("calm playlist to unwind")), label: appLabel(app) };
 }
 
 export function habitFitsCommute(habit) {

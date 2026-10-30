@@ -1,9 +1,9 @@
 import React from "react";
 import HourSquare from "./HourSquare";
 import { format } from "date-fns";
-import { commuteMode, isCommuteHour as isCommuteSlot } from "@/lib/commute";
+import { commuteMode, windowsForDay, windowForHour } from "@/lib/commute";
 
-export default function DayGrid({ date, unmovables, habits, sleepHours, calendarBlocks = [], commute, onSquareClick }) {
+export default function DayGrid({ date, unmovables, habits, sleepHours, calendarBlocks = [], commute, sessions = [], onSquareClick }) {
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const dayName = format(date, "EEEE").toLowerCase();
 
@@ -30,9 +30,12 @@ export default function DayGrid({ date, unmovables, habits, sleepHours, calendar
     return sleepHours.includes(hour);
   };
 
-  const isCommuteHour = (hour) => isCommuteSlot(commute, date, hour);
+  const rideWindows = windowsForDay(commute, sessions, date);
+  const rideWindowAt = (hour) => windowForHour(rideWindows, hour);
+  const isCommuteHour = (hour) => !!rideWindowAt(hour);
 
-  const commuteEmoji = commute?.enabled ? commuteMode(commute).emoji : "🚗";
+  const commuteEmoji = (hour) =>
+    rideWindowAt(hour)?.mode?.emoji || (commute?.enabled ? commuteMode(commute).emoji : "🚗");
   const isCalendarHour = (hour) => getCalendarForHour(hour).length > 0;
 
   const isSpareHour = (hour) => {
@@ -60,7 +63,7 @@ export default function DayGrid({ date, unmovables, habits, sleepHours, calendar
             isSpare={isSpareHour(hour)}
             isSleep={isSleepHour(hour)}
             isCommute={isCommuteHour(hour)}
-            commuteEmoji={commuteEmoji}
+            commuteEmoji={commuteEmoji(hour)}
             isCalendarUnmovable={isCalendarHour(hour)}
             onSquareClick={onSquareClick}
           />

@@ -19,7 +19,9 @@ import CommuteSetup from "../components/commute/CommuteSetup";
 import CommuteSheet from "../components/commute/CommuteSheet";
 import CommuteOptIn from "../components/commute/CommuteOptIn";
 import CommuteNudge from "../components/commute/CommuteNudge";
-import { getCommute, isCommuteHour } from "../lib/commute";
+import StartCommuteSheet from "../components/commute/StartCommuteSheet";
+import MoodStrip from "../components/mood/MoodStrip";
+import { getCommute, windowsForDay, windowForHour, minutesLeftInWindow } from "../lib/commute";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 
 export default function Home() {
@@ -31,7 +33,9 @@ export default function Home() {
   const [showGoalsOnboarding, setShowGoalsOnboarding] = useState(false);
   const [statsSheet, setStatsSheet] = useState(null); // "completed" | "scheduled" | null
   const [showCommuteSetup, setShowCommuteSetup] = useState(false);
-  const [commuteHour, setCommuteHour] = useState(null);
+  const [showStartCommute, setShowStartCommute] = useState(false);
+  const [rideSheet, setRideSheet] = useState(null); // { hour, window }
+  const [startedRides, setStartedRides] = useState([]);
   const [commuteOptInHidden, setCommuteOptInHidden] = useState(false);
   const [nudgeDismissed, setNudgeDismissed] = useState(false);
   const queryClient = useQueryClient();
@@ -49,6 +53,18 @@ export default function Home() {
     enabled: !!currentUser,
   });
 
+  const { data: rides = [] } = useQuery({
+    queryKey: ["commuteSessions"],
+    queryFn: async () => {
+      const page = await base44.entities.CommuteSession.filter(
+        { created_by_id: currentUser.id },
+        { sort: "-start_time", limit: 40 }
+      );
+      return page?.items || [];
+    },
+    enabled: !!currentUser,
+  });
+
   const profile = profiles[0];
   const dateStr = format(selectedDate, "yyyy-MM-dd");
 
@@ -62,6 +78,13 @@ export default function Home() {
   const allDayEvents = calendarBlocks.filter((b) => b.all_day);
   const timedCalendarBlocks = calendarBlocks.filter((b) => !b.all_day);
   const calendarConnected = !calendarError && !!calendarRes?.data;
+
+  const { data: moods = [] } = useQuery({
+    queryKey: ["mood", dateStr],
+    queryFn: () => base44.entities.MoodCheckin.filter({ created_by_id: currentUser.id, date: dateStr }),
+    enabled: !!currentUser,
+  });
+  const mood = moods[0] || null;
 
   const parseSleepHours = () => {
     if (!profile) return [];
@@ -95,14 +118,15 @@ export default function Home() {
   const commute = getCommute(profile);
   const now = new Date();
   const isToday = format(selectedDate, "yyyy-MM-dd") === format(now, "yyyy-MM-dd");
-  const nowDecimal = now.getHours() + now.getMinutes() / 60;
-  const commutingNow =
-    !!commute &&
-    isToday &&
-    isCommuteHour(commute, now, now.getHours()) &&
-    nowDecimal >= commute.start_hour &&
-    nowDecimal < commute.end_hour;
-  const commuteMinutesLeft = commute ? Math.max(0, Math.round((commute.end_hour - nowDecimal) * 60)) : 0;
+
+  // Every ride on this day: saved morning/evening windows plus rides started on the spot
+  const rideMap = new Map();
+  [...rides, ...startedRides].forEach((ride) => ride?.id && rideMap.set(ride.id, ride));
+  const dayRides = [...rideMap.values()];
+  const rideWindows = windowsForDay(commute, dayRides, selectedDate);
+  const windowAt = (hour) => windowForHour(rideWindows, hour);
+  const liveWindow = isToday ? windowAt(now.getHours()) : null;
+  const liveMinutesLeft = liveWindow ? minutesLeftInWindow(liveWindow, now.getHours()) : 0;
 
   const getSpareCount = () => {
     let count = 0;
@@ -113,7 +137,7 @@ export default function Home() {
       const isCalendar = timedCalendarBlocks.some(b => b.start_hour <= h && b.end_hour > h);
       const isHabit = todayHabits.some(hab => hab.scheduled_hour === h);
       const isSleep = sleepHours.includes(h);
-      const onCommute = isCommuteHour(commute, selectedDate, h);
+      const onCommute = !!windowAt(h);
       if (!isUnmovable && !isCalendar && !isHabit && !isSleep && !onCommute) count++;
     }
     return count;
@@ -142,6 +166,24 @@ export default function Home() {
   const saveCommuteMutation = useMutation({
     mutationFn: (commuteData) => base44.entities.UserProfile.update(profile.id, { commute: commuteData }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["userProfile"] }),
+  });
+
+  const saveMoodMutation = useMutation({
+    mutationFn: ({ score, label }) =>
+      mood
+        ? base44.entities.MoodCheckin.update(mood.id, { score, label })
+        : base44.entities.MoodCheckin.create({ date: dateStr, score, label }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["mood", dateStr] }),
+  });
+
+  const startRideMutation = useMutation({
+    mutationFn: ({ minutes, mode }) =>
+      base44.entities.CommuteSession.create({
+        start_time: new Date().toISOString(),
+        duration_minutes: minutes,
+        mode,
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["commuteSessions"] }),
   });
 
   const DAY_MAP = { mon: "monday", tue: "tuesday", wed: "wednesday", thu: "thursday", fri: "friday", sat: "saturday", sun: "sunday" };
@@ -268,11 +310,11 @@ export default function Home() {
 
       {/* Commute */}
       {commute ? (
-        commutingNow && !nudgeDismissed && (
+        liveWindow && !liveWindow.oneOff && !nudgeDismissed && (
           <CommuteNudge
             commute={commute}
-            minutesLeft={commuteMinutesLeft}
-            onOpen={() => setCommuteHour(now.getHours())}
+            minutesLeft={liveMinutesLeft}
+            onOpen={() => setRideSheet({ hour: now.getHours(), window: liveWindow })}
             onDismiss={() => setNudgeDismissed(true)}
           />
         )
@@ -286,6 +328,36 @@ export default function Home() {
         )
       )}
 
+      {/* Ride now — any time, any length */}
+      <button
+        onClick={() => {
+          if (liveWindow) setRideSheet({ hour: now.getHours(), window: liveWindow });
+          else setShowStartCommute(true);
+        }}
+        className={`w-full flex items-center justify-between gap-3 rounded-2xl px-4 py-3 mb-3 border transition-colors ${
+          liveWindow
+            ? "bg-[#5C8D89] border-[#5C8D89] text-white"
+            : "bg-white border-[#E8E4DF] text-[#1A1A1A] hover:bg-[#F5F0EB]"
+        }`}
+      >
+        <span className="flex items-center gap-2 text-sm font-semibold">
+          <span className="text-base">{liveWindow ? liveWindow.mode.emoji : "🧭"}</span>
+          {liveWindow ? `${liveWindow.label} · ${liveMinutesLeft} min left` : "Start a commute"}
+        </span>
+        <span className={`text-xs ${liveWindow ? "text-white/70" : "text-[#8A8580]"}`}>
+          {liveWindow ? "Open ride" : "Whenever you leave"}
+        </span>
+      </button>
+
+      {/* Mood check-in */}
+      <div className="mb-3">
+        <MoodStrip
+          mood={mood}
+          onSelect={(m) => saveMoodMutation.mutate(m)}
+          isSaving={saveMoodMutation.isPending}
+        />
+      </div>
+
       {/* All-day events banner */}
       <AllDayEventsBanner events={allDayEvents} />
 
@@ -298,8 +370,10 @@ export default function Home() {
           sleepHours={sleepHours}
           calendarBlocks={timedCalendarBlocks}
           commute={commute}
+          sessions={dayRides}
           onSquareClick={(hour) => {
-            if (commute && isCommuteHour(commute, selectedDate, hour)) setCommuteHour(hour);
+            const ride = windowAt(hour);
+            if (ride) setRideSheet({ hour, window: ride });
             else setSelectedHour(hour);
           }}
         />
@@ -401,18 +475,20 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Commute hour sheet */}
+      {/* Ride sheet — saved windows and rides started on the spot */}
       <AnimatePresence>
-        {commuteHour !== null && commute && (
+        {rideSheet && (
           <CommuteSheet
             commute={commute}
+            rideWindow={rideSheet.window}
             date={selectedDate}
-            hour={commuteHour}
+            hour={rideSheet.hour}
             profile={profile}
             habits={habits}
-            onClose={() => setCommuteHour(null)}
+            mood={mood}
+            onClose={() => setRideSheet(null)}
             onEdit={() => {
-              setCommuteHour(null);
+              setRideSheet(null);
               setShowCommuteSetup(true);
             }}
             onQueue={(item) =>
@@ -420,7 +496,7 @@ export default function Home() {
                 title: item.title,
                 status: "confirmed",
                 scheduled_date: dateStr,
-                scheduled_hour: commuteHour,
+                scheduled_hour: rideSheet.hour,
                 duration_minutes: item.minutes,
                 category: item.category,
                 emoji: item.emoji,
@@ -432,13 +508,34 @@ export default function Home() {
                 data: {
                   status: "confirmed",
                   scheduled_date: dateStr,
-                  scheduled_hour: commuteHour,
+                  scheduled_hour: rideSheet.hour,
                 },
               })
             }
             onComplete={(habit) =>
               updateHabitMutation.mutate({ id: habit.id, data: { status: "completed" } })
             }
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Start a ride on the spot */}
+      <AnimatePresence>
+        {showStartCommute && (
+          <StartCommuteSheet
+            defaultMode={commute?.mode || "transit"}
+            isStarting={startRideMutation.isPending}
+            onClose={() => setShowStartCommute(false)}
+            onStart={async ({ minutes, mode }) => {
+              const ride = await startRideMutation.mutateAsync({ minutes, mode });
+              setStartedRides((prev) => [...prev, ride]);
+              setShowStartCommute(false);
+              const hour = new Date().getHours();
+              setRideSheet({
+                hour,
+                window: windowForHour(windowsForDay(commute, [ride], selectedDate), hour),
+              });
+            }}
           />
         )}
       </AnimatePresence>

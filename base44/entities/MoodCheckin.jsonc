@@ -1,0 +1,52 @@
+{
+  "name": "MoodCheckin",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "The day this check-in belongs to"
+    },
+    "score": {
+      "type": "number",
+      "description": "1 drained to 5 charged"
+    },
+    "label": {
+      "type": "string",
+      "description": "The word the user picked for how they are running today"
+    }
+  },
+  "required": [
+    "date",
+    "score"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

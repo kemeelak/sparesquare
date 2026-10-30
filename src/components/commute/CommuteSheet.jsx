@@ -5,11 +5,12 @@ import { base44 } from "@/api/base44Client";
 import { X, ExternalLink, Loader2, Plus, Check, RefreshCw, Settings2 } from "lucide-react";
 import {
   commuteMode,
-  minutesLeftInCommute,
+  minutesLeftInWindow,
   resolveOpen,
   habitFitsCommute,
   appLabel,
   formatLabels,
+  restLink,
 } from "@/lib/commute";
 
 const KIND_META = {
@@ -21,19 +22,22 @@ const KIND_META = {
 
 export default function CommuteSheet({
   commute,
+  rideWindow,
   date,
   hour,
   profile,
   habits,
+  mood,
   onClose,
   onQueue,
   onQueueBacklog,
   onComplete,
   onEdit,
 }) {
-  const mode = commuteMode(commute);
+  const mode = rideWindow?.mode || commuteMode(commute);
   const dateStr = format(date, "yyyy-MM-dd");
-  const minutes = minutesLeftInCommute(commute, hour);
+  const minutes = minutesLeftInWindow(rideWindow, hour);
+  const rest = restLink(commute);
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -42,7 +46,7 @@ export default function CommuteSheet({
     (h) => h.scheduled_date === dateStr && h.scheduled_hour === hour && h.status !== "backlog"
   );
   const backlog = (habits || [])
-    .filter((h) => h.status === "backlog" && habitFitsCommute(h, commute.mode))
+    .filter((h) => h.status === "backlog" && habitFitsCommute(h, commute?.mode))
     .slice(0, 3);
 
   const fetchSuggestions = async () => {
@@ -52,8 +56,9 @@ export default function CommuteSheet({
       ? "listening, watching, reading, or a voice-only action"
       : "listening or a voice-only action ONLY — their eyes and hands are busy, so never suggest reading or watching";
 
-    const formats = formatLabels(commute.formats).join(", ") || "open to anything";
-    const readApp = commute.apps?.reading && commute.apps.reading !== "none" ? appLabel(commute.apps.reading) : null;
+    const formats = formatLabels(commute?.formats).join(", ") || "open to anything";
+    const readApp =
+      commute?.apps?.reading && commute.apps.reading !== "none" ? appLabel(commute.apps.reading) : null;
 
     try {
       const res = await base44.integrations.Core.InvokeLLM({
@@ -62,10 +67,15 @@ export default function CommuteSheet({
         prompt: `Someone wants to use their commute as growth time. Suggest what they could do in the next ${minutes} minutes.
 
 Their ride: ${mode.label}, about ${minutes} minutes.
+How they're doing today: ${mood ? `${mood.label} (${mood.score} of 5)` : "no check-in"}.${
+          mood && mood.score <= 2
+            ? " They're running low — favour light, restoring suggestions over anything that feels like homework, and it's fine for one suggestion to be simply putting on music."
+            : ""
+        }
 They can do: ${allowed}.
-They listen in: ${appLabel(commute.apps?.audio)}.${readApp ? ` They read in: ${readApp}.` : ""}
+They listen in: ${commute?.apps?.audio ? appLabel(commute.apps.audio) : "no app set"}.${readApp ? ` They read in: ${readApp}.` : ""}
 Formats they actually enjoy on a ride: ${formats}.
-Content topics they enjoy: ${(commute.topics || []).join(", ") || "no preference"}.
+Content topics they enjoy: ${(commute?.topics || []).join(", ") || "no preference"}.
 Their growth focus: ${profile?.growth_focus || "not set"}.
 Their goals: ${(profile?.goals || []).join("; ") || "not set"}.
 They ALREADY do these consistently, never suggest them back: ${(profile?.existing_habits || []).join("; ") || "none recorded"}.
@@ -132,8 +142,12 @@ For every suggestion give: a short title; kind (listen/watch/read/do); minutes a
               {mode.emoji}
             </div>
             <div>
-              <p className="font-bold text-[#1A1A1A] text-sm">Commuting · {mode.label}</p>
-              <p className="text-xs text-[#8A8580]">{minutes} minutes to use</p>
+              <p className="font-bold text-[#1A1A1A] text-sm">
+                {rideWindow?.label || "Commuting"} · {mode.label}
+              </p>
+              <p className="text-xs text-[#8A8580]">
+                {minutes} minutes {rideWindow?.oneOff ? "on this ride" : "to use"}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -310,6 +324,23 @@ For every suggestion give: a short title; kind (listen/watch/read/do); minutes a
                   </p>
                 )}
               </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl bg-[#F5F0EB] p-4">
+            <p className="text-sm font-semibold text-[#1A1A1A]">Nothing has to happen</p>
+            <p className="text-xs text-[#8A8580] mt-1 leading-relaxed">
+              Rest counts as a good ride. If today isn't a learning day, just put something on.
+            </p>
+            {rest && (
+              <a
+                href={rest.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-lg bg-white border border-[#E8E4DF] text-xs font-semibold text-[#1A1A1A]"
+              >
+                Just music in {rest.label} <ExternalLink className="w-3 h-3" />
+              </a>
             )}
           </div>
         </div>

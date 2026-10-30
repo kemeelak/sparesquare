@@ -56,6 +56,9 @@ export default function CommuteSetup({ profile, onSave, onClose, isSaving }) {
   );
   const [startHour, setStartHour] = useState(existing.start_hour ?? 8);
   const [endHour, setEndHour] = useState(existing.end_hour ?? 9);
+  const [ridesBack, setRidesBack] = useState(existing.return_end_hour > existing.return_start_hour);
+  const [returnStart, setReturnStart] = useState(existing.return_start_hour ?? 17);
+  const [returnEnd, setReturnEnd] = useState(existing.return_end_hour ?? 18);
   const [audioApp, setAudioApp] = useState(existing.apps?.audio || "spotify");
   const [readingApp, setReadingApp] = useState(existing.apps?.reading || "kindle");
   const [formats, setFormats] = useState(existing.formats || ["podcasts"]);
@@ -72,7 +75,15 @@ export default function CommuteSetup({ profile, onSave, onClose, isSaving }) {
     setFormats((prev) => (prev.includes(value) ? prev.filter((f) => f !== value) : [...prev, value]));
 
   const canContinue =
-    step === 1 ? days.length > 0 : step === 2 ? endHour > startHour : step === 4 ? formats.length > 0 : step === 5 ? topics.length > 0 : true;
+    step === 1
+      ? days.length > 0
+      : step === 2
+      ? endHour > startHour && (!ridesBack || returnEnd > returnStart)
+      : step === 4
+      ? formats.length > 0
+      : step === 5
+      ? topics.length > 0
+      : true;
 
   const next = () => {
     if (step < TOTAL_STEPS - 1) return setStep(step + 1);
@@ -82,6 +93,8 @@ export default function CommuteSetup({ profile, onSave, onClose, isSaving }) {
       days,
       start_hour: startHour,
       end_hour: endHour,
+      return_start_hour: ridesBack ? returnStart : null,
+      return_end_hour: ridesBack ? returnEnd : null,
       apps: { audio: audioApp, reading: modeMeta.canRead ? readingApp : "none" },
       formats,
       topics,
@@ -175,6 +188,26 @@ export default function CommuteSetup({ profile, onSave, onClose, isSaving }) {
               <p className="text-xs text-[#7C9A82] mt-3">
                 {Math.round((endHour - startHour) * 60)} minutes of commute time per travel day.
               </p>
+            )}
+
+            <button
+              onClick={() => setRidesBack(!ridesBack)}
+              className={`mt-5 w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-colors ${
+                ridesBack ? "border-[#1A1A1A] bg-[#F5F0EB]" : "border-[#E8E4DF] bg-white"
+              }`}
+            >
+              <span className="text-sm font-medium text-[#1A1A1A]">I head back home too</span>
+              <span className="text-xs text-[#8A8580]">{ridesBack ? "Yes" : "No"}</span>
+            </button>
+            {ridesBack && (
+              <div className="flex items-center gap-3 mt-3">
+                <SlotSelect value={returnStart} onChange={setReturnStart} slots={START_SLOTS} />
+                <span className="text-[#8A8580] text-sm">to</span>
+                <SlotSelect value={returnEnd} onChange={setReturnEnd} slots={END_SLOTS} />
+              </div>
+            )}
+            {ridesBack && returnEnd <= returnStart && (
+              <p className="text-xs text-[#B0AAA4] mt-2">The ride back needs to end after it starts.</p>
             )}
           </>
         )}

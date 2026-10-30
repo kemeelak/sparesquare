@@ -1,0 +1,58 @@
+{
+  "name": "CommuteSession",
+  "type": "object",
+  "properties": {
+    "start_time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this ride started"
+    },
+    "duration_minutes": {
+      "type": "number",
+      "description": "How long the ride takes, in minutes"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "drive",
+        "transit",
+        "passenger",
+        "walk_bike"
+      ],
+      "description": "How the user is travelling on this ride"
+    }
+  },
+  "required": [
+    "start_time",
+    "duration_minutes"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
