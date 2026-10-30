@@ -201,3 +201,34 @@ export function expandIcsEvents(icsText, dateStr) {
 export function normalizeFeedUrl(rawUrl) {
   return (rawUrl || "").trim().replace(/^webcal:\/\//i, "https://").replace(/^http:\/\//i, "https://");
 }
+
+// Public calendar feeds are only ever fetched from these hosts. Everything else is
+// refused before the server opens a connection, so a pasted link can't be pointed at
+// localhost, a private range or a cloud metadata endpoint.
+const FEED_HOST_SUFFIXES = ["icloud.com", "apple.com", "google.com"];
+const IPV4_LITERAL = /^\d{1,3}(\.\d{1,3}){3}$/;
+const PRIVATE_HOSTNAME = /(^localhost$|\.(local|internal|intranet|lan|home|corp)$)/;
+
+// Returns the https URL that is safe to fetch, or null when the link is not a
+// supported public calendar address.
+export function safeFeedUrl(rawUrl: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(normalizeFeedUrl(rawUrl));
+  } catch {
+    return null;
+  }
+
+  if (url.protocol !== "https:") return null;
+  if (url.username || url.password) return null;
+
+  const host = url.hostname.toLowerCase().replace(/\.$/, "");
+  if (!host) return null;
+  if (host.includes(":")) return null; // raw IPv6 literal
+  if (IPV4_LITERAL.test(host)) return null; // raw IPv4 literal — private ranges, 169.254.169.254
+  if (!host.includes(".")) return null; // single-label name, e.g. "localhost" or an internal box
+  if (PRIVATE_HOSTNAME.test(host)) return null;
+
+  const allowed = FEED_HOST_SUFFIXES.some((suffix) => host === suffix || host.endsWith(`.${suffix}`));
+  return allowed ? url.toString() : null;
+}

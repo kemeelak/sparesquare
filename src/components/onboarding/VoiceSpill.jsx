@@ -58,10 +58,9 @@ export default function VoiceSpill({ onResult, onClose }) {
       const ext = type.includes("mp4") ? "m4a" : "webm";
       const file = new File([new Blob(chunksRef.current, { type })], `voice.${ext}`, { type });
       const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
-      const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri, expires_in: 300 });
-      const transcript = await base44.integrations.Core.TranscribeAudio({ audio_url: signed_url });
-      const text = typeof transcript === "string" ? transcript : transcript?.text || "";
-      if (!text.trim()) throw new Error("empty");
+      const res = await base44.functions.invoke("transcribeAudio", { file_uri });
+      const text = (res?.data?.transcript || "").trim();
+      if (!text) throw new Error("empty");
       const extracted = await extractAnswersFromTranscript(text);
       onResult(extracted, text);
     } catch (e) {

@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
-import { expandIcsEvents, normalizeFeedUrl } from '../../shared/ics.ts';
+import { expandIcsEvents, safeFeedUrl } from '../../shared/ics.ts';
 
 const CONNECTOR_ID = '6ad815231cdd9de033a79a50';
 
@@ -57,20 +57,21 @@ async function fetchGoogleBlocks(base44, dateStr) {
   return { blocks, connected: true };
 }
 
+// `feedUrl` has already been checked by safeFeedUrl — only that value reaches fetch.
 async function fetchFeedBlocks(feedUrl, dateStr) {
-  const res = await fetch(normalizeFeedUrl(feedUrl), {
+  const res = await fetch(feedUrl, {
     headers: { Accept: 'text/calendar, text/plain, */*' },
     signal: AbortSignal.timeout(12000)
   });
 
   if (!res.ok) {
-    console.log('ics_feed_error', res.status, feedUrl.slice(0, 40));
+    console.log('ics_feed_error', res.status);
     return { blocks: [], error: `The calendar link answered with ${res.status}` };
   }
 
   const text = await res.text();
   if (!/BEGIN:VCALENDAR/i.test(text)) {
-    console.log('ics_feed_not_calendar', feedUrl.slice(0, 40));
+    console.log('ics_feed_not_calendar');
     return { blocks: [], error: 'That link did not return a calendar file' };
   }
 
@@ -93,10 +94,15 @@ export default async function(req) {
       { limit: 1 }
     );
     const feedUrl = (profiles?.[0]?.calendar_feed_url || '').trim();
+    // The stored link is user-typed, so it is validated here before any request leaves the server.
+    const safeFeed = feedUrl ? safeFeedUrl(feedUrl) : null;
+    if (feedUrl && !safeFeed) console.log('ics_feed_rejected', 'unsupported host');
 
     const [google, feed] = await Promise.allSettled([
       fetchGoogleBlocks(base44, dateStr),
-      feedUrl ? fetchFeedBlocks(feedUrl, dateStr) : Promise.resolve(null)
+      safeFeed
+        ? fetchFeedBlocks(safeFeed, dateStr)
+        : Promise.resolve(feedUrl ? { blocks: [], error: 'That link is not a supported calendar address. Paste the webcal:// link iCloud gives you.' } : null)
     ]);
 
     const googleResult = google.status === 'fulfilled' ? google.value : { blocks: [], connected: false };

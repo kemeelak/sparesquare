@@ -145,8 +145,6 @@ export default function Friends() {
       targetProfile = publicProfiles.find(p => p.email === addValue.trim().toLowerCase());
     } else if (addMethod === "username") {
       targetProfile = publicProfiles.find(p => p.username?.toLowerCase() === addValue.trim().toLowerCase());
-    } else if (addMethod === "phone") {
-      targetProfile = publicProfiles.find(p => p.phone_number === addValue.trim());
     }
 
     if (!targetProfile) {
@@ -383,7 +381,7 @@ export default function Friends() {
 
               {/* Method selector */}
               <div className="flex gap-2 mb-4">
-                {["email", "username", "phone"].map(m => (
+                {["email", "username"].map(m => (
                   <button
                     key={m}
                     onClick={() => { setAddMethod(m); setAddValue(""); setAddError(""); setAddSuccess(""); }}
@@ -397,7 +395,7 @@ export default function Friends() {
               <input
                 value={addValue}
                 onChange={(e) => { setAddValue(e.target.value); setAddError(""); setAddSuccess(""); }}
-                placeholder={addMethod === "email" ? "friend@email.com" : addMethod === "username" ? "@username" : "+1 555 0123"}
+                placeholder={addMethod === "email" ? "friend@email.com" : "@username"}
                 className="w-full rounded-xl border border-[#E8E4DF] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 mb-3"
               />
 
