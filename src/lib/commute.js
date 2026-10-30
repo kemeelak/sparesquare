@@ -126,6 +126,13 @@ export function isCommuteHour(commute, date, hour, sessions = []) {
   return !!windowForHour(windowsForDay(commute, sessions, date), hour);
 }
 
+// How long a ride has actually been going — used when someone ends it early
+export function elapsedMinutes(session, now = new Date()) {
+  const started = new Date(session?.start_time).getTime();
+  if (!started) return 1;
+  return Math.max(1, Math.round((now.getTime() - started) / 60000));
+}
+
 export function minutesLeftInWindow(rideWindow, hour) {
   if (!rideWindow) return 0;
   return Math.max(0, Math.round((rideWindow.end_hour - Math.max(hour, rideWindow.start_hour)) * 60));

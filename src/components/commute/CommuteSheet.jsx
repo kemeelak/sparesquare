@@ -33,6 +33,7 @@ export default function CommuteSheet({
   onQueueBacklog,
   onComplete,
   onEdit,
+  onEndRide,
 }) {
   const mode = rideWindow?.mode || commuteMode(commute);
   const dateStr = format(date, "yyyy-MM-dd");
@@ -151,6 +152,14 @@ For every suggestion give: a short title; kind (listen/watch/read/do); minutes a
             </div>
           </div>
           <div className="flex items-center gap-1">
+            {onEndRide && minutes > 0 && (
+              <button
+                onClick={onEndRide}
+                className="px-2.5 py-1.5 rounded-lg bg-[#F5F0EB] text-[11px] font-semibold text-[#1A1A1A]"
+              >
+                End ride
+              </button>
+            )}
             <button
               onClick={onEdit}
               className="p-2 rounded-xl hover:bg-[#F5F0EB] text-[#8A8580]"

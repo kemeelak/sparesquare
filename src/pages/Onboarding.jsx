@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, Sparkles, Loader2, MessageCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import OnboardingChat from "@/components/onboarding/OnboardingChat";
+import CommuteSetup from "@/components/commute/CommuteSetup";
 import { partitionNewHabits } from "@/lib/habitDedupe";
 
 const GROWTH_LABELS = {
@@ -32,10 +33,12 @@ function toTimeStr(h) {
 }
 
 export default function Onboarding() {
-  const [phase, setPhase] = useState("welcome"); // welcome | chat | confirm | building
+  const [phase, setPhase] = useState("welcome"); // welcome | chat | confirm | commute
   const [extracted, setExtracted] = useState({});
   const [draft, setDraft] = useState({});
   const [saving, setSaving] = useState(false);
+  const [createdProfile, setCreatedProfile] = useState(null);
+  const [commuteSaving, setCommuteSaving] = useState(false);
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -129,7 +132,7 @@ Return JSON with a habits array (0-4 items), each with: title, description, dura
     const wakeH = extracted.wake_hour ?? 7;
     const goalH = extracted.sleep_goal_hour ?? sleepH;
 
-    await base44.entities.UserProfile.create({
+    const created = await base44.entities.UserProfile.create({
       rhythm_type: extracted.rhythm_type || "other",
       unmovables: extracted.unmovables || [],
       sleep_actual: toTimeStr(sleepH),
@@ -161,7 +164,10 @@ Return JSON with a habits array (0-4 items), each with: title, description, dura
       );
     }
 
-    window.location.href = createPageUrl("Home");
+    // Commute is the last onboarding step — it can be skipped with the X
+    setCreatedProfile(created);
+    setSaving(false);
+    setPhase("commute");
   };
 
   const unmovables = extracted.unmovables || [];
@@ -338,6 +344,19 @@ Return JSON with a habits array (0-4 items), each with: title, description, dura
             </motion.div>
           )}
         </AnimatePresence>
+
+        {phase === "commute" && createdProfile && (
+          <CommuteSetup
+            profile={createdProfile}
+            isSaving={commuteSaving}
+            onClose={() => (window.location.href = createPageUrl("Home"))}
+            onSave={async (commuteData) => {
+              setCommuteSaving(true);
+              await base44.entities.UserProfile.update(createdProfile.id, { commute: commuteData });
+              window.location.href = createPageUrl("Home");
+            }}
+          />
+        )}
       </div>
     </div>
   );

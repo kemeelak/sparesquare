@@ -21,7 +21,7 @@ import CommuteOptIn from "../components/commute/CommuteOptIn";
 import CommuteNudge from "../components/commute/CommuteNudge";
 import StartCommuteSheet from "../components/commute/StartCommuteSheet";
 import MoodPopup from "../components/mood/MoodPopup";
-import { getCommute, windowsForDay, windowForHour, minutesLeftInWindow } from "../lib/commute";
+import { getCommute, windowsForDay, windowForHour, minutesLeftInWindow, elapsedMinutes } from "../lib/commute";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 
 export default function Home() {
@@ -207,6 +207,12 @@ export default function Home() {
         duration_minutes: minutes,
         mode,
       }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["commuteSessions"] }),
+  });
+
+  const endRideMutation = useMutation({
+    mutationFn: (session) =>
+      base44.entities.CommuteSession.update(session.id, { duration_minutes: elapsedMinutes(session) }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["commuteSessions"] }),
   });
 
@@ -503,6 +509,17 @@ export default function Home() {
             profile={profile}
             habits={habits}
             mood={mood}
+            onEndRide={
+              rideSheet.window?.session
+                ? async () => {
+                    const updated = await endRideMutation.mutateAsync(rideSheet.window.session);
+                    if (updated?.id) {
+                      setStartedRides((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+                    }
+                    setRideSheet(null);
+                  }
+                : null
+            }
             onClose={() => setRideSheet(null)}
             onEdit={() => {
               setRideSheet(null);
