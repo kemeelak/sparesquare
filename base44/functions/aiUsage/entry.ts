@@ -10,7 +10,7 @@ export default async function (req: Request): Promise<Response> {
     const user = await base44.auth.me().catch((e: any) => (e?.status === 401 ? null : Promise.reject(e)));
     if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
 
-    const snap = await usageSnapshot(base44.asServiceRole, user.id);
+    const snap = await usageSnapshot(base44.asServiceRole, user.id, user.email);
     return new Response(
       JSON.stringify({
         plan: snap.plan,

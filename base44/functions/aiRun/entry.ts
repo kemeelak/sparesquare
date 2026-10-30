@@ -28,7 +28,7 @@ export default async function (req: Request): Promise<Response> {
     }
 
     const db = base44.asServiceRole;
-    const plan = await resolvePlan(db, user.id);
+    const plan = await resolvePlan(db, user.id, user.email);
     const limit = planCredits(plan);
     const period = currentPeriod();
 

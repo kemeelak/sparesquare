@@ -5,6 +5,20 @@ export default function CreditMeter({ usage, className }) {
   if (!usage) return null;
 
   const { used = 0, limit = 1, remaining = 0, plan } = usage;
+
+  if (plan === "unlimited") {
+    return (
+      <div className={className}>
+        <p className="text-xs font-medium text-[#4A5568]">
+          {used.toLocaleString()} credits used · no limit on this account
+        </p>
+        <div className="h-2 rounded-full bg-[#F0EBE5] mt-2 overflow-hidden">
+          <div className="h-full w-full rounded-full bg-[#4A5568]" />
+        </div>
+      </div>
+    );
+  }
+
   const pct = Math.min(100, Math.round((used / Math.max(1, limit)) * 100));
   const low = remaining <= limit * 0.15;
 

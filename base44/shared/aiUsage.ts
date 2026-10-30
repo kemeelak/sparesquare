@@ -12,6 +12,8 @@ export const PLANS: Record<string, { name: string; credits: number; price?: stri
     currency: "USD",
     productId: "plus_monthly",
   },
+  // Testing accounts: effectively no cap. Never sold, never self-assignable.
+  unlimited: { name: "Unlimited", credits: 1000000000 },
 };
 
 // What each AI feature costs, in credits.
@@ -28,6 +30,14 @@ export const FEATURE_COSTS: Record<string, number> = {
 };
 
 export const PAID_PRODUCT_IDS = ["plus_monthly"];
+
+// Accounts that never hit a credit cap. The email is read from the signed-in user on the
+// server, so a client can't claim it.
+export const UNLIMITED_EMAILS = ["kemeelke@gmail.com"];
+
+export function isUnlimitedEmail(email?: string | null): boolean {
+  return !!email && UNLIMITED_EMAILS.includes(email.trim().toLowerCase());
+}
 
 export function currentPeriod(): string {
   return new Date().toISOString().slice(0, 7);
@@ -47,7 +57,8 @@ function rows(res: any): any[] {
 
 // Paid access comes only from a verified Base44Purchase row written by the payments
 // webhook — never from anything the user can edit on their own profile.
-export async function resolvePlan(db: any, userId: string): Promise<string> {
+export async function resolvePlan(db: any, userId: string, email?: string | null): Promise<string> {
+  if (isUnlimitedEmail(email)) return "unlimited";
   const purchases = rows(await db.entities.Base44Purchase.filter({ appUserId: userId, status: "paid" }));
   return purchases.some((p: any) => PAID_PRODUCT_IDS.includes(p.productId)) ? "plus" : "free";
 }
@@ -57,8 +68,8 @@ export async function getUsageRow(db: any, userId: string, period: string) {
   return existing[0] ?? null;
 }
 
-export async function usageSnapshot(db: any, userId: string) {
-  const plan = await resolvePlan(db, userId);
+export async function usageSnapshot(db: any, userId: string, email?: string | null) {
+  const plan = await resolvePlan(db, userId, email);
   const limit = planCredits(plan);
   const period = currentPeriod();
   const row = await getUsageRow(db, userId, period);

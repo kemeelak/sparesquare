@@ -22,6 +22,13 @@ export const PLAN_INFO = {
     productId: "plus_monthly",
     blurb: "For using it properly — daily coaching plus feeding your library.",
   },
+  unlimited: {
+    id: "unlimited",
+    name: "Unlimited",
+    price: 0,
+    credits: 0,
+    blurb: "Testing account — no AI credit cap.",
+  },
 };
 
 // What credits actually buy, so the limit feels concrete rather than arbitrary.
