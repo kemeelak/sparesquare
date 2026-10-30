@@ -86,3 +86,13 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Phones zoom into any field whose text is under 16px — keep every text bar at 16px so tapping
+   one never zooms the page in. */
+@media (max-width: 1023px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
