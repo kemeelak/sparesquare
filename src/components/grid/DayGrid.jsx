@@ -48,7 +48,7 @@ export default function DayGrid({ date, unmovables, habits, sleepHours, calendar
   };
 
   return (
-    <div className="grid grid-cols-6 gap-2">
+    <div className="grid grid-cols-6 gap-1.5">
       {hours.map((hour) => {
         const habitsForHour = getHabitsForHour(hour);
         const calendarForHour = getCalendarForHour(hour);

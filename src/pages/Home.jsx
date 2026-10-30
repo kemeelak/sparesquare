@@ -20,7 +20,7 @@ import CommuteSheet from "../components/commute/CommuteSheet";
 import CommuteOptIn from "../components/commute/CommuteOptIn";
 import CommuteNudge from "../components/commute/CommuteNudge";
 import StartCommuteSheet from "../components/commute/StartCommuteSheet";
-import MoodStrip from "../components/mood/MoodStrip";
+import MoodPopup from "../components/mood/MoodPopup";
 import { getCommute, windowsForDay, windowForHour, minutesLeftInWindow } from "../lib/commute";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 
@@ -38,6 +38,8 @@ export default function Home() {
   const [startedRides, setStartedRides] = useState([]);
   const [commuteOptInHidden, setCommuteOptInHidden] = useState(false);
   const [nudgeDismissed, setNudgeDismissed] = useState(false);
+  const [moodPopup, setMoodPopup] = useState(null); // "morning" | "evening" | null
+  const [moodPrompted, setMoodPrompted] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: profiles = [] } = useQuery({
@@ -84,7 +86,9 @@ export default function Home() {
     queryFn: () => base44.entities.MoodCheckin.filter({ created_by_id: currentUser.id, date: dateStr }),
     enabled: !!currentUser,
   });
-  const mood = moods[0] || null;
+  const morningMood = moods.find((m) => m.slot === "morning" || !m.slot) || null;
+  const eveningMood = moods.find((m) => m.slot === "evening") || null;
+  const mood = eveningMood || morningMood;
 
   const parseSleepHours = () => {
     if (!profile) return [];
@@ -153,6 +157,24 @@ export default function Home() {
     }
   }, [profile]);
 
+  // The check-in lives in a pop-up — morning window and evening window
+  const moodSlot =
+    now.getHours() >= 5 && now.getHours() < 11
+      ? "morning"
+      : now.getHours() >= 18 && now.getHours() < 23
+      ? "evening"
+      : null;
+
+  useEffect(() => {
+    if (moodPrompted || !isToday || !moodSlot || !currentUser) return;
+    if (moodSlot === "morning" ? morningMood : eveningMood) return;
+    const timer = setTimeout(() => {
+      setMoodPopup(moodSlot);
+      setMoodPrompted(true);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [moodPrompted, isToday, moodSlot, morningMood, eveningMood, currentUser]);
+
   const updateHabitMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.HabitBlock.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["habits"] }),
@@ -169,10 +191,12 @@ export default function Home() {
   });
 
   const saveMoodMutation = useMutation({
-    mutationFn: ({ score, label }) =>
-      mood
-        ? base44.entities.MoodCheckin.update(mood.id, { score, label })
-        : base44.entities.MoodCheckin.create({ date: dateStr, score, label }),
+    mutationFn: ({ score, label, slot }) => {
+      const existing = slot === "evening" ? eveningMood : morningMood;
+      return existing
+        ? base44.entities.MoodCheckin.update(existing.id, { score, label, slot })
+        : base44.entities.MoodCheckin.create({ date: dateStr, score, label, slot });
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["mood", dateStr] }),
   });
 
@@ -240,43 +264,43 @@ export default function Home() {
   };
 
   return (
-    <div className="p-4 lg:p-8 max-w-2xl mx-auto">
+    <div className="p-3 lg:p-8 max-w-2xl mx-auto">
       {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">Your Grid</h1>
-              <p className="text-sm text-[#8A8580]">Map your day, find your growth</p>
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="min-w-0">
+              <h1 className="text-lg font-bold text-[#1A1A1A] tracking-tight leading-tight">Your Grid</h1>
+              <p className="text-[11px] text-[#8A8580]">Map your day, find your growth</p>
             </div>
             <button
               onClick={() => setShowAddEvent(true)}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#1A1A1A] text-white text-sm font-medium hover:bg-[#333] transition-colors"
+              className="flex items-center gap-1 px-3 py-2 rounded-xl bg-[#1A1A1A] text-white text-xs font-medium hover:bg-[#333] transition-colors flex-shrink-0"
             >
-              <Plus className="w-4 h-4" /> Add Event
+              <Plus className="w-3.5 h-3.5" /> Add
             </button>
           </div>
 
       {/* Date Navigator */}
-      <div className="flex items-center justify-between bg-white rounded-2xl p-3 border border-[#E8E4DF] mb-4">
+      <div className="flex items-center justify-between bg-white rounded-xl px-1 py-1 border border-[#E8E4DF] mb-2.5">
         <button
           onClick={() => setSelectedDate(subDays(selectedDate, 1))}
-          className="p-2 rounded-xl hover:bg-[#F5F0EB] transition-colors"
+          className="p-1.5 rounded-lg hover:bg-[#F5F0EB] transition-colors"
         >
-          <ChevronLeft className="w-5 h-5 text-[#4A5568]" />
+          <ChevronLeft className="w-4 h-4 text-[#4A5568]" />
         </button>
-        <div className="text-center">
-          <p className="text-lg font-semibold text-[#1A1A1A]">{format(selectedDate, "EEEE")}</p>
-          <p className="text-xs text-[#8A8580]">{format(selectedDate, "MMMM d, yyyy")}</p>
+        <div className="text-center leading-tight">
+          <p className="text-sm font-semibold text-[#1A1A1A]">{format(selectedDate, "EEEE")}</p>
+          <p className="text-[10px] text-[#8A8580]">{format(selectedDate, "MMMM d")}</p>
         </div>
         <button
           onClick={() => setSelectedDate(addDays(selectedDate, 1))}
-          className="p-2 rounded-xl hover:bg-[#F5F0EB] transition-colors"
+          className="p-1.5 rounded-lg hover:bg-[#F5F0EB] transition-colors"
         >
-          <ChevronRight className="w-5 h-5 text-[#4A5568]" />
+          <ChevronRight className="w-4 h-4 text-[#4A5568]" />
         </button>
       </div>
 
       {/* Spare / Calendar / Partner row */}
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-2.5">
             <SpareCounter count={getSpareCount()} />
             <button
               onClick={() => { refetchCalendar(); setShowCalendarSync(true); }}
@@ -298,13 +322,15 @@ export default function Home() {
           </div>
 
           {/* Stats */}
-          <div className="mb-4">
+          <div className="mb-2.5">
             <StatsRow
               completed={completedCount}
               total={todayHabits.length}
               streak={3}
+              mood={mood}
               onClickCompleted={() => setStatsSheet("completed")}
               onClickScheduled={() => setStatsSheet("scheduled")}
+              onClickMood={() => setMoodPopup(moodSlot || "morning")}
             />
           </div>
 
@@ -334,7 +360,7 @@ export default function Home() {
           if (liveWindow) setRideSheet({ hour: now.getHours(), window: liveWindow });
           else setShowStartCommute(true);
         }}
-        className={`w-full flex items-center justify-between gap-3 rounded-2xl px-4 py-3 mb-3 border transition-colors ${
+        className={`w-full flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 mb-2 border transition-colors ${
           liveWindow
             ? "bg-[#5C8D89] border-[#5C8D89] text-white"
             : "bg-white border-[#E8E4DF] text-[#1A1A1A] hover:bg-[#F5F0EB]"
@@ -349,20 +375,11 @@ export default function Home() {
         </span>
       </button>
 
-      {/* Mood check-in */}
-      <div className="mb-3">
-        <MoodStrip
-          mood={mood}
-          onSelect={(m) => saveMoodMutation.mutate(m)}
-          isSaving={saveMoodMutation.isPending}
-        />
-      </div>
-
       {/* All-day events banner */}
       <AllDayEventsBanner events={allDayEvents} />
 
       {/* Grid */}
-      <div className="bg-white rounded-2xl p-4 border border-[#E8E4DF] mb-4">
+      <div className="bg-white rounded-2xl p-3 border border-[#E8E4DF] mb-2">
         <DayGrid
           date={selectedDate}
           unmovables={unmovables}
@@ -536,6 +553,22 @@ export default function Home() {
                 window: windowForHour(windowsForDay(commute, [ride], selectedDate), hour),
               });
             }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Morning / evening check-in pop-up */}
+      <AnimatePresence>
+        {moodPopup && (
+          <MoodPopup
+            slot={moodPopup}
+            mood={moodPopup === "morning" ? morningMood : eveningMood}
+            isSaving={saveMoodMutation.isPending}
+            onSelect={(m) => {
+              saveMoodMutation.mutate({ ...m, slot: moodPopup });
+              setMoodPopup(null);
+            }}
+            onSkip={() => setMoodPopup(null)}
           />
         )}
       </AnimatePresence>

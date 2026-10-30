@@ -7,6 +7,14 @@
       "format": "date",
       "description": "The day this check-in belongs to"
     },
+    "slot": {
+      "type": "string",
+      "enum": [
+        "morning",
+        "evening"
+      ],
+      "description": "Which check-in of the day this is"
+    },
     "score": {
       "type": "number",
       "description": "1 drained to 5 charged"
