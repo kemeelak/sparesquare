@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, Sparkles, Loader2, MessageCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import OnboardingChat from "@/components/onboarding/OnboardingChat";
+import { partitionNewHabits } from "@/lib/habitDedupe";
 
 const GROWTH_LABELS = {
   fitness: "💪 Fitness & Health",
@@ -68,13 +69,22 @@ export default function Onboarding() {
       motivation: draft.motivation,
     };
 
+    const existingHabits = extracted.existing_habits || [];
+
     const backlogSuggestions = await base44.integrations.Core.InvokeLLM({
-      prompt: `Based on this user's onboarding profile, suggest 5 highly personalized habit blocks for their backlog. These should be specific, actionable, and deeply relevant to their life situation and goals.
+      prompt: `Suggest habits for this person's backlog — only ones genuinely missing from their life.
+
+Be ruthless about relevance:
+- Never suggest anything they already do consistently.
+- Never suggest something they said they tried before and dropped for a real reason.
+- Only what their stated goals actually require, and their real schedule can hold.
+- Fewer is better. Give 4 at most, and return an EMPTY array rather than filler.
 
 User profile:
 ${Object.entries(profileSummary).map(([k, v]) => `${k}: ${v}`).join("\n")}
+${existingHabits.length ? `\nAlready does consistently — do NOT suggest these or near-copies of them:\n${existingHabits.map((h) => `- ${h}`).join("\n")}` : ""}
 
-Return 5 habits as JSON with fields: title, description, duration_minutes (15-60), energy_level (low/medium/high), category (fitness/mindfulness/learning/nutrition/sleep/productivity/social/creative).`,
+Return JSON with a habits array (0-4 items), each with: title, description, duration_minutes (15-60), energy_level (low/medium/high), category (fitness/mindfulness/learning/nutrition/sleep/productivity/social/creative).`,
       response_json_schema: {
         type: "object",
         properties: {
@@ -132,11 +142,14 @@ Return 5 habits as JSON with fields: title, description, duration_minutes (15-60
       goals: draft.goals.split("\n").map((g) => g.trim()).filter(Boolean),
       challenges: draft.challenges.split("\n").map((c) => c.trim()).filter(Boolean),
       motivation: draft.motivation.trim(),
+      existing_habits: existingHabits,
     });
 
-    if (backlogSuggestions?.habits?.length > 0) {
+    const { fresh: freshHabits } = partitionNewHabits(backlogSuggestions?.habits || [], existingHabits);
+
+    if (freshHabits.length > 0) {
       await base44.entities.HabitBlock.bulkCreate(
-        backlogSuggestions.habits.map((h) => ({
+        freshHabits.map((h) => ({
           title: h.title,
           description: h.description,
           duration_minutes: h.duration_minutes || 20,
@@ -234,7 +247,7 @@ Return 5 habits as JSON with fields: title, description, duration_minutes (15-60
             >
               <div className="bg-white rounded-2xl border border-[#E8E4DF] px-5 py-5 mb-5 shadow-sm">
                 <h2 className="font-bold text-[#1A1A1A] text-base mb-1">Here's what I learned about you</h2>
-                <p className="text-xs text-[#8A8580] mb-4">Edit anything below, then I'll build your grid and add 5 personalised habits. ✨</p>
+                <p className="text-xs text-[#8A8580] mb-4">Edit anything below, then I'll build your grid — and only suggest habits that are genuinely missing. ✨</p>
 
                 {/* Read-only summary */}
                 <div className="space-y-2 mb-4 pb-4 border-b border-[#F0EBE6]">
@@ -246,6 +259,9 @@ Return 5 habits as JSON with fields: title, description, duration_minutes (15-60
                     <Row label="Fixed blocks" value={unmovables.map((u) => `${u.label} ${u.start_hour}–${u.end_hour}h`).join(", ")} />
                   )}
                   {extracted.energy_pattern && <Row label="Most energized" value={extracted.energy_pattern} />}
+                  {extracted.existing_habits?.length > 0 && (
+                    <Row label="Already consistent" value={extracted.existing_habits.join(" · ")} />
+                  )}
                 </div>
 
                 {/* Editable: the deeper why */}

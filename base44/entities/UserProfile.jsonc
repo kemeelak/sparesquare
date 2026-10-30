@@ -98,6 +98,13 @@
     "motivation": {
       "type": "string",
       "description": "Why the user is doing this \u2014 their deeper why"
+    },
+    "existing_habits": {
+      "type": "array",
+      "description": "Routines and habits the user already keeps consistently \u2014 never suggest these back to them",
+      "items": {
+        "type": "string"
+      }
     }
   },
   "required": [],

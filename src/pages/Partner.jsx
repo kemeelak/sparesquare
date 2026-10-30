@@ -120,6 +120,7 @@ USER PROFILE:
 - Goals: ${(profile?.goals || []).join(", ") || "Not set"}
 - Motivation: ${profile?.motivation || "Not shared"}
 - Challenges: ${(profile?.challenges || []).join(", ") || "Not shared"}
+- Already does consistently (NEVER suggest these back, and don't re-teach them): ${(profile?.existing_habits || []).join(", ") || "Not shared"}
 
 TODAY'S SCHEDULE (${today}, current hour: ${currentHour}:00):
 - Confirmed/Suggested: ${todayHabits.filter(h => ["confirmed","suggested"].includes(h.status)).map(h => `${h.scheduled_hour}:00 ${h.title} (${h.duration_minutes || "?"}min)`).join(", ") || "None"}

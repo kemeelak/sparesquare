@@ -23,6 +23,13 @@ export default function Plugins() {
     enabled: !!currentUser,
   });
 
+  const { data: habits = [] } = useQuery({
+    queryKey: ["habits"],
+    queryFn: () => base44.entities.HabitBlock.filter({ created_by_id: currentUser.id }),
+    enabled: !!currentUser,
+  });
+  const existingTitles = habits.map((h) => h.title).filter(Boolean);
+
   const filtered = sources.filter(
     (s) => s.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.author?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -34,7 +41,7 @@ export default function Plugins() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">Plug-in Library</h1>
-          <p className="text-sm text-[#8A8580]">Extract habits from books, podcasts & videos</p>
+          <p className="text-sm text-[#8A8580]">Feed your Partner the principles you live by</p>
         </div>
         <Button
           onClick={() => setShowAdd(true)}
@@ -59,7 +66,7 @@ export default function Plugins() {
       <div className="grid gap-4 md:grid-cols-2">
         <AnimatePresence>
           {filtered.map((source) => (
-            <PluginCard key={source.id} source={source} queryClient={queryClient} />
+            <PluginCard key={source.id} source={source} queryClient={queryClient} existingTitles={existingTitles} />
           ))}
         </AnimatePresence>
       </div>
@@ -70,7 +77,7 @@ export default function Plugins() {
             <BookOpen className="w-7 h-7 text-[#8A8580]" />
           </div>
           <h2 className="text-lg font-semibold text-[#1A1A1A] mb-1">No sources yet</h2>
-          <p className="text-sm text-[#8A8580]">Add a book, podcast, or video to extract actionable habits</p>
+          <p className="text-sm text-[#8A8580]">Add a book, podcast, or video — its principles become your Partner's coaching</p>
         </div>
       )}
 

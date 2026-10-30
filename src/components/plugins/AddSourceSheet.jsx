@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { X, BookOpen, Headphones, Video, FileText, Loader2, Sparkles, Link } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useCurrentUser } from "@/lib/useCurrentUser";
+import { partitionNewHabits } from "@/lib/habitDedupe";
 
 const types = [
   { value: "book", label: "Book", icon: BookOpen },
@@ -15,12 +18,34 @@ const types = [
 const isYouTubeUrl = (str) => /youtube\.com|youtu\.be/.test(str);
 
 export default function AddSourceSheet({ onClose, onAdded }) {
+  const currentUser = useCurrentUser();
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [type, setType] = useState("book");
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
   const [extractedData, setExtractedData] = useState(null);
+
+  // Everything this person already does, so nothing is extracted twice
+  const { data: existingHabits = [] } = useQuery({
+    queryKey: ["habits"],
+    queryFn: () => base44.entities.HabitBlock.filter({ created_by_id: currentUser.id }),
+    enabled: !!currentUser,
+  });
+  const { data: existingSources = [] } = useQuery({
+    queryKey: ["pluginSources"],
+    queryFn: () => base44.entities.PluginSource.filter({ created_by_id: currentUser.id }),
+    enabled: !!currentUser,
+  });
+
+  const knownHabitTitles = [
+    ...existingHabits.map((h) => h.title),
+    ...existingSources.flatMap((s) => (s.habits_extracted || []).map((h) => h.title)),
+  ].filter(Boolean);
+
+  const knownHabitsText = knownHabitTitles.length
+    ? knownHabitTitles.map((t) => `- ${t}`).join("\n")
+    : "- (nothing yet — they're starting fresh)";
 
   const handleExtract = async () => {
     if (!title.trim()) return;
@@ -51,14 +76,20 @@ IMPORTANT: Base your extraction ONLY on the actual transcript below. Do NOT inve
 VIDEO TRANSCRIPT:
 ${transcriptContext}
 
+WHAT THEY ALREADY DO — never extract anything equivalent to these:
+${knownHabitsText}
+
 Extract THREE things from what is actually said in this transcript:
 
-1. SCHEDULABLE HABITS (habits array): Concrete, specific actions with a fixed time. Must be directly mentioned or clearly implied in the transcript. 4-7 habits.
+1. SCHEDULABLE HABITS (habits array): Concrete, specific actions with a fixed time, directly mentioned or clearly implied in the transcript. 0-7 habits. If the video is purely mindset, philosophy or story with nothing concrete to schedule, return an EMPTY array. Never pad with filler to hit a number, and never extract anything that duplicates what they already do above — the principles below still get captured either way.
 
-2. PARTNER PRINCIPLES (learnings array): Core ideas, mindset shifts, and frameworks mentioned. 6-10 principles.
+2. PARTNER PRINCIPLES (learnings array): Core ideas, mindset shifts, and frameworks mentioned. 6-10 principles. This is the part that matters most.
 
 3. SUMMARY: One paragraph capturing the video's core message.`
       : `You are extracting structured knowledge from "${title}" (${type}) to train an AI life coach called SpareSquare Partner.
+
+WHAT THEY ALREADY DO — never extract anything equivalent to these:
+${knownHabitsText}
 
 Extract THREE things:
 
@@ -67,9 +98,9 @@ Extract THREE things:
 BAD (too vague): "Live below your means", "Practice generosity", "Be disciplined"
 GOOD (specific, timed): "Track every expense in a spreadsheet" (weekly, 15min), "Write 3 things you're grateful for" (daily, 5min), "Read 10 pages" (daily, 15min)
 
-Extract 4-7 habits. Include frequency (daily/weekly/monthly) and realistic duration_minutes.
+Extract 0-7 habits — only what genuinely exists in this source, and never anything that duplicates what they already do above. If this source is principle-only (a philosophy, a mindset book, a mindset podcast), return an EMPTY array rather than inventing things to schedule. Including frequency (daily/weekly/monthly) and realistic duration_minutes.
 
-2. PARTNER PRINCIPLES (learnings array): Core ideas, mindset shifts, frameworks — the Partner AI will use these when giving advice. Extract 6-12 principles.
+2. PARTNER PRINCIPLES (learnings array): Core ideas, mindset shifts, frameworks — the Partner AI will use these when giving advice. Extract 6-12 principles. This is the part that matters most.
 
 3. SUMMARY: One paragraph capturing the core philosophy.`;
 
@@ -111,13 +142,16 @@ Extract 4-7 habits. Include frequency (daily/weekly/monthly) and realistic durat
       }
     });
 
-    setExtractedData({ ...result, usedTranscript: !!transcriptContext });
+    // Drop anything they already do, or that this source repeated
+    const { fresh, duplicates } = partitionNewHabits(result.habits || [], knownHabitTitles);
+
+    setExtractedData({ ...result, habits: fresh, skippedDuplicates: duplicates, usedTranscript: !!transcriptContext });
     setLoading(false);
     setLoadingStep("");
   };
 
   const handleSave = async (selectedIndices) => {
-    const selectedHabits = extractedData.habits.filter((_, i) => selectedIndices.includes(i));
+    const selectedHabits = (extractedData.habits || []).filter((_, i) => selectedIndices.includes(i));
     const sourceName = extractedData.title || title;
 
     await base44.entities.PluginSource.create({
@@ -228,7 +262,7 @@ Extract 4-7 habits. Include frequency (daily/weekly/monthly) and realistic durat
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4 mr-2" /> Extract Habits
+                    <Sparkles className="w-4 h-4 mr-2" /> Extract principles
                   </>
                 )}
               </Button>
@@ -241,6 +275,7 @@ Extract 4-7 habits. Include frequency (daily/weekly/monthly) and realistic durat
               sourceName={extractedData.title || title}
               author={extractedData.author}
               usedTranscript={extractedData.usedTranscript}
+              skippedDuplicates={extractedData.skippedDuplicates || []}
               onSave={handleSave}
               onBack={() => setExtractedData(null)}
             />
@@ -251,7 +286,7 @@ Extract 4-7 habits. Include frequency (daily/weekly/monthly) and realistic durat
   );
 }
 
-function HabitSelector({ habits, learnings, summary, sourceName, author, usedTranscript, onSave, onBack }) {
+function HabitSelector({ habits, learnings, summary, sourceName, author, usedTranscript, skippedDuplicates = [], onSave, onBack }) {
   const [selected, setSelected] = useState(habits.map((_, i) => i));
   const [saving, setSaving] = useState(false);
 
@@ -296,11 +331,17 @@ function HabitSelector({ habits, learnings, summary, sourceName, author, usedTra
         </div>
       )}
 
-      <p className="text-sm font-medium text-[#1A1A1A] mb-3">
-        Select habits to add ({selected.length}/{habits.length}):
-      </p>
+      {habits.length > 0 ? (
+        <p className="text-sm font-medium text-[#1A1A1A] mb-3">
+          Select habits to add ({selected.length}/{habits.length}):
+        </p>
+      ) : (
+        <p className="text-sm text-[#6B6560] bg-[#F5F0EB] rounded-xl px-3 py-3 mb-4 leading-relaxed">
+          Nothing here worth scheduling — this source is all mindset. Its principles still go straight into your Partner.
+        </p>
+      )}
 
-      <div className="space-y-2 mb-6">
+      <div className="space-y-2 mb-4">
         {habits.map((habit, i) => (
           <button
             key={i}
@@ -325,16 +366,26 @@ function HabitSelector({ habits, learnings, summary, sourceName, author, usedTra
         ))}
       </div>
 
+      {skippedDuplicates.length > 0 && (
+        <p className="text-[11px] text-[#8A8580] mb-4 leading-relaxed">
+          Skipped {skippedDuplicates.length} you already have: {skippedDuplicates.join(", ")}
+        </p>
+      )}
+
       <div className="flex gap-2">
         <Button variant="outline" onClick={onBack} className="rounded-xl flex-1">
           Back
         </Button>
         <Button
           onClick={handleSave}
-          disabled={selected.length === 0 || saving}
+          disabled={saving}
           className="rounded-xl flex-1 bg-[#7C9A82] hover:bg-[#6B8A71] text-white"
         >
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : `Add ${selected.length} Habits`}
+          {saving
+            ? <Loader2 className="w-4 h-4 animate-spin" />
+            : selected.length > 0
+              ? `Add ${selected.length} Habit${selected.length === 1 ? "" : "s"}`
+              : "Save principles only"}
         </Button>
       </div>
     </div>

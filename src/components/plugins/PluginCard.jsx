@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, Headphones, Video, FileText, ChevronDown, ChevronUp, Plus, Check, Brain, Trash2, Share2, X, Loader2 } from "lucide-react";
 import { useCurrentUser } from "@/lib/useCurrentUser";
+import { isDuplicateHabit } from "@/lib/habitDedupe";
 
 const typeIcons = {
   book: BookOpen,
@@ -18,7 +19,7 @@ const typeColors = {
   article: "bg-[#FEF3C7] text-[#D97706]",
 };
 
-export default function PluginCard({ source, queryClient }) {
+export default function PluginCard({ source, queryClient, existingTitles = [] }) {
   const currentUser = useCurrentUser();
   const [expandedHabits, setExpandedHabits] = useState(false);
   const [expandedLearnings, setExpandedLearnings] = useState(false);
@@ -243,31 +244,36 @@ export default function PluginCard({ source, queryClient }) {
           >
             <div className="px-4 py-3 space-y-2">
               <p className="text-[10px] font-semibold text-[#7C9A82] uppercase tracking-wide mb-2">Add to Backlog</p>
-              {source.habits_extracted.map((habit, i) => (
-                <div key={i} className="flex items-center justify-between gap-2 py-1.5">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-[#1A1A1A] truncate">{habit.title}</p>
-                    <div className="flex gap-2 mt-0.5">
-                      {habit.frequency && (
-                        <span className="text-[10px] text-[#8A8580]">{habit.frequency}</span>
-                      )}
-                      {habit.duration_minutes && (
-                        <span className="text-[10px] text-[#B0AAA4]">{habit.duration_minutes}min</span>
-                      )}
+              {source.habits_extracted.map((habit, i) => {
+                const alreadyHave = addedIds[i] || isDuplicateHabit(habit.title, existingTitles);
+                return (
+                  <div key={i} className="flex items-center justify-between gap-2 py-1.5">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-[#1A1A1A] truncate">{habit.title}</p>
+                      <div className="flex gap-2 mt-0.5">
+                        {habit.frequency && (
+                          <span className="text-[10px] text-[#8A8580]">{habit.frequency}</span>
+                        )}
+                        {habit.duration_minutes && (
+                          <span className="text-[10px] text-[#B0AAA4]">{habit.duration_minutes}min</span>
+                        )}
+                      </div>
                     </div>
+                    <button
+                      onClick={() => addToBacklog(habit, i)}
+                      disabled={alreadyHave}
+                      title={alreadyHave ? "Already in your habits" : "Add to backlog"}
+                      className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                        alreadyHave
+                          ? "bg-[#E8F0EA] text-[#7C9A82]"
+                          : "bg-white border border-[#E8E4DF] text-[#7C9A82] hover:bg-[#E8F0EA] hover:border-[#7C9A82]"
+                      }`}
+                    >
+                      {alreadyHave ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => addToBacklog(habit, i)}
-                    className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                      addedIds[i]
-                        ? "bg-[#7C9A82] text-white"
-                        : "bg-white border border-[#E8E4DF] text-[#7C9A82] hover:bg-[#E8F0EA] hover:border-[#7C9A82]"
-                    }`}
-                  >
-                    {addedIds[i] ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
         )}
