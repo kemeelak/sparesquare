@@ -6,6 +6,7 @@ import { base44 } from "@/api/base44Client";
 import { invokeAI } from "@/lib/plans";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
+import AppleCalendarGuide from "@/components/calendar/AppleCalendarGuide";
 
 const CONNECTOR_ID = "6ad815231cdd9de033a79a50";
 
@@ -17,6 +18,7 @@ export default function CalendarSync({ onClose, connected, onRefresh, blockCount
   const [feedInput, setFeedInput] = useState(icsUrl);
   const [feedStatus, setFeedStatus] = useState("idle"); // idle | saving | error
   const [feedError, setFeedError] = useState("");
+  const [showAppleGuide, setShowAppleGuide] = useState(false);
   const queryClient = useQueryClient();
 
   // App-user OAuth: popup on desktop, full redirect on phones (popups are blocked there)
@@ -57,9 +59,10 @@ export default function CalendarSync({ onClose, connected, onRefresh, blockCount
     queryClient.invalidateQueries({ queryKey: ["userProfile"] });
   };
 
-  const handleConnectFeed = async () => {
-    const value = feedInput.trim();
+  const handleConnectFeed = async (link) => {
+    const value = (typeof link === "string" ? link : feedInput).trim();
     if (!value) return;
+    setFeedInput(value);
     setFeedStatus("saving");
     setFeedError("");
     try {
@@ -76,6 +79,7 @@ export default function CalendarSync({ onClose, connected, onRefresh, blockCount
       }
       await onRefresh?.();
       setFeedStatus("idle");
+      setShowAppleGuide(false);
     } catch (e) {
       setFeedError(e.message || "Could not connect that link");
       setFeedStatus("error");
@@ -223,6 +227,15 @@ Only extract recurring, fixed commitments — not one-off events.`,
         {/* Apple / iCloud — read-only public calendar link */}
         {status === "idle" && (
           <div className="mt-4 rounded-2xl border border-[#E8E4DF] p-4">
+            {showAppleGuide && !icsUrl ? (
+              <AppleCalendarGuide
+                onBack={() => { setShowAppleGuide(false); setFeedError(""); }}
+                onConnect={handleConnectFeed}
+                connecting={feedStatus === "saving"}
+                error={feedError}
+              />
+            ) : (
+            <>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-base">🍎</span>
               <p className="text-sm font-semibold text-[#1A1A1A]">Apple / iCloud Calendar</p>
@@ -243,27 +256,21 @@ Only extract recurring, fixed commitments — not one-off events.`,
               </>
             ) : (
               <>
-                <p className="text-xs text-[#8A8580] mb-2">
-                  In Apple Calendar: Share Calendar → Public Calendar → Copy Link, then paste it here.
-                  Read-only, no password needed.
+                <p className="text-xs text-[#8A8580] mb-3">
+                  Read-only. Apple shares a copy of the one calendar you pick — nothing is read from
+                  your phone.
                 </p>
-                <input
-                  value={feedInput}
-                  onChange={(e) => setFeedInput(e.target.value)}
-                  placeholder="webcal://p01-calendarws.icloud.com/ca/..."
-                  className="w-full rounded-xl border border-[#E8E4DF] p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 placeholder:text-[#B0AAA4]"
-                />
                 <Button
-                  onClick={handleConnectFeed}
-                  disabled={!feedInput.trim() || feedStatus === "saving"}
-                  className="w-full mt-2 h-11 rounded-xl bg-[#1A1A1A] hover:bg-[#333] text-white"
+                  onClick={() => setShowAppleGuide(true)}
+                  className="w-full h-11 rounded-xl bg-[#1A1A1A] hover:bg-[#333] text-white"
                 >
-                  {feedStatus === "saving" && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  {feedStatus === "saving" ? "Checking link..." : "Connect feed"}
+                  Connect iCloud Calendar
                 </Button>
               </>
             )}
             {feedError && <p className="text-xs text-red-500 mt-2">{feedError}</p>}
+            </>
+            )}
           </div>
         )}
 
