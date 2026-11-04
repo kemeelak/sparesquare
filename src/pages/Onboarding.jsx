@@ -3,9 +3,10 @@ import { base44 } from "@/api/base44Client";
 import { invokeAI } from "@/lib/plans";
 import { createPageUrl } from "../utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Sparkles, Loader2, MessageCircle, ArrowRight } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import OnboardingChat from "@/components/onboarding/OnboardingChat";
+import WelcomeIntro from "@/components/onboarding/WelcomeIntro";
 import CommuteSetup from "@/components/commute/CommuteSetup";
 import UnmovableEditor from "@/components/onboarding/UnmovableEditor";
 import { partitionNewHabits } from "@/lib/habitDedupe";
@@ -42,7 +43,8 @@ function toTimeStr(h) {
 }
 
 export default function Onboarding() {
-  const [phase, setPhase] = useState("welcome"); // welcome | chat | confirm | commute
+  // intro = the quick "here's what this does" before the first question
+  const [phase, setPhase] = useState("intro"); // intro | chat | confirm | commute
   const [extracted, setExtracted] = useState({});
   const [draft, setDraft] = useState({});
   const [saving, setSaving] = useState(false);
@@ -169,41 +171,18 @@ export default function Onboarding() {
         </motion.div>
 
         <AnimatePresence mode="wait">
-          {/* WELCOME */}
-          {phase === "welcome" && (
+          {/* INTRO — three quick beats so nobody starts the chat blind */}
+          {phase === "intro" && (
             <motion.div
-              key="welcome"
+              key="intro"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="bg-white rounded-2xl border border-[#E8E4DF] p-6 shadow-sm"
             >
-              <div className="w-12 h-12 rounded-2xl bg-[#F5EDE4] flex items-center justify-center mx-auto mb-4">
-                <MessageCircle className="w-6 h-6 text-[#D4A574]" />
-              </div>
-              <h2 className="text-base font-bold text-[#1A1A1A] text-center mb-2">Let's get to know you</h2>
-              <p className="text-sm text-[#8A8580] text-center mb-5 leading-relaxed">
-                Instead of a boring form, we'll have a quick conversation about your life, your goals, and what's stopped you before. The more I understand your <span className="text-[#1A1A1A] font-medium">why</span>, the better I can coach you.
+              <WelcomeIntro onDone={startChat} />
+              <p className="text-xs text-[#B0AAA4] text-center mt-3">
+                Then 2-3 minutes of questions, no forms
               </p>
-              <div className="space-y-2 mb-6">
-                {[
-                  "Your daily rhythm & hidden time",
-                  "What you're working toward",
-                  "What's blocked you before — and why it matters now",
-                ].map((t) => (
-                  <div key={t} className="flex items-center gap-2 text-sm text-[#4A5568]">
-                    <Check className="w-4 h-4 text-[#7C9A82] flex-shrink-0" />
-                    {t}
-                  </div>
-                ))}
-              </div>
-              <Button
-                onClick={startChat}
-                className="w-full bg-[#1A1A1A] hover:bg-[#333] text-white rounded-xl h-12"
-              >
-                Start the conversation <ArrowRight className="w-4 h-4" />
-              </Button>
-              <p className="text-xs text-[#B0AAA4] text-center mt-3">Takes about 2-3 minutes</p>
             </motion.div>
           )}
 
