@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { invokeAI } from "@/lib/plans";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, Mic } from "lucide-react";
 import { normalizeExtracted, isOnboardingComplete } from "@/components/onboarding/normalizeExtracted";
+import { checkExtracted, issueQuestion } from "@/components/onboarding/checkExtracted";
+import VoiceSpill from "@/components/onboarding/VoiceSpill";
 
 const MAX_WORDS = 1000;
 const MAX_CHARS = 7000;
@@ -127,6 +129,9 @@ export default function OnboardingChat({ onComplete }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [extracted, setExtracted] = useState({});
+  const [showVoice, setShowVoice] = useState(false);
+  // Anything implausible gets questioned once — nobody should be asked the same thing twice.
+  const askedRef = useRef(new Set());
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -169,14 +174,16 @@ export default function OnboardingChat({ onComplete }) {
     }
   };
 
-  const send = async () => {
+  // `spoken` is a voice dump: it arrives already transcribed and goes in as their turn.
+  const send = async (spoken) => {
+    const typed = typeof spoken === "string" ? spoken : input;
     // Tapped answers and typed detail can be sent together — whatever they gave us counts.
-    const text = [input.trim(), ...picked].filter(Boolean).join(", ");
+    const text = [typed.trim(), ...picked].filter(Boolean).join(", ");
     if (!text || loading) return;
     const nextMessages = [...messages, { role: "user", content: text }];
     const turnCount = nextMessages.filter((m) => m.role === "user").length;
     setMessages(nextMessages);
-    setInput("");
+    if (typeof spoken !== "string") setInput("");
     setPicked([]);
     setOptions([]);
     setLoading(true);
@@ -219,8 +226,20 @@ export default function OnboardingChat({ onComplete }) {
       const nextOptions = Array.isArray(res?.options) ? res.options.slice(0, 4) : [];
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
       setOptions(nextOptions);
+      const done = res?.complete || isOnboardingComplete(merged);
+      // Nothing implausible gets saved on a guess — a long dump or a voice note can easily
+      // turn "church" into a name or a 20-minute ride into a thirteen-hour block.
+      const checks = done
+        ? checkExtracted(merged).filter((issue) => !askedRef.current.has(issue.key))
+        : [];
+      if (checks.length > 0) {
+        checks.forEach((issue) => askedRef.current.add(issue.key));
+        setMessages((prev) => [...prev, { role: "assistant", content: issueQuestion(checks) }]);
+        setOptions(["That's right, keep it", "Let me correct it"]);
+        return;
+      }
       // A long, complete answer can cover everything at once — no need to finish the questions.
-      if (res?.complete || isOnboardingComplete(merged)) {
+      if (done) {
         setTimeout(() => onComplete(merged), 700);
       }
     } catch (e) {
@@ -321,7 +340,21 @@ export default function OnboardingChat({ onComplete }) {
         </div>
       )}
 
+      {userTurns === 0 && !loading && (
+        <p className="text-[11px] text-[#B0AAA4] text-center pb-1">
+          Rather talk it out? Tap the mic and dump the whole thing at once.
+        </p>
+      )}
+
       <div className="flex gap-2 items-end bg-[#FAF8F5] pt-1 pb-2">
+        <button
+          onClick={() => setShowVoice(true)}
+          disabled={loading}
+          aria-label="Say it out loud"
+          className="w-11 h-11 flex-shrink-0 rounded-xl border border-[#E8E4DF] bg-white text-[#1A1A1A] flex items-center justify-center disabled:opacity-30 hover:bg-[#F5F0EB] transition-colors"
+        >
+          <Mic className="w-4 h-4" />
+        </button>
         <textarea
           ref={inputRef}
           value={input}
@@ -346,6 +379,23 @@ export default function OnboardingChat({ onComplete }) {
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         </button>
       </div>
+
+      {showVoice && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setShowVoice(false)}
+        >
+          <div className="w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <VoiceSpill
+              onClose={() => setShowVoice(false)}
+              onResult={(_extracted, text) => {
+                setShowVoice(false);
+                send(text);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { Check, Sparkles, Loader2, MessageCircle, ArrowRight } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import OnboardingChat from "@/components/onboarding/OnboardingChat";
 import CommuteSetup from "@/components/commute/CommuteSetup";
+import UnmovableEditor from "@/components/onboarding/UnmovableEditor";
 import { partitionNewHabits } from "@/lib/habitDedupe";
 
 const GROWTH_LABELS = {
@@ -240,20 +241,45 @@ export default function Onboarding() {
                   <Row label="Working on" value={growthLabelList(extracted).join(" · ") || "—"} />
                   <Row label="Sleep" value={`${toTimeStr(sleepH)} → wake ${toTimeStr(wakeH)}`} />
                   <Row label="Sleep goal" value={toTimeStr(goalH)} />
-                  {unmovables.length > 0 && (
-                    <Row label="Fixed blocks" value={unmovables.map((u) => `${u.label} ${u.start_hour}–${u.end_hour}h`).join(", ")} />
-                  )}
                   {extracted.energy_pattern && <Row label="Most energized" value={extracted.energy_pattern} />}
-                  {extracted.existing_habits?.length > 0 && (
-                    <Row label="Already consistent" value={extracted.existing_habits.join(" · ")} />
-                  )}
-                  {extracted.extra_notes?.length > 0 && (
-                    <Row label="Also noted" value={extracted.extra_notes.join(" · ")} />
-                  )}
                 </div>
 
-                {/* Editable: the deeper why */}
+                {/* Everything they said, as we heard it — fix anything misheard before it sticks */}
                 <div className="space-y-4">
+                  <Field label="Fixed blocks — check the times">
+                    <UnmovableEditor
+                      blocks={unmovables}
+                      onChange={(blocks) => setExtracted((prev) => ({ ...prev, unmovables: blocks }))}
+                    />
+                  </Field>
+                  <Field label="Already consistent (one per line)">
+                    <textarea
+                      value={(extracted.existing_habits || []).join("\n")}
+                      onChange={(e) =>
+                        setExtracted((prev) => ({
+                          ...prev,
+                          existing_habits: e.target.value.split("\n").map((v) => v.trim()).filter(Boolean),
+                        }))
+                      }
+                      rows={2}
+                      className="w-full rounded-xl border border-[#E8E4DF] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 resize-none"
+                      placeholder="e.g. Walk the dog every morning"
+                    />
+                  </Field>
+                  <Field label="Also noted (one per line)">
+                    <textarea
+                      value={(extracted.extra_notes || []).join("\n")}
+                      onChange={(e) =>
+                        setExtracted((prev) => ({
+                          ...prev,
+                          extra_notes: e.target.value.split("\n").map((v) => v.trim()).filter(Boolean),
+                        }))
+                      }
+                      rows={2}
+                      className="w-full rounded-xl border border-[#E8E4DF] bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 resize-none"
+                      placeholder="Anything else you told me"
+                    />
+                  </Field>
                   <Field label="Your goals (one per line)">
                     <textarea
                       value={draft.goals}

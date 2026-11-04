@@ -3,7 +3,6 @@ import { base44 } from "@/api/base44Client";
 import { Mic, Square, Loader2, Sparkles, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { extractAnswersFromTranscript } from "./extractAnswers";
 
 const PROMPTS = [
   "What does a typical day look like for you?",
@@ -63,8 +62,9 @@ export default function VoiceSpill({ onResult, onClose }) {
       const res = await base44.functions.invoke("transcribeAudio", { file_uri });
       const text = (res?.data?.transcript || "").trim();
       if (!text) throw new Error("empty");
-      const extracted = await extractAnswersFromTranscript(text);
-      onResult(extracted, text);
+      // The transcript goes into the conversation itself, so whatever they dumped is read
+      // alongside everything they already said — and gets checked before it's stored.
+      onResult(null, text);
     } catch (e) {
       setError("Hmm, I couldn't make that out. Want to try again?");
       setStatus("error");
