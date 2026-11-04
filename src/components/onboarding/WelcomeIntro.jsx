@@ -5,33 +5,34 @@ import { GridArt, DetailArt, LibraryArt, PartnerArt, PlacedArt } from "@/compone
 
 const SCENES = [
   {
-    eyebrow: "What it does",
-    title: "It finds the hours your day is hiding",
-    body: "Give me your real day and I'll lay it on a 24-hour grid. The squares nothing owns are where you grow.",
+    eyebrow: "What you get",
+    title: "You already have the hours. You just can't see them.",
+    body: "Your day is drawn as a 24-hour grid, and the squares nothing owns are exactly where the things you keep putting off can finally live.",
     Art: GridArt,
   },
   {
-    eyebrow: "What to tell me",
-    title: "Specifics are the whole trick",
-    body: "Your actual wake and sleep times, what you can't move, and what you keep failing to start. Talk it out if typing is a bore.",
-    Art: DetailArt,
-  },
-  {
-    eyebrow: "The library",
-    title: "Feed it a book, get the useful parts",
-    body: "Drop in books, podcasts and videos. Each one gets pulled apart into the ideas worth keeping and the actions worth trying.",
+    eyebrow: "What you get",
+    title: "The books you read once start working daily",
+    body: "Everything you're into becomes a library. Each source is pulled apart into the ideas worth keeping and the actions worth trying, so nothing sits unfinished on a shelf.",
     Art: LibraryArt,
   },
   {
-    eyebrow: "Your Partner",
-    title: "It coaches you from your own shelf",
-    body: "Everything it says is built on what you put in the library, so the advice sounds like it came from something you actually read.",
+    eyebrow: "What you get",
+    title: "A partner that already knows your day",
+    body: "It talks to you from your own shelf and your own schedule, picks a habit that fits the gap, and checks in when you go quiet.",
     Art: PartnerArt,
+  },
+  {
+    eyebrow: "What I need from you",
+    title: "Then just tell me your real day",
+    body: "Your actual wake and sleep times, the blocks you can't move, and what keeps stalling. The more honest it is, the less generic the advice.",
+    Art: DetailArt,
+    hint: ["🎙️ Talk it out", "✍️ Or type", "✅ You review it before it saves"],
   },
   {
     eyebrow: "What happens next",
     title: "One small block, in a square you own",
-    body: "It picks a habit that fits the gap, not a 5am overhaul, and checks in when you go quiet.",
+    body: "Two minutes of questions, no forms, no 5am overhaul. You walk out with one habit sitting in a square that was already spare.",
     Art: PlacedArt,
   },
 ];
@@ -39,7 +40,7 @@ const SCENES = [
 export default function WelcomeIntro({ onDone }) {
   const [scene, setScene] = useState(0);
   const isLast = scene === SCENES.length - 1;
-  const { eyebrow, title, body, Art } = SCENES[scene];
+  const { eyebrow, title, body, hint, Art } = SCENES[scene];
 
   return (
     <div className="bg-[#1A1A1A] rounded-3xl overflow-hidden shadow-xl">
@@ -102,6 +103,15 @@ export default function WelcomeIntro({ onDone }) {
             </p>
             <h2 className="text-lg font-bold text-white leading-snug">{title}</h2>
             <p className="text-[13px] text-white/60 leading-relaxed mt-1.5">{body}</p>
+            {hint && (
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {hint.map((h) => (
+                  <span key={h} className="text-[10px] bg-white/10 text-white/60 px-2 py-1 rounded-md">
+                    {h}
+                  </span>
+                ))}
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
 
