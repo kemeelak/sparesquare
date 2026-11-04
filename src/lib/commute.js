@@ -117,6 +117,31 @@ export function windowsForDay(commute, sessions = [], date = new Date()) {
   return windows;
 }
 
+// A real calendar event beats a saved ride — if they're at work at 8, 8 isn't a commute.
+// Windows are trimmed to the hours the calendar leaves free and dropped when nothing is left.
+export function trimWindowsToCalendar(windows, blocks = []) {
+  const blocked = (blocks || []).filter(
+    (b) => typeof b?.start_hour === "number" && typeof b?.end_hour === "number"
+  );
+  if (blocked.length === 0) return windows || [];
+
+  return (windows || []).flatMap((w) => {
+    let segments = [{ start: w.start_hour, end: w.end_hour }];
+    blocked.forEach((b) => {
+      segments = segments.flatMap((s) => {
+        if (b.end_hour <= s.start || b.start_hour >= s.end) return [s];
+        const pieces = [];
+        if (b.start_hour > s.start) pieces.push({ start: s.start, end: b.start_hour });
+        if (b.end_hour < s.end) pieces.push({ start: b.end_hour, end: s.end });
+        return pieces;
+      });
+    });
+    return segments
+      .filter((s) => s.end > s.start)
+      .map((s, i) => ({ ...w, key: i > 0 ? `${w.key}-${i}` : w.key, start_hour: s.start, end_hour: s.end }));
+  });
+}
+
 // A 8:30 start still touches the 8 o'clock block
 export function windowForHour(windows, hour) {
   return (windows || []).find((w) => hour + 1 > w.start_hour && hour < w.end_hour) || null;

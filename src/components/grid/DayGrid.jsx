@@ -1,7 +1,7 @@
 import React from "react";
 import HourSquare from "./HourSquare";
 import { format } from "date-fns";
-import { commuteMode, windowsForDay, windowForHour } from "@/lib/commute";
+import { commuteMode, windowsForDay, windowForHour, trimWindowsToCalendar } from "@/lib/commute";
 
 export default function DayGrid({ date, unmovables, habits, sleepHours, calendarBlocks = [], commute, sessions = [], onSquareClick }) {
   const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -30,7 +30,12 @@ export default function DayGrid({ date, unmovables, habits, sleepHours, calendar
     return sleepHours.includes(hour);
   };
 
-  const rideWindows = windowsForDay(commute, sessions, date);
+  // A booked hour wins over a saved ride window, so the grid stops claiming a commute
+  // during a meeting that came in from their calendar.
+  const rideWindows = trimWindowsToCalendar(
+    windowsForDay(commute, sessions, date),
+    calendarBlocks
+  );
   const rideWindowAt = (hour) => windowForHour(rideWindows, hour);
   const isCommuteHour = (hour) => !!rideWindowAt(hour);
 

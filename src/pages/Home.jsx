@@ -21,7 +21,7 @@ import CommuteOptIn from "../components/commute/CommuteOptIn";
 import CommuteNudge from "../components/commute/CommuteNudge";
 import StartCommuteSheet from "../components/commute/StartCommuteSheet";
 import MoodPopup from "../components/mood/MoodPopup";
-import { getCommute, windowsForDay, windowForHour, minutesLeftInWindow, elapsedMinutes } from "../lib/commute";
+import { getCommute, windowsForDay, windowForHour, minutesLeftInWindow, elapsedMinutes, trimWindowsToCalendar } from "../lib/commute";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 
 export default function Home() {
@@ -128,7 +128,11 @@ export default function Home() {
   const rideMap = new Map();
   [...rides, ...startedRides].forEach((ride) => ride?.id && rideMap.set(ride.id, ride));
   const dayRides = [...rideMap.values()];
-  const rideWindows = windowsForDay(commute, dayRides, selectedDate);
+  // Saved windows give way to whatever the calendar already has booked
+  const rideWindows = trimWindowsToCalendar(
+    windowsForDay(commute, dayRides, selectedDate),
+    timedCalendarBlocks
+  );
   const windowAt = (hour) => windowForHour(rideWindows, hour);
   const liveWindow = isToday ? windowAt(now.getHours()) : null;
   const liveMinutesLeft = liveWindow ? minutesLeftInWindow(liveWindow, now.getHours()) : 0;
