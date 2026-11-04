@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowLeft } from "lucide-react";
 import { GridArt, DetailArt, LibraryArt, PartnerArt, PlacedArt } from "@/components/onboarding/introArt";
 
 const SCENES = [
@@ -36,37 +36,34 @@ const SCENES = [
   },
 ];
 
-const SCENE_MS = 4000;
-
 export default function WelcomeIntro({ onDone }) {
   const [scene, setScene] = useState(0);
   const isLast = scene === SCENES.length - 1;
   const { eyebrow, title, body, Art } = SCENES[scene];
 
-  useEffect(() => {
-    if (isLast) return;
-    const timer = setTimeout(() => setScene((s) => s + 1), SCENE_MS);
-    return () => clearTimeout(timer);
-  }, [scene, isLast]);
-
-  const next = () => (isLast ? onDone() : setScene((s) => s + 1));
-
   return (
     <div className="bg-[#1A1A1A] rounded-3xl overflow-hidden shadow-xl">
-      {/* Progress + skip */}
+      {/* Step markers — tap one to jump straight there */}
       <div className="flex items-center gap-2 px-5 pt-4">
         <div className="flex-1 flex gap-1.5">
           {SCENES.map((s, i) => (
-            <div key={s.title} className="h-[3px] flex-1 rounded-full bg-white/15 overflow-hidden">
-              <motion.div
-                initial={false}
-                animate={{ width: i < scene ? "100%" : i === scene ? "100%" : "0%" }}
-                transition={{ duration: i === scene && !isLast ? SCENE_MS / 1000 : 0.3, ease: "linear" }}
-                className="h-full bg-[#D4A574]"
+            <button
+              key={s.title}
+              onClick={() => setScene(i)}
+              aria-label={`Step ${i + 1}: ${s.eyebrow}`}
+              className="h-[3px] flex-1 rounded-full bg-white/15 overflow-hidden"
+            >
+              <div
+                className={`h-full bg-[#D4A574] transition-all duration-300 ${
+                  i <= scene ? "w-full" : "w-0"
+                }`}
               />
-            </div>
+            </button>
           ))}
         </div>
+        <span className="text-[10px] text-white/30 tabular-nums flex-shrink-0">
+          {scene + 1}/{SCENES.length}
+        </span>
         <button
           onClick={onDone}
           className="text-[11px] text-white/40 hover:text-white/80 transition-colors flex-shrink-0"
@@ -75,7 +72,7 @@ export default function WelcomeIntro({ onDone }) {
         </button>
       </div>
 
-      <div onClick={next} className="px-5 pb-5 pt-5 cursor-pointer select-none">
+      <div className="px-5 pb-5 pt-5">
         <div className="h-[172px] flex items-center">
           <AnimatePresence mode="wait">
             <motion.div
@@ -108,27 +105,22 @@ export default function WelcomeIntro({ onDone }) {
           </motion.div>
         </AnimatePresence>
 
-        {isLast ? (
+        <div className="flex items-center gap-2.5 mt-5">
+          {scene > 0 && (
+            <button
+              onClick={() => setScene((s) => s - 1)}
+              className="h-12 px-4 rounded-xl border border-white/15 text-white/60 hover:text-white hover:border-white/30 font-medium text-sm flex items-center gap-1.5 transition-colors flex-shrink-0"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back
+            </button>
+          )}
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDone();
-            }}
-            className="w-full h-12 mt-5 rounded-xl bg-[#D4A574] hover:bg-[#c99968] text-[#1A1A1A] font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
+            onClick={() => (isLast ? onDone() : setScene((s) => s + 1))}
+            className="flex-1 h-12 rounded-xl bg-[#D4A574] hover:bg-[#c99968] text-[#1A1A1A] font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
           >
-            Start the conversation <ArrowRight className="w-4 h-4" />
+            {isLast ? "Start the conversation" : "Next"} <ArrowRight className="w-4 h-4" />
           </button>
-        ) : (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              next();
-            }}
-            className="mt-5 text-[13px] font-medium text-white/45 hover:text-white/80 transition-colors flex items-center gap-1"
-          >
-            Next <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        )}
+        </div>
       </div>
     </div>
   );
