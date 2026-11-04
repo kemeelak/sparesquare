@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { cleanText } from "@/lib/cleanText";
 import { Mic, Square, Loader2, Sparkles, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -60,7 +61,8 @@ export default function VoiceSpill({ onResult, onClose }) {
       // Records who this recording belongs to, so only this member can have it transcribed.
       await base44.entities.VoiceNote.create({ file_uri });
       const res = await base44.functions.invoke("transcribeAudio", { file_uri });
-      const text = (res?.data?.transcript || "").trim();
+      // Transcription drops capitals and doubles the odd word — tidy that before anyone sees it
+      const text = cleanText((res?.data?.transcript || "").trim());
       if (!text) throw new Error("empty");
       // The transcript goes into the conversation itself, so whatever they dumped is read
       // alongside everything they already said — and gets checked before it's stored.

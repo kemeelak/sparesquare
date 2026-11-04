@@ -9,6 +9,7 @@ import OnboardingChat from "@/components/onboarding/OnboardingChat";
 import CommuteSetup from "@/components/commute/CommuteSetup";
 import UnmovableEditor from "@/components/onboarding/UnmovableEditor";
 import { partitionNewHabits } from "@/lib/habitDedupe";
+import { cleanText, cleanList } from "@/lib/cleanText";
 
 const GROWTH_LABELS = {
   fitness: "💪 Fitness & Health",
@@ -95,7 +96,7 @@ export default function Onboarding() {
     ).replace(/[^a-z0-9_]/gi, "").toLowerCase() || "you";
 
     const growthLabels = growthLabelList(extracted);
-    const existingHabits = extracted.existing_habits || [];
+    const existingHabits = cleanList(extracted.existing_habits || []);
 
     const sleepH = extracted.sleep_hour ?? 23;
     const wakeH = extracted.wake_hour ?? 7;
@@ -110,13 +111,13 @@ export default function Onboarding() {
       growth_focus: extracted.growth_focus || growthLabels[0] || "learning",
       growth_focuses: extracted.growth_focuses || (extracted.growth_focus ? [extracted.growth_focus] : []),
       energy_pattern: extracted.energy_pattern || "",
-      extra_notes: extracted.extra_notes || [],
+      extra_notes: cleanList(extracted.extra_notes || []),
       onboarding_complete: true,
       timezone_offset: new Date().getTimezoneOffset() / -60,
       partner_name: draft.partner_name || "Partner",
-      goals: (draft.goals || "").split("\n").map((g) => g.trim()).filter(Boolean),
-      challenges: (draft.challenges || "").split("\n").map((c) => c.trim()).filter(Boolean),
-      motivation: (draft.motivation || "").trim(),
+      goals: cleanList(draft.goals),
+      challenges: cleanList(draft.challenges),
+      motivation: cleanText(draft.motivation),
       existing_habits: existingHabits,
     });
 

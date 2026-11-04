@@ -1,9 +1,14 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, ChevronRight } from "lucide-react";
+import { X, Check, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
+import { cleanText, cleanList } from "@/lib/cleanText";
+import VoiceSpill from "@/components/onboarding/VoiceSpill";
+import GoalsReview from "@/components/onboarding/GoalsReview";
+
+const toLines = (value) => (Array.isArray(value) ? value.join("\n") : value || "");
 
 const GOALS_STEPS = [
   {
@@ -47,6 +52,8 @@ export default function GoalsOnboarding({ profile, onClose }) {
   const [selected, setSelected] = useState([]);
   const [customInput, setCustomInput] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showVoice, setShowVoice] = useState(false);
+  const [review, setReview] = useState({ goals: "", challenges: "", motivation: "" });
   const queryClient = useQueryClient();
 
   const currentStep = GOALS_STEPS[step];
@@ -73,13 +80,19 @@ export default function GoalsOnboarding({ profile, onClose }) {
     setCustomInput("");
 
     if (step + 1 >= GOALS_STEPS.length) {
-      handleSave(newAnswers);
+      // One last look at the whole thing, so a stray word from a ramble can be fixed
+      setReview({
+        goals: toLines(newAnswers.goals),
+        challenges: toLines(newAnswers.challenges),
+        motivation: toLines(newAnswers.motivation),
+      });
+      setStep(GOALS_STEPS.length);
     } else {
       setStep(step + 1);
     }
   };
 
-  const handleSave = async (finalAnswers) => {
+  const handleSave = async () => {
     setSaving(true);
     try {
       const me = await base44.auth.me();
@@ -88,9 +101,9 @@ export default function GoalsOnboarding({ profile, onClose }) {
       if (!latestProfile) return;
 
       await base44.entities.UserProfile.update(latestProfile.id, {
-        goals: Array.isArray(finalAnswers.goals) ? finalAnswers.goals : [finalAnswers.goals],
-        challenges: Array.isArray(finalAnswers.challenges) ? finalAnswers.challenges : [finalAnswers.challenges],
-        motivation: Array.isArray(finalAnswers.motivation) ? finalAnswers.motivation[0] : finalAnswers.motivation,
+        goals: cleanList(review.goals),
+        challenges: cleanList(review.challenges),
+        motivation: cleanText(review.motivation),
         goals_onboarding_complete: true,
       });
       queryClient.invalidateQueries({ queryKey: ["userProfile"] });
@@ -130,6 +143,14 @@ export default function GoalsOnboarding({ profile, onClose }) {
         </div>
 
         {/* Question */}
+        {step === GOALS_STEPS.length ? (
+          <GoalsReview
+            values={review}
+            onChange={(key, value) => setReview((prev) => ({ ...prev, [key]: value }))}
+            onFinish={handleSave}
+            saving={saving}
+          />
+        ) : (
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
@@ -165,12 +186,28 @@ export default function GoalsOnboarding({ profile, onClose }) {
               })}
             </div>
 
+            {/* The long version is the useful version — and talking is easier than typing */}
+            <button
+              onClick={() => setShowVoice(true)}
+              className="w-full flex items-center gap-2 px-3.5 py-2.5 mb-2 rounded-xl border border-dashed border-[#D4A574] bg-[#F5EDE4]/60 text-left hover:bg-[#F5EDE4] transition-colors"
+            >
+              <span className="w-8 h-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
+                <Mic className="w-4 h-4 text-[#D4A574]" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-xs font-semibold text-[#1A1A1A]">Easier to just say it?</span>
+                <span className="block text-[11px] text-[#8A8580]">
+                  Tap the mic and ramble. The more you give me, the sharper your plan.
+                </span>
+              </span>
+            </button>
+
             {/* Custom input */}
             <textarea
               value={customInput}
               onChange={(e) => setCustomInput(e.target.value)}
               placeholder={currentStep.placeholder}
-              rows={2}
+              rows={4}
               className="w-full rounded-xl border border-[#E8E4DF] bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/10 placeholder:text-[#B0AAA4] resize-none mb-4"
               style={{ fontSize: "16px" }}
             />
@@ -192,6 +229,25 @@ export default function GoalsOnboarding({ profile, onClose }) {
             </div>
           </motion.div>
         </AnimatePresence>
+        )}
+
+        {showVoice && (
+          <div
+            className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowVoice(false)}
+          >
+            <div className="w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+              <VoiceSpill
+                onClose={() => setShowVoice(false)}
+                onResult={(_extracted, text) => {
+                  setShowVoice(false);
+                  // Lands in the box so it can be edited before it's saved
+                  setCustomInput((prev) => (prev ? `${prev} ${text}` : text));
+                }}
+              />
+            </div>
+          </div>
+        )}
       </motion.div>
     </motion.div>
   );
