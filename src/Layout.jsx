@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "./utils";
 import { base44 } from "@/api/base44Client";
 import AppSplash from "@/components/shared/AppSplash";
+import Logo from "@/components/shared/Logo";
 import UpgradeModal from "@/components/account/UpgradeModal";
 import MobileMenu from "@/components/shared/MobileMenu";
 import { Grid3X3, MessageCircle, BookOpen, Layers, TrendingUp, Users, User } from "lucide-react";
@@ -65,7 +66,7 @@ export default function Layout({ children, currentPageName }) {
         `}</style>
         <div className="w-full max-w-sm text-center">
           <div className="w-16 h-16 rounded-2xl bg-[#1A1A1A] flex items-center justify-center mx-auto mb-6">
-            <span className="text-white font-bold text-2xl">S²</span>
+            <Logo />
           </div>
           <h1 className="text-2xl font-bold text-[#1A1A1A] mb-2">SpareSquare</h1>
           <p className="text-[#8A8580] text-sm mb-10">Find hidden time. Build habits that stick.</p>
@@ -150,7 +151,7 @@ export default function Layout({ children, currentPageName }) {
       <aside className="hidden lg:flex fixed left-0 top-0 h-full w-20 flex-col items-center py-8 bg-white/80 backdrop-blur-xl border-r border-[#E8E4DF] z-50">
         <div className="mb-12">
           <div className="w-10 h-10 rounded-xl bg-[#1A1A1A] flex items-center justify-center">
-            <span className="text-white font-bold text-sm">S²</span>
+            <Logo />
           </div>
         </div>
         <nav className="flex flex-col gap-2 flex-1">
