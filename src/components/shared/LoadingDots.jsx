@@ -1,12 +1,11 @@
 import React from "react";
 import { motion } from "framer-motion";
-import Logo from "@/components/shared/Logo";
 
 export default function LoadingDots() {
   return (
     <div className="flex justify-start mb-3">
       <div className="w-7 h-7 rounded-lg bg-[#1A1A1A] flex items-center justify-center mr-2 flex-shrink-0">
-        <Logo />
+        <span className="text-white text-[10px] font-bold">S²</span>
       </div>
       <div className="bg-white border border-[#E8E4DF] rounded-2xl rounded-bl-md px-5 py-4 flex gap-1.5">
         {[0, 1, 2].map((i) => (

@@ -1,6 +1,5 @@
 import React from "react";
 import { motion } from "framer-motion";
-import Logo from "@/components/shared/Logo";
 import ReactMarkdown from "react-markdown";
 import ActionCard from "./ActionCard";
 
@@ -48,7 +47,7 @@ export default function ChatBubble({ message }) {
     >
       {!isUser && (
         <div className="w-7 h-7 rounded-lg bg-[#1A1A1A] flex items-center justify-center mr-2 mt-1 flex-shrink-0">
-          <Logo />
+          <span className="text-white text-[10px] font-bold">S²</span>
         </div>
       )}
       <div className={`max-w-[82%] ${isUser ? "" : "flex-1"}`}>

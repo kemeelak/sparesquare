@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { invokeAI } from "@/lib/plans";
-import Logo from "@/components/shared/Logo";
 import { createPageUrl } from "../utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Loader2 } from "lucide-react";
@@ -165,7 +164,7 @@ export default function Onboarding() {
         {/* Logo */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
           <div className="w-12 h-12 rounded-2xl bg-[#1A1A1A] flex items-center justify-center mx-auto mb-2">
-            <Logo />
+            <span className="text-white font-bold text-lg">S²</span>
           </div>
           <h1 className="text-lg font-bold text-[#1A1A1A] tracking-tight">Welcome to SpareSquare</h1>
           <p className="text-xs text-[#8A8580] mt-0.5">Let's map your day and find your growth windows</p>
