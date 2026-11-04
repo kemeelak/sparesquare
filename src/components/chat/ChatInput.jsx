@@ -1,9 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Send } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function ChatInput({ onSend, disabled, placeholder }) {
-  const [text, setText] = useState("");
+export default function ChatInput({ onSend, disabled, placeholder, initialValue = "" }) {
+  const [text, setText] = useState(initialValue);
+
+  useEffect(() => {
+    if (initialValue) setText(initialValue);
+  }, [initialValue]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

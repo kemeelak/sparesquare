@@ -180,6 +180,7 @@ export default function Partner() {
   const [activeThread, setActiveThread] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showThreadMenu, setShowThreadMenu] = useState(false);
+  const [draft, setDraft] = useState("");
   const messagesEndRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -202,15 +203,18 @@ export default function Partner() {
 
   useEffect(() => { setMessages(threadMessages); }, [threadMessages]);
 
+  // A prompt arriving in the link lands in the composer, never straight in the chat:
+  // the member has to send it themselves, so a crafted link can't spend their credits
+  // or write into their history. The parameter is dropped so a reload can't repeat it.
   useEffect(() => {
-    if (!profile || loading) return;
+    if (!profile) return;
     const params = new URLSearchParams(window.location.search);
     const autoPrompt = params.get("autoPrompt");
-    if (autoPrompt) {
-      const decoded = decodeURIComponent(autoPrompt);
-      setTimeout(() => handleSend(decoded), 600);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!autoPrompt) return;
+    setDraft(autoPrompt.slice(0, 500));
+    params.delete("autoPrompt");
+    const rest = params.toString();
+    window.history.replaceState({}, "", window.location.pathname + (rest ? `?${rest}` : ""));
   }, [profile]);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
@@ -385,7 +389,7 @@ export default function Partner() {
             </div>
           )}
           <div className="p-4 lg:p-4 max-w-2xl mx-auto">
-            <ChatInput onSend={handleSend} disabled={loading} placeholder={activeThread ? `Ask about ${category}…` : "What's on your mind?"} />
+            <ChatInput onSend={handleSend} disabled={loading} initialValue={draft} placeholder={activeThread ? `Ask about ${category}…` : "What's on your mind?"} />
           </div>
         </div>
       </div>
