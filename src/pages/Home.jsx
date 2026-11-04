@@ -14,6 +14,7 @@ import CalendarSync from "../components/calendar/CalendarSync";
 import AllDayEventsBanner from "../components/grid/AllDayEventsBanner";
 import AddEventForm from "../components/grid/AddEventForm";
 import GoalsOnboarding from "../components/onboarding/GoalsOnboarding";
+import FeatureTour from "../components/onboarding/FeatureTour";
 import StatsDetailSheet from "../components/grid/StatsDetailSheet";
 import CommuteSetup from "../components/commute/CommuteSetup";
 import CommuteSheet from "../components/commute/CommuteSheet";
@@ -40,6 +41,8 @@ export default function Home() {
   const [nudgeDismissed, setNudgeDismissed] = useState(false);
   const [moodPopup, setMoodPopup] = useState(null); // "morning" | "evening" | null
   const [moodPrompted, setMoodPrompted] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+  const [tourChecked, setTourChecked] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: profiles = [] } = useQuery({
@@ -154,9 +157,23 @@ export default function Home() {
 
   const completedCount = todayHabits.filter(h => h.status === "completed").length;
 
+  // A new member gets shown around before anything else asks for their attention
+  useEffect(() => {
+    if (!profile || tourChecked) return;
+    setTourChecked(true);
+    if (profile.onboarding_complete && !profile.tour_complete) setShowTour(true);
+  }, [profile, tourChecked]);
+
+  const finishTour = async () => {
+    setShowTour(false);
+    if (!profile) return;
+    await base44.entities.UserProfile.update(profile.id, { tour_complete: true });
+    queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+  };
+
   // Show goals onboarding prompt once after main onboarding done
   useEffect(() => {
-    if (profile && profile.onboarding_complete && !profile.goals_onboarding_complete && !showGoalsOnboarding) {
+    if (profile && profile.onboarding_complete && profile.tour_complete && !profile.goals_onboarding_complete && !showGoalsOnboarding) {
       const timer = setTimeout(() => setShowGoalsOnboarding(true), 2000);
       return () => clearTimeout(timer);
     }
@@ -173,7 +190,7 @@ export default function Home() {
   // A sheet the user opened takes priority — never pop the check-in on top of it
   const sheetOpen =
     showCalendarSync || showAddEvent || selectedHour !== null || !!rideSheet ||
-    showCommuteSetup || showStartCommute || !!statsSheet || showGoalsOnboarding;
+    showCommuteSetup || showStartCommute || !!statsSheet || showGoalsOnboarding || showTour;
 
   useEffect(() => {
     if (moodPrompted || !isToday || !moodSlot || !currentUser || sheetOpen) return;
@@ -614,6 +631,11 @@ export default function Home() {
             onClose={() => setShowGoalsOnboarding(false)}
           />
         )}
+      </AnimatePresence>
+
+      {/* What this app can do for them, once */}
+      <AnimatePresence>
+        {showTour && <FeatureTour onDone={finishTour} />}
       </AnimatePresence>
     </div>
   );

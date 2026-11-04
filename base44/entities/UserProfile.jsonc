@@ -99,6 +99,11 @@
       "type": "boolean",
       "default": false
     },
+    "tour_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "The member has been walked through what the app can do for them"
+    },
     "timezone_offset": {
       "type": "number",
       "description": "User timezone offset in hours"
