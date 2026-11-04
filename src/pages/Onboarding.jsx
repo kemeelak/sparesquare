@@ -46,6 +46,7 @@ export default function Onboarding() {
   const [saving, setSaving] = useState(false);
   const [createdProfile, setCreatedProfile] = useState(null);
   const [commuteSaving, setCommuteSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -68,6 +69,20 @@ export default function Onboarding() {
 
   const handleConfirm = async () => {
     setSaving(true);
+    setSaveError(null);
+    try {
+      await saveProfile();
+    } catch (e) {
+      console.error("onboarding: save failed", e);
+      setSaveError("That didn't save. Give it another go.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Their profile is the only thing that has to land. Everything after it — the public
+  // profile, the habit suggestions — is a bonus and must never block them getting in.
+  const saveProfile = async () => {
     const me = await base44.auth.me();
     // Nothing here is mandatory — someone who already told us everything shouldn't have to
     // fill in the rest, so a username falls back to their email handle.
@@ -79,72 +94,7 @@ export default function Onboarding() {
     ).replace(/[^a-z0-9_]/gi, "").toLowerCase() || "you";
 
     const growthLabels = growthLabelList(extracted);
-
-    const profileSummary = {
-      rhythm: RHYTHM_LABELS[extracted.rhythm_type] || "other",
-      growth: growthLabels.join(", ") || "learning",
-      sleep: `${toTimeStr(extracted.sleep_hour ?? 23)} → wake ${toTimeStr(extracted.wake_hour ?? 7)}`,
-      energy: extracted.energy_pattern,
-      goals: draft.goals,
-      challenges: draft.challenges,
-      motivation: draft.motivation,
-      notes: (extracted.extra_notes || []).join("; "),
-    };
-
     const existingHabits = extracted.existing_habits || [];
-
-    const backlogSuggestions = await invokeAI("onboarding_plan", {
-      prompt: `Suggest habits for this person's backlog — only ones genuinely missing from their life.
-
-Be ruthless about relevance:
-- Never suggest anything they already do consistently.
-- Never suggest something they said they tried before and dropped for a real reason.
-- Only what their stated goals actually require, and their real schedule can hold.
-- Fewer is better. Give 4 at most, and return an EMPTY array rather than filler.
-
-User profile:
-${Object.entries(profileSummary).map(([k, v]) => `${k}: ${v}`).join("\n")}
-${existingHabits.length ? `\nAlready does consistently — do NOT suggest these or near-copies of them:\n${existingHabits.map((h) => `- ${h}`).join("\n")}` : ""}
-
-Return JSON with a habits array (0-4 items), each with: title, description, duration_minutes (15-60), energy_level (low/medium/high), category (fitness/mindfulness/learning/nutrition/sleep/productivity/social/creative).`,
-      response_json_schema: {
-        type: "object",
-        properties: {
-          habits: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                title: { type: "string" },
-                description: { type: "string" },
-                duration_minutes: { type: "number" },
-                energy_level: { type: "string" },
-                category: { type: "string" },
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (me && username) {
-      const existingPub = await base44.entities.UserPublicProfile.filter({ created_by_id: me.id });
-      if (existingPub.length > 0) {
-        await base44.entities.UserPublicProfile.update(existingPub[0].id, {
-          username,
-          display_name: me.full_name || username,
-          user_id: me.id,
-        });
-      } else {
-        await base44.entities.UserPublicProfile.create({
-          user_id: me.id,
-          username,
-          display_name: me.full_name || username,
-          current_streak: 0,
-          total_completed: 0,
-        });
-      }
-    }
 
     const sleepH = extracted.sleep_hour ?? 23;
     const wakeH = extracted.wake_hour ?? 7;
@@ -163,31 +113,39 @@ Return JSON with a habits array (0-4 items), each with: title, description, dura
       onboarding_complete: true,
       timezone_offset: new Date().getTimezoneOffset() / -60,
       partner_name: draft.partner_name || "Partner",
-      goals: draft.goals.split("\n").map((g) => g.trim()).filter(Boolean),
-      challenges: draft.challenges.split("\n").map((c) => c.trim()).filter(Boolean),
-      motivation: draft.motivation.trim(),
+      goals: (draft.goals || "").split("\n").map((g) => g.trim()).filter(Boolean),
+      challenges: (draft.challenges || "").split("\n").map((c) => c.trim()).filter(Boolean),
+      motivation: (draft.motivation || "").trim(),
       existing_habits: existingHabits,
     });
 
-    const { fresh: freshHabits } = partitionNewHabits(backlogSuggestions?.habits || [], existingHabits);
+    setCreatedProfile(created);
 
-    if (freshHabits.length > 0) {
-      await base44.entities.HabitBlock.bulkCreate(
-        freshHabits.map((h) => ({
-          title: h.title,
-          description: h.description,
-          duration_minutes: h.duration_minutes || 20,
-          energy_level: h.energy_level || "medium",
-          category: h.category || "productivity",
-          status: "backlog",
-          source: "SpareSquare AI",
-        }))
+    try {
+      await savePublicProfile(me, username);
+    } catch (e) {
+      console.error("onboarding: public profile failed", e);
+    }
+
+    try {
+      await suggestBacklog(
+        {
+          rhythm: RHYTHM_LABELS[extracted.rhythm_type] || "other",
+          growth: growthLabels.join(", ") || "learning",
+          sleep: `${toTimeStr(sleepH)} → wake ${toTimeStr(wakeH)}`,
+          energy: extracted.energy_pattern,
+          goals: draft.goals,
+          challenges: draft.challenges,
+          motivation: draft.motivation,
+          notes: (extracted.extra_notes || []).join("; "),
+        },
+        existingHabits
       );
+    } catch (e) {
+      console.error("onboarding: habit suggestions failed", e);
     }
 
     // Commute is the last onboarding step — it can be skipped with the X
-    setCreatedProfile(created);
-    setSaving(false);
     setPhase("commute");
   };
 
@@ -344,6 +302,10 @@ Return JSON with a habits array (0-4 items), each with: title, description, dura
                 </div>
               </div>
 
+              {saveError && (
+                <p className="text-sm text-red-600 text-center mb-3">{saveError}</p>
+              )}
+
               <div className="flex gap-3">
                 <Button
                   variant="outline"
@@ -383,6 +345,79 @@ Return JSON with a habits array (0-4 items), each with: title, description, dura
         )}
       </div>
     </div>
+  );
+}
+
+// Their handle so friends can find them — optional, so a failure here is logged, not fatal.
+async function savePublicProfile(me, username) {
+  if (!me || !username) return;
+  const existing = await base44.entities.UserPublicProfile.filter({ created_by_id: me.id });
+  if (existing.length > 0) {
+    await base44.entities.UserPublicProfile.update(existing[0].id, {
+      username,
+      display_name: me.full_name || username,
+      user_id: me.id,
+    });
+    return;
+  }
+  await base44.entities.UserPublicProfile.create({
+    user_id: me.id,
+    username,
+    display_name: me.full_name || username,
+    current_streak: 0,
+    total_completed: 0,
+  });
+}
+
+// A few things genuinely missing from their life, ready to schedule later.
+async function suggestBacklog(profileSummary, existingHabits) {
+  const suggestions = await invokeAI("onboarding_plan", {
+    prompt: `Suggest habits for this person's backlog — only ones genuinely missing from their life.
+
+Be ruthless about relevance:
+- Never suggest anything they already do consistently.
+- Never suggest something they said they tried before and dropped for a real reason.
+- Only what their stated goals actually require, and their real schedule can hold.
+- Fewer is better. Give 4 at most, and return an EMPTY array rather than filler.
+
+User profile:
+${Object.entries(profileSummary).map(([k, v]) => `${k}: ${v}`).join("\n")}
+${existingHabits.length ? `\nAlready does consistently — do NOT suggest these or near-copies of them:\n${existingHabits.map((h) => `- ${h}`).join("\n")}` : ""}
+
+Return JSON with a habits array (0-4 items), each with: title, description, duration_minutes (15-60), energy_level (low/medium/high), category (fitness/mindfulness/learning/nutrition/sleep/productivity/social/creative).`,
+    response_json_schema: {
+      type: "object",
+      properties: {
+        habits: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              description: { type: "string" },
+              duration_minutes: { type: "number" },
+              energy_level: { type: "string" },
+              category: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const { fresh } = partitionNewHabits(suggestions?.habits || [], existingHabits);
+  if (fresh.length === 0) return;
+
+  await base44.entities.HabitBlock.bulkCreate(
+    fresh.map((h) => ({
+      title: h.title,
+      description: h.description,
+      duration_minutes: h.duration_minutes || 20,
+      energy_level: h.energy_level || "medium",
+      category: h.category || "productivity",
+      status: "backlog",
+      source: "SpareSquare AI",
+    }))
   );
 }
 

@@ -102,12 +102,7 @@ const RESPONSE_SCHEMA = {
         partner_name: { type: ["string", "null"] },
         username: { type: ["string", "null"] },
       },
-      required: [
-        "rhythm_type", "unmovables", "existing_habits", "sleep_hour", "wake_hour",
-        "sleep_goal_hour", "growth_focus", "goals", "challenges", "motivation",
-        "energy_pattern", "notes", "partner_name", "username",
-      ],
-      additionalProperties: false,
+      required: ["rhythm_type"],
     },
   },
   required: ["reply", "options", "complete", "extracted"],
@@ -153,6 +148,27 @@ export default function OnboardingChat({ onComplete }) {
     );
   };
 
+  // One AI turn. A dropped call gets one silent retry before we tell them anything went
+  // wrong, and a model that answers with JSON as text is parsed rather than discarded.
+  const askGuide = async (prompt) => {
+    const call = async () => {
+      const res = await invokeAI("onboarding_chat", {
+        prompt,
+        model: "gpt_5_mini",
+        response_json_schema: RESPONSE_SCHEMA,
+      });
+      if (typeof res === "string") {
+        try { return JSON.parse(res); } catch { return null; }
+      }
+      return res;
+    };
+    try {
+      return await call();
+    } catch (e) {
+      return await call();
+    }
+  };
+
   const send = async () => {
     // Tapped answers and typed detail can be sent together — whatever they gave us counts.
     const text = [input.trim(), ...picked].filter(Boolean).join(", ");
@@ -172,12 +188,22 @@ export default function OnboardingChat({ onComplete }) {
         ? " This is already a long conversation — wrap up on this turn unless something essential is still missing."
         : "";
       const prompt = `${SYSTEM}\n\nExchanges so far: ${turnCount}.${nudge}\n\nConversation so far:\n${transcript}\n\nGuide: (respond with JSON only)`;
-      const res = await invokeAI("onboarding_chat", {
-        prompt,
-        model: "gpt_5_mini",
-        response_json_schema: RESPONSE_SCHEMA,
-      });
-      const reply = res?.reply || "Say a bit more?";
+      const res = await askGuide(prompt);
+      // Nothing came back: out of credits (the upgrade prompt is already up). Let them
+      // carry on with what we've got instead of stranding them in the chat.
+      if (!res) {
+        setOptions([]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content:
+              "I can't reply again on this plan. Tap \"That's enough — take me in\" and I'll build your grid from what you've told me.",
+          },
+        ]);
+        return;
+      }
+      const reply = res.reply || "Say a bit more?";
       // Cleaned into the exact shapes the app expects; nothing already captured is lost.
       const clean = normalizeExtracted(res?.extracted);
       const merged = {
@@ -200,7 +226,7 @@ export default function OnboardingChat({ onComplete }) {
     } catch (e) {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Sorry — say that again?" },
+        { role: "assistant", content: "That didn't go through on my end. Send it once more?" },
       ]);
     } finally {
       setLoading(false);
