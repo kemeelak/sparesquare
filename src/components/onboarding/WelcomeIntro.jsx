@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { GridArt, DetailArt, PlacedArt } from "@/components/onboarding/introArt";
+import { GridArt, DetailArt, LibraryArt, PartnerArt, PlacedArt } from "@/components/onboarding/introArt";
 
 const SCENES = [
   {
@@ -17,14 +17,26 @@ const SCENES = [
     Art: DetailArt,
   },
   {
+    eyebrow: "The library",
+    title: "Feed it a book, get the useful parts",
+    body: "Drop in books, podcasts and videos. Each one gets pulled apart into the ideas worth keeping and the actions worth trying.",
+    Art: LibraryArt,
+  },
+  {
+    eyebrow: "Your Partner",
+    title: "It coaches you from your own shelf",
+    body: "Everything it says is built on what you put in the library, so the advice sounds like it came from something you actually read.",
+    Art: PartnerArt,
+  },
+  {
     eyebrow: "What happens next",
     title: "One small block, in a square you own",
-    body: "Your Partner picks a habit that fits the gap, not a 5am overhaul, and checks in when you go quiet.",
+    body: "It picks a habit that fits the gap, not a 5am overhaul, and checks in when you go quiet.",
     Art: PlacedArt,
   },
 ];
 
-const SCENE_MS = 4200;
+const SCENE_MS = 4000;
 
 export default function WelcomeIntro({ onDone }) {
   const [scene, setScene] = useState(0);

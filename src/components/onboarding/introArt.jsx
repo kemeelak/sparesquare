@@ -126,3 +126,85 @@ export function PlacedArt() {
     </div>
   );
 }
+
+const SPINES = [
+  { height: "h-9", tone: "bg-[#7C9A82]" },
+  { height: "h-12", tone: "bg-[#D4A574]" },
+  { height: "h-10", tone: "bg-white/30" },
+  { height: "h-8", tone: "bg-[#4A5568]" },
+  { height: "h-11", tone: "bg-white/20" },
+];
+
+const DISTILLED = [
+  { tag: "Idea", text: "Habits stick to a cue, not willpower" },
+  { tag: "Action", text: "Read 20 min after dinner" },
+];
+
+export function LibraryArt() {
+  return (
+    <div className="w-full">
+      <div className="flex items-end justify-center gap-1.5 border-b border-white/15 pb-1.5">
+        {SPINES.map((spine, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.09, duration: 0.3 }}
+            className={`w-2 rounded-sm ${spine.height} ${spine.tone}`}
+          />
+        ))}
+      </div>
+      <div className="space-y-1.5 mt-3">
+        {DISTILLED.map((row, i) => (
+          <motion.div
+            key={row.tag}
+            initial={{ opacity: 0, x: 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.75 + i * 0.5, duration: 0.35 }}
+            className="flex items-start gap-2"
+          >
+            <span className="text-[9px] font-bold uppercase tracking-wider text-[#D4A574] w-11 flex-shrink-0 pt-0.5">
+              {row.tag}
+            </span>
+            <span className="text-[11px] text-white/85 leading-snug">{row.text}</span>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function PartnerArt() {
+  return (
+    <div className="w-full">
+      <div className="flex gap-2">
+        <div className="w-7 h-7 rounded-xl bg-[#7C9A82] flex items-center justify-center text-[10px] font-bold text-[#1A1A1A] flex-shrink-0">
+          P
+        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="bg-white/10 rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-[12px] text-white/85 leading-relaxed"
+        >
+          “Put the book on your pillow before dinner. You told me cues beat willpower, so
+          let's use one.”
+        </motion.div>
+      </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.9 }}
+        className="flex flex-wrap gap-1.5 mt-3 pl-9"
+      >
+        <span className="text-[10px] bg-[#7C9A82]/25 text-[#A9C4AE] px-2 py-1 rounded-md">
+          📚 Atomic Habits
+        </span>
+        <span className="text-[10px] bg-white/10 text-white/60 px-2 py-1 rounded-md">
+          from your library
+        </span>
+        <span className="text-[10px] bg-white/10 text-white/60 px-2 py-1 rounded-md">🔥 3 days</span>
+      </motion.div>
+    </div>
+  );
+}
