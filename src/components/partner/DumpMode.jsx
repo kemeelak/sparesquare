@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import DumpEntryCard from "./DumpEntryCard";
 import DumpComposer from "./DumpComposer";
+import { Mic } from "lucide-react";
 import { invokeAI } from "@/lib/plans";
 import { buildDumpPrompt, DUMP_SCHEMA } from "./dumpPrompt";
 
@@ -66,14 +67,15 @@ export default function DumpMode({ currentUser, profile, partnerName }) {
         <div className="max-w-2xl mx-auto">
           {empty ? (
             <div className="py-10 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-[#F5F0EB] flex items-center justify-center mx-auto mb-4 text-3xl">
-                🪣
+              <div className="w-16 h-16 rounded-2xl bg-[#F5EDE4] flex items-center justify-center mx-auto mb-4">
+                <Mic className="w-7 h-7 text-[#D4A574]" />
               </div>
-              <h2 className="text-lg font-semibold text-[#1A1A1A] mb-1.5">Drop anything here</h2>
+              <h2 className="text-lg font-semibold text-[#1A1A1A] mb-1.5">Say it out loud</h2>
               <p className="text-sm text-[#8A8580] max-w-sm mx-auto leading-relaxed">
-                The thing you keep turning over, a photo of the mess, a rant you don't want to say out loud.
-                {" "}{partnerName} reads it and hands back one small move, nothing more.
+                Press the mic below and talk. Out loud, unfiltered, half-formed, all of it.
+                {" "}{partnerName} writes it down, reads it, and hands back one small move.
               </p>
+              <p className="text-xs text-[#B0AAA4] mt-3">Typing and photos work too.</p>
             </div>
           ) : (
             <>
