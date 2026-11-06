@@ -22,6 +22,7 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
   const [exploring, setExploring] = useState(false);
   const [editingReflection, setEditingReflection] = useState(false);
   const [reflectionDraft, setReflectionDraft] = useState(entry.reflection || "");
+  const [kept, setKept] = useState([]);
   const scrollRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -33,6 +34,22 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
       .catch(() => {});
     return () => { alive = false; };
   }, [entry.photo_url]);
+
+  // Everything they kept while digging stays with the note, so walking out doesn't lose it.
+  useEffect(() => {
+    let alive = true;
+    base44.entities.NoteExploration
+      .filter({ entry_id: entry.id }, "-created_date", 20)
+      .then((page) => {
+        if (!alive) return;
+        const rows = page?.items ?? page ?? [];
+        setKept(rows.flatMap((row) => row.bookmarks || []));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [entry.id, exploring]);
 
   const stamp = entry.created_date ? format(new Date(entry.created_date), "EEE d MMM · h:mm a") : "just now";
   const title = entry.title || shortTitle(entry.text) || (entry.photo_url ? "A photo you dropped" : "Untitled");
@@ -263,6 +280,25 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
               )}
             </div>
           </article>
+
+          {kept.length > 0 && (
+            <section className="tw-kept-points">
+              <p className="tw-stamp">Kept while digging</p>
+              <ul className="tw-kept-list">
+                {kept.map((point, index) => (
+                  <li key={`${point.key}-${index}`}>
+                    <button type="button" className="tw-kept-item tw-kept-btn" onClick={() => setExploring(true)}>
+                      <span className="tw-kept-body">
+                        <span className="tw-kept-label">{point.label || "A point"}</span>
+                        {point.detail && <span className="tw-kept-detail">{point.detail}</span>}
+                      </span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           {followUps.length > 0 && (
             <section className="tw-follows">

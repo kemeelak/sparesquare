@@ -96,6 +96,12 @@ export const WALL_CSS = `
 .tw-kept-item{display:flex;align-items:flex-start;gap:10px;background:#F5EDE4;border:1px solid #EBDCC8;border-radius:12px;padding:11px 12px;animation:tw-slide .26s cubic-bezier(.2,.8,.25,1) both}
 .tw-kept-body{flex:1;min-width:0}
 .tw-kept-label{margin:0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:#8A6A3C}
+.tw-kept-btn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font:inherit;cursor:pointer;transition:border-color .16s,transform .16s}
+.tw-kept-btn:hover{border-color:#DFCBB0}
+.tw-kept-btn:active{transform:scale(.995)}
+.tw-kept-btn:focus-visible{outline:2px solid #7C9A82;outline-offset:2px}
+.tw-kept-btn svg{flex:none;color:#8A6A3C;stroke:currentColor;fill:none;stroke-width:2}
+.tw-kept-btn .tw-kept-label,.tw-kept-btn .tw-kept-detail{display:block}
 .tw-kept-detail{margin:5px 0 0;font-size:13.5px;line-height:1.5;color:#5C5C5C;overflow-wrap:anywhere}
 .tw-lap-foot{display:flex;justify-content:flex-end;margin-top:6px}
 .tw-notit{display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;padding:6px 2px;color:#8A8580;font:600 10.5px/1 'Inter',-apple-system,sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:color .16s,transform .16s}
