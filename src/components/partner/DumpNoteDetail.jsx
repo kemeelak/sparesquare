@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Check, Pencil, Trash2 } from "lucide-react";
 import DumpActionCard from "./DumpActionCard";
 import NoteAdditionView from "./NoteAdditionView";
+import NoteBlockHead from "./NoteBlockHead";
 import NoteFollowUp from "./NoteFollowUp";
 import NoteFollowUpBar from "./NoteFollowUpBar";
 import { shortTitle } from "./DumpNoteFront";
@@ -17,6 +18,8 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
   const [editDraft, setEditDraft] = useState(entry.text || "");
   const [confirming, setConfirming] = useState(false);
   const [openAddition, setOpenAddition] = useState(null);
+  const [editingReflection, setEditingReflection] = useState(false);
+  const [reflectionDraft, setReflectionDraft] = useState(entry.reflection || "");
   const scrollRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -58,6 +61,19 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
     if (!next || next === entry.text) return;
     await base44.entities.DumpEntry.update(entry.id, { text: next });
     refresh();
+  };
+
+  const saveReflection = async () => {
+    const next = reflectionDraft.trim();
+    setEditingReflection(false);
+    if (!next || next === entry.reflection) return;
+    await base44.entities.DumpEntry.update(entry.id, { reflection: next });
+    refresh();
+  };
+
+  const cancelReflection = () => {
+    setEditingReflection(false);
+    setReflectionDraft(entry.reflection || "");
   };
 
   const remove = async () => {
@@ -120,7 +136,11 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
             <span className="tw-pin" aria-hidden="true" />
 
             <div className="tw-block">
-              <p className="tw-stamp">What you wrote</p>
+              <NoteBlockHead
+                label="What you wrote"
+                editing={editing}
+                onEdit={() => { setEditing(true); setConfirming(false); }}
+              />
 
               {editing ? (
                 <>
@@ -162,17 +182,43 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
             </div>
 
             <div className="tw-block">
-              <p className="tw-stamp">Back to you</p>
+              <NoteBlockHead
+                label="Back to you"
+                editing={editingReflection}
+                onEdit={entry.reflection ? () => setEditingReflection(true) : undefined}
+              />
               {reflecting ? (
                 <p className="tw-scribble animate-pulse">Reading it…</p>
-              ) : entry.reflection ? (
+              ) : editingReflection ? (
                 <>
-                  <p className="tw-scribble">{entry.reflection}</p>
-                  <DumpActionCard entry={entry} />
+                  <textarea
+                    value={reflectionDraft}
+                    onChange={(e) => setReflectionDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") cancelReflection();
+                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveReflection();
+                    }}
+                    aria-label="Edit what came back"
+                    className="tw-edit"
+                    autoFocus
+                  />
+                  <div className="tw-foot">
+                    <button onClick={saveReflection} className="tw-do">
+                      <Check className="w-3.5 h-3.5" />
+                      Save
+                    </button>
+                    <button onClick={cancelReflection} className="tw-later">
+                      Cancel
+                    </button>
+                  </div>
                 </>
+              ) : entry.reflection ? (
+                <p className="tw-scribble">{entry.reflection}</p>
               ) : (
                 <p className="tw-small" style={{ margin: 0 }}>Nothing came back on this one.</p>
               )}
+
+              {!reflecting && entry.reflection && <DumpActionCard entry={entry} />}
             </div>
           </article>
 

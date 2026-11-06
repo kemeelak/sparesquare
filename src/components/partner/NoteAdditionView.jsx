@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Check, Pencil, Trash2 } from "lucide-react";
+import NoteBlockHead from "./NoteBlockHead";
 import NoteFollowUp from "./NoteFollowUp";
 import NoteFollowUpBar from "./NoteFollowUpBar";
 import { shortTitle } from "./DumpNoteFront";
@@ -87,7 +88,7 @@ export default function NoteAdditionView({ item, partnerName, onBack, onChange, 
 
           <article className="tw-note tw-detail-note">
             <span className="tw-pin" aria-hidden="true" />
-            <p className="tw-stamp">One you added</p>
+            <NoteBlockHead label="One you added" editing={editing} onEdit={() => setEditing(true)} />
 
             {editing ? (
               <>

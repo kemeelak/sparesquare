@@ -207,6 +207,15 @@ export const WALL_CSS = `
 .tw-follow-btn:focus-visible{outline:3px solid #547a7d;outline-offset:2px}
 .tw-audio-lead{margin-top:14px;height:40px}
 
+/* each block of text carries its own edit control */
+.tw-block-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px}
+.tw-block-head .tw-stamp{margin:0}
+.tw-block-edit{display:inline-flex;align-items:center;gap:5px;border:0;cursor:pointer;padding:5px 9px;border-radius:99px;background:rgba(53,77,81,.09);color:#5c6a66;font:600 10px/1 system-ui,-apple-system,sans-serif;letter-spacing:.1em;text-transform:uppercase;transition:background-color .16s,color .16s,transform .16s}
+.tw-block-edit:hover{background:rgba(53,77,81,.17);color:#33464a}
+.tw-block-edit:active{transform:scale(.95)}
+.tw-block-edit:focus-visible{outline:3px solid #547a7d;outline-offset:2px}
+.tw-block-edit svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
 @media (hover:none){
   .tw-note-btn:hover{transform:none;box-shadow:0 8px 18px rgba(61,45,25,.16)}
   .tw-card-tools{opacity:1}
