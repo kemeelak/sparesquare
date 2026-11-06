@@ -26,6 +26,15 @@ export default function DumpMode({ currentUser, profile, partnerName }) {
     enabled: !!currentUser,
   });
 
+  const { data: sources } = useQuery({
+    queryKey: ["dumpLibrary", currentUser?.id],
+    queryFn: () => base44.entities.PluginSource
+      .filter({ created_by_id: currentUser.id }, "-created_date", 12)
+      .then((page) => page?.items ?? page ?? []),
+    initialData: [],
+    enabled: !!currentUser,
+  });
+
   const handleDrop = async ({ text, file }) => {
     let photo_url = null;
     let photoLink = null;
@@ -42,7 +51,7 @@ export default function DumpMode({ currentUser, profile, partnerName }) {
 
     try {
       const res = await invokeAI("coach", {
-        prompt: buildDumpPrompt({ partnerName, profile, text, hasPhoto: !!photo_url }),
+        prompt: buildDumpPrompt({ partnerName, profile, text, hasPhoto: !!photo_url, sources }),
         response_json_schema: DUMP_SCHEMA,
         ...(photoLink ? { file_urls: [photoLink] } : {}),
       });
@@ -52,6 +61,7 @@ export default function DumpMode({ currentUser, profile, partnerName }) {
         await base44.entities.DumpEntry.update(entry.id, {
           title: res.title || "",
           reflection: res.reflection || "",
+          library_source: res.library_source || "",
           action_title: action.title || "",
           action_description: action.description || "",
           action_minutes: action.minutes || null,

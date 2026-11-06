@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft } from "lucide-react";
-import { GridArt, DetailArt, DumpArt } from "@/components/onboarding/introArt";
+import { GridArt, DetailArt, LibraryArt } from "@/components/onboarding/introArt";
 
 const SCENES = [
   {
@@ -11,10 +11,10 @@ const SCENES = [
     Art: GridArt,
   },
   {
-    eyebrow: "Your partner",
-    title: "Dump it instead of carrying it",
-    body: "Say it, type it, or drop in a photo. It comes back as the one thing underneath and the move to make — even the email you keep avoiding, written for you.",
-    Art: DumpArt,
+    eyebrow: "Your library",
+    title: "Turn what you read into a habit",
+    body: "Add a book, podcast or video. It pulls out the ideas worth keeping and the habits you can actually do — and those ideas come back when you dump what's on your mind.",
+    Art: LibraryArt,
   },
   {
     eyebrow: "First step",

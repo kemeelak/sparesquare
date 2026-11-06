@@ -8,6 +8,7 @@ export const DUMP_SCHEMA = {
   properties: {
     title: { type: "string" },
     reflection: { type: "string" },
+    library_source: { type: "string" },
     action: {
       type: "object",
       properties: {
@@ -23,10 +24,10 @@ export const DUMP_SCHEMA = {
       required: ["title", "description", "minutes", "category", "life_area"],
     },
   },
-  required: ["title", "reflection", "action"],
+  required: ["title", "reflection", "library_source", "action"],
 };
 
-export function buildDumpPrompt({ partnerName, profile, text, hasPhoto }) {
+export function buildDumpPrompt({ partnerName, profile, text, hasPhoto, sources }) {
   const now = new Date();
   const buckets = bucketSettings(profile)
     .filter((b) => !b.hidden)
@@ -42,6 +43,15 @@ export function buildDumpPrompt({ partnerName, profile, text, hasPhoto }) {
     `Their buckets: ${buckets}`,
   ].filter(Boolean).join("\n- ");
 
+  // What they read feeds back into what comes out of a dump: their own shelf, never a general reading list.
+  const shelf = (sources || [])
+    .flatMap((s) => (s.learnings || []).slice(0, 2).map((l) => `- ${s.title}: ${l.principle}`))
+    .slice(0, 8);
+
+  const libraryBlock = shelf.length
+    ? `WHAT IS ON THEIR SHELF (sources they actually read or listened to):\n${shelf.join("\n")}`
+    : "THEIR LIBRARY IS EMPTY. They have not added a book, podcast or video yet, so nothing can come from it.";
+
   return `${partnerName} is reading what this person just dropped into their private space. They are not chatting and they did not ask a question. They wrote it down to get it out of their head, and they want something back that is worth the words.
 
 WHAT THEY DROPPED:
@@ -51,6 +61,8 @@ ${hasPhoto ? "They also attached a photo. Only use what you genuinely see in it 
 WHAT YOU KNOW ABOUT THEM:
 - ${context}
 
+${libraryBlock}
+
 REPLY IN THREE PARTS.
 
 0. title — 2 to 5 words naming what this dump is actually about, the way they would label it later when scrolling back through a wall of notes. It goes on the front of the card, so it has to stand alone. No punctuation at the end, no quotes, no "note about", never a full sentence. "Sunday dread about Monday" yes. "The money conversation with my sister" yes. "Feeling stressed" no, too plain. If it is a photo with no words, name the moment instead.
@@ -59,6 +71,7 @@ REPLY IN THREE PARTS.
    - If it is heavy — grief, shame, a fight, a rejection, a day that fell apart — name it gently and do not rush to fix it.
    - If it is light, funny or excited, match that instead of getting solemn.
    - If it is a photo with no words, say the one thing the picture actually gives away and nothing more.
+   - If one of the principles on their shelf genuinely speaks to this, let it shape the reflection and set library_source to that source's exact title as written above. Never force it: most notes need nothing from the shelf, and an empty string is the normal answer. Never name a book, podcast or video they have not added.
 
 2. action — the single smallest useful move, doable today or tomorrow, under 25 minutes, that pours into one of their real buckets. A title they would recognise on their grid (5 words max). A description of one line that says exactly when or how, specific enough to do without thinking. Minutes as a number. A category. The life_area bucket it belongs to.
    - Never "drink water", "journal about it", "practice self care", "take a deep breath", "reflect on this", "set a boundary".

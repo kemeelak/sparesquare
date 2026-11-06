@@ -30,13 +30,13 @@ const STEPS = [
   {
     emoji: "🗒️",
     title: "Dump it instead of carrying it",
-    body: "Rant, type or drop a voice note. Open it and it comes back as the one thing underneath, the move to make today — and the email or message you've been avoiding, drafted so you only have to send it.",
+    body: "Rant, type or drop a voice note. Open it and it comes back as the one thing underneath and the move to make today — drawn from what you've already read, named back to you.",
     where: "Partner · Dump",
   },
   {
     emoji: "📚",
     title: "Turn what you consume into habits",
-    body: "Add a book, podcast or video to your library. It pulls out the principles and the habits, and you schedule the ones worth keeping.",
+    body: "Add a book, podcast or video. It pulls out the principles and the habits, you schedule the ones worth keeping, and the principles feed back into your notes.",
     where: "Library",
   },
   {

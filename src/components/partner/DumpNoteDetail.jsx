@@ -218,6 +218,10 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
                 <p className="tw-small" style={{ margin: 0 }}>Nothing came back on this one.</p>
               )}
 
+              {!reflecting && entry.library_source && (
+                <p className="tw-lib-chip">📚 From your library · {entry.library_source}</p>
+              )}
+
               {!reflecting && entry.reflection && <DumpActionCard entry={entry} />}
             </div>
           </article>

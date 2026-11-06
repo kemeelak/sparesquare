@@ -18,6 +18,10 @@
       "type": "string",
       "description": "The one thing that came back to them"
     },
+    "library_source": {
+      "type": "string",
+      "description": "The title of the source on their shelf the reflection drew on, when one genuinely fit"
+    },
     "action_title": {
       "type": "string",
       "description": "The single small move offered back"

@@ -111,6 +111,7 @@ export const WALL_CSS = `
 .tw-drop{margin-left:auto;border:0;background:transparent;color:#84877e;cursor:pointer;display:grid;place-items:center;padding:4px}
 .tw-drop:hover{color:#d4674e}
 
+.tw-lib-chip{display:inline-flex;align-items:center;gap:6px;margin:12px 0 0;padding:5px 10px;border-radius:99px;background:rgba(53,77,81,.08);border:1px solid rgba(53,77,81,.14);font-size:11px;letter-spacing:.04em;color:#4a6b6f}
 .tw-draft-btn{margin-top:14px}
 .tw-draft{margin-top:16px;padding-top:14px;border-top:1px dashed rgba(95,75,49,.3)}
 .tw-draft-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
