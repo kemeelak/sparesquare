@@ -73,6 +73,14 @@
           "at": {
             "type": "string",
             "description": "When it was added, ISO"
+          },
+          "photo_url": {
+            "type": "string",
+            "description": "Private storage path of a photo added with this note"
+          },
+          "voice_uri": {
+            "type": "string",
+            "description": "Private storage path of a voice recording added with this note"
           }
         }
       }

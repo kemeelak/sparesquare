@@ -2,20 +2,19 @@ import React, { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, ArrowUp, Check, Loader2, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, Pencil, Trash2 } from "lucide-react";
 import DumpActionCard from "./DumpActionCard";
+import NoteFollowUp from "./NoteFollowUp";
+import NoteFollowUpBar from "./NoteFollowUpBar";
 import { shortTitle } from "./DumpNoteFront";
 
 // One dump, opened up: what they wrote, what came back, the move inside it,
 // and everything they have piled onto it since.
 export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack }) {
   const [photo, setPhoto] = useState(null);
-  const [draft, setDraft] = useState("");
-  const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editDraft, setEditDraft] = useState(entry.text || "");
   const [confirming, setConfirming] = useState(false);
-  const inputRef = useRef(null);
   const scrollRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -28,32 +27,26 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
     return () => { alive = false; };
   }, [entry.photo_url]);
 
-  // The bar grows with what they write instead of scrolling inside a fixed box.
-  useEffect(() => {
-    const el = inputRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
-  }, [draft]);
-
   const stamp = entry.created_date ? format(new Date(entry.created_date), "EEE d MMM · h:mm a") : "just now";
   const title = entry.title || shortTitle(entry.text) || (entry.photo_url ? "A photo you dropped" : "Untitled");
   const followUps = entry.follow_ups || [];
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["dumpEntries"] });
 
-  const addFollowUp = async () => {
-    const next = draft.trim();
-    if (!next || saving) return;
-    setSaving(true);
-    await base44.entities.DumpEntry.update(entry.id, {
-      follow_ups: [...followUps, { text: next, at: new Date().toISOString() }],
-    });
-    setDraft("");
+  const saveFollowUps = async (next) => {
+    await base44.entities.DumpEntry.update(entry.id, { follow_ups: next });
     refresh();
-    setSaving(false);
+  };
+
+  const addFollowUp = async (payload) => {
+    await saveFollowUps([...followUps, { ...payload, at: new Date().toISOString() }]);
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   };
+
+  const editFollowUp = (index, patch) =>
+    saveFollowUps(followUps.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+
+  const deleteFollowUp = (index) => saveFollowUps(followUps.filter((_, i) => i !== index));
 
   const saveEdit = async () => {
     const next = editDraft.trim();
@@ -164,12 +157,12 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
             <section className="tw-follows">
               <p className="tw-stamp">Added since</p>
               {followUps.map((item, index) => (
-                <article key={`${item.at}-${index}`} className="tw-follow">
-                  <p className="tw-body">{item.text}</p>
-                  {item.at && (
-                    <p className="tw-follow-stamp">{format(new Date(item.at), "d MMM · h:mm a")}</p>
-                  )}
-                </article>
+                <NoteFollowUp
+                  key={`${item.at}-${index}`}
+                  item={item}
+                  onSave={(patch) => editFollowUp(index, patch)}
+                  onDelete={() => deleteFollowUp(index)}
+                />
               ))}
             </section>
           )}
@@ -177,31 +170,7 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
       </div>
 
       <div className="tw-bar">
-        <div className="tw-composer">
-          <div className="tw-compose-row">
-            <textarea
-              ref={inputRef}
-              rows={1}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); addFollowUp(); }
-              }}
-              aria-label="Add a note to this"
-              className="tw-textarea"
-              placeholder={`Add to this note, or tell ${partnerName} more`}
-            />
-            <button
-              type="button"
-              onClick={addFollowUp}
-              disabled={!draft.trim() || saving}
-              className="tw-send"
-              aria-label="Add this note"
-            >
-              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowUp className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
+        <NoteFollowUpBar onAdd={addFollowUp} partnerName={partnerName} />
       </div>
     </div>
   );

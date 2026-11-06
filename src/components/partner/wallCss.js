@@ -184,6 +184,20 @@ export const WALL_CSS = `
 .tw-follows{display:flex;flex-direction:column;gap:10px}
 .tw-follow{background:rgba(255,250,240,.72);border:1px solid rgba(95,75,49,.16);border-left:3px solid rgba(212,103,78,.5);padding:14px 16px 12px;box-shadow:0 3px 10px rgba(61,45,25,.1);animation:tw-slide .28s cubic-bezier(.2,.8,.25,1) both}
 .tw-follow-stamp{margin:8px 0 0;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8a8b82}
+.tw-follow-photo{display:block;margin:10px 0 0;max-width:100%;max-height:220px;border:1px solid rgba(95,75,49,.18);box-shadow:0 4px 10px rgba(61,45,25,.14)}
+.tw-audio{display:block;width:100%;height:36px;margin:10px 0 0}
+.tw-follow-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+.tw-follow-foot .tw-follow-stamp{margin:0}
+.tw-follow-tools{display:flex;gap:2px;flex:none}
+.tw-follow-tools button{border:0;background:transparent;cursor:pointer;color:#8a8b82;padding:4px;border-radius:6px;display:grid;place-items:center;transition:background-color .15s,color .15s}
+.tw-follow-tools button:hover{background:#f0eadb;color:#26383d}
+.tw-follow-tools .tw-icon-danger:hover{background:#f7e2dc;color:#a8482f}
+.tw-follow-tools svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tw-edit-follow{min-height:70px}
+.tw-attach-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.tw-voice-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:99px;background:#f0eadb;border:1px solid #c9b58f;font-size:12px;color:#33464a}
+.tw-voice-chip svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tw-voice-chip button{border:0;background:transparent;cursor:pointer;color:#8a8b82;display:grid;place-items:center;padding:2px}
 
 @media (hover:none){
   .tw-note-btn:hover{transform:none;box-shadow:0 8px 18px rgba(61,45,25,.16)}
