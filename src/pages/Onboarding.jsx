@@ -11,6 +11,7 @@ import CommuteSetup from "@/components/commute/CommuteSetup";
 import UnmovableEditor from "@/components/onboarding/UnmovableEditor";
 import { partitionNewHabits } from "@/lib/habitDedupe";
 import { cleanText, cleanList } from "@/lib/cleanText";
+import { mixFromWeights } from "@/lib/lifeAreas";
 
 const GROWTH_LABELS = {
   fitness: "💪 Fitness & Health",
@@ -99,6 +100,9 @@ export default function Onboarding() {
 
     const growthLabels = growthLabelList(extracted);
     const existingHabits = cleanList(extracted.existing_habits || []);
+    // What they let slip about how their week should lean — this is the split the balance
+    // card measures them against, so it's saved rather than re-guessed every time.
+    const bucketMix = mixFromWeights(extracted.bucket_weights);
 
     const sleepH = extracted.sleep_hour ?? 23;
     const wakeH = extracted.wake_hour ?? 7;
@@ -121,6 +125,7 @@ export default function Onboarding() {
       challenges: cleanList(draft.challenges),
       motivation: cleanText(draft.motivation),
       existing_habits: existingHabits,
+      ...(bucketMix ? { bucket_mix: bucketMix } : {}),
     });
 
     setCreatedProfile(created);

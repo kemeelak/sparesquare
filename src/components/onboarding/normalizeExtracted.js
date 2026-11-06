@@ -164,6 +164,20 @@ function cleanGrowthFocuses(value) {
 
 // If the model words the rhythm its own way ("night owl, office till 6"), fall back to
 // what their fixed blocks say — weekday daytime work is a 9-to-5 life.
+// How much each part of life pulls for them right now, on a 1-10 pull. One bucket alone
+// says nothing about a split, so it's only kept when they pointed at two or more.
+const BUCKET_KEYS = ["work", "people", "faith", "fun", "health"];
+
+function cleanBucketWeights(value) {
+  if (!value || typeof value !== "object") return null;
+  const out = {};
+  BUCKET_KEYS.forEach((key) => {
+    const pull = Number(value[key]);
+    if (Number.isFinite(pull) && pull > 0 && pull <= 10) out[key] = pull;
+  });
+  return Object.keys(out).length >= 2 ? out : null;
+}
+
 function inferRhythm(unmovables) {
   const weekdayWork = unmovables.some(
     (block) =>
@@ -218,6 +232,9 @@ export function normalizeExtracted(raw) {
   // coaching can use it instead of asking them again.
   const notes = cleanList(raw.notes);
   if (notes.length) out.extra_notes = notes;
+
+  const bucketWeights = cleanBucketWeights(raw.bucket_weights);
+  if (bucketWeights) out.bucket_weights = bucketWeights;
 
   const partner = cleanText(raw.partner_name);
   if (partner) out.partner_name = partner.slice(0, 12);

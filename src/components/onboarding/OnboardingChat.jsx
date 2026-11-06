@@ -31,10 +31,11 @@ What you actually need before wrapping up:
 2. Sleep: when they actually go to bed, when they get up, and when they'd like to.
 3. What they're working on — one OR SEVERAL areas — and why it matters now.
 4. What has stopped them before.
+5. Once, sideways and without a form: which part of life has been getting squeezed — work, friends and family, faith, fun, health. Ask it like curiosity ("what's been getting the squeezed end of things lately?"), never as a rating, a ranking, or a list of all five. If what they already told you points somewhere, take it and don't ask. This one is optional: it must never be the reason the conversation keeps going.
 
 Partner name and username are nice-to-have only: suggest both yourself at the end if they never mentioned them. Never spend a turn on them.
 
-Record what you learn in extracted. Times become 24-hour hour NUMBERS (0-23). unmovables is [{label, start_hour, end_hour, days}] for time they genuinely can't move (work, class, commute, caregiving), with lowercase day names and [] meaning every day — a routine they already keep (dog walk, gym, journaling) belongs in existing_habits instead. growth_focus is comma-separated when there's more than one (e.g. "fitness, peace"). rhythm_type is exactly one of nine_to_five, student, night_shift, freelancer, parent, other. goals and challenges are short strings. motivation is one sentence in their words. notes is any other fact worth remembering about them — never repeat something already sitting in another field.
+Record what you learn in extracted. Times become 24-hour hour NUMBERS (0-23). unmovables is [{label, start_hour, end_hour, days}] for time they genuinely can't move (work, class, commute, caregiving), with lowercase day names and [] meaning every day — a routine they already keep (dog walk, gym, journaling) belongs in existing_habits instead. growth_focus is comma-separated when there's more than one (e.g. "fitness, peace"). rhythm_type is exactly one of nine_to_five, student, night_shift, freelancer, parent, other. goals and challenges are short strings. motivation is one sentence in their words. notes is any other fact worth remembering about them — never repeat something already sitting in another field. bucket_weights is how hard each part of life pulls for them right now — work, people, faith, fun, health — numbers 1-10, only the buckets they actually pointed at, a squeezed or yearned-for bucket scoring high. Leave it out unless they said enough for a split.
 
 Return ONLY this JSON object:
 {
@@ -53,6 +54,7 @@ Return ONLY this JSON object:
     "challenges": ["..."],
     "motivation": "...",
     "notes": ["has a 4-year-old", "left knee injury"],
+    "bucket_weights": {"work": 7, "people": 3, "health": 5},
     "partner_name": "...",
     "username": "..."
   },
@@ -101,6 +103,16 @@ const RESPONSE_SCHEMA = {
         motivation: { type: ["string", "null"] },
         energy_pattern: { type: ["string", "null"] },
         notes: { type: ["array", "null"], items: { type: "string" } },
+        bucket_weights: {
+          type: ["object", "null"],
+          properties: {
+            work: { type: ["number", "null"] },
+            people: { type: ["number", "null"] },
+            faith: { type: ["number", "null"] },
+            fun: { type: ["number", "null"] },
+            health: { type: ["number", "null"] },
+          },
+        },
         partner_name: { type: ["string", "null"] },
         username: { type: ["string", "null"] },
       },
@@ -220,6 +232,7 @@ export default function OnboardingChat({ onComplete }) {
         goals: mergeList(extracted.goals, clean.goals),
         challenges: mergeList(extracted.challenges, clean.challenges),
         extra_notes: mergeList(extracted.extra_notes, clean.extra_notes),
+        bucket_weights: { ...extracted.bucket_weights, ...clean.bucket_weights },
         unmovables: clean.unmovables?.length ? clean.unmovables : extracted.unmovables,
       };
       setExtracted(merged);

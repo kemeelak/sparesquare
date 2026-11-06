@@ -141,6 +141,27 @@
         "type": "string"
       }
     },
+    "bucket_mix": {
+      "type": "object",
+      "description": "How this member wants their week split across the five life buckets, in percents \u2014 heard in onboarding, never asked as a form",
+      "properties": {
+        "work": {
+          "type": "number"
+        },
+        "people": {
+          "type": "number"
+        },
+        "faith": {
+          "type": "number"
+        },
+        "fun": {
+          "type": "number"
+        },
+        "health": {
+          "type": "number"
+        }
+      }
+    },
     "commute": {
       "type": "object",
       "description": "Opt-in commute setup: when and how the user travels, and what they like to consume on the way",

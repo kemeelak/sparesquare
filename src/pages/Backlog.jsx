@@ -106,6 +106,7 @@ export default function Backlog() {
               duration_minutes: habit.duration_minutes,
               energy_level: habit.energy_level,
               category: habit.category,
+              life_area: habit.life_area,
               scheduled_hour: hour,
               scheduled_date: format(d, "yyyy-MM-dd"),
               status: "suggested",

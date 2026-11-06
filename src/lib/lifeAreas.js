@@ -76,9 +76,36 @@ const KEYWORDS = {
   work: ["work", "career", "job", "business", "money", "income", "client", "study", "learn", "exam", "school", "launch", "promotion"],
 };
 
+// How much each bucket pulls for them, heard in their own words, becomes a split that
+// adds to 100. Nothing said means nothing to go on — the caller keeps what it had.
+const QUIET_PULL = 2;
+
+export function mixFromWeights(weights) {
+  const pulls = {};
+  AREA_KEYS.forEach((key) => {
+    const pull = Math.max(0, Number(weights?.[key]) || 0);
+    if (pull > 0) pulls[key] = pull;
+  });
+  if (!Object.keys(pulls).length) return null;
+
+  // A bucket they never mentioned isn't meant to get none of their week — it just isn't
+  // what's pulling right now, so it keeps a quiet floor instead of being zeroed out.
+  const pullOf = (key) => pulls[key] ?? QUIET_PULL;
+  const total = AREA_KEYS.reduce((sum, key) => sum + pullOf(key), 0);
+  const mix = {};
+  AREA_KEYS.forEach((key) => {
+    mix[key] = Math.round((pullOf(key) / total) * 100);
+  });
+  return mix;
+}
+
 // What their hours *should* look like, from what they told us they're working on.
-// Not equal fifths — the shares follow their own words.
+// Not equal fifths — the shares follow their own words. The split they let slip during
+// onboarding is the truest thing we have, so it wins over anything inferred later.
 export function buildMix(profile) {
+  const saved = mixFromWeights(profile?.bucket_mix);
+  if (saved) return saved;
+
   const scores = { ...BASE_MIX };
 
   const focuses = (profile?.growth_focuses?.length ? profile.growth_focuses : [profile?.growth_focus]).filter(Boolean);

@@ -28,6 +28,24 @@ export default function ScheduleSheet({ habit, habits = [], profile, onClose, on
   
   const dayName = format(date, "EEEE").toLowerCase(); // e.g. "monday"
 
+  // Hours that have already gone today are never offered, and the date can't go back past
+  // today — a block can't be scheduled into a time that's already passed.
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const nowHour = new Date().getHours();
+  const isToday = dateStr === todayStr;
+  const pickableHours = Array.from({ length: 24 }, (_, h) => h).filter(
+    (h) => !(isToday && h < nowHour)
+  );
+
+  const changeDate = (next) => {
+    const nextStr = format(next, "yyyy-MM-dd");
+    if (nextStr < todayStr) return;
+    setDate(next);
+    if (nextStr === todayStr && selectedHour !== null && selectedHour < nowHour) {
+      setSelectedHour(null);
+    }
+  };
+
   // Compute busy hours for the selected date
   const busyHours = useMemo(() => {
     const busy = new Set();
@@ -82,6 +100,8 @@ export default function ScheduleSheet({ habit, habits = [], profile, onClose, on
 
     return busy;
   }, [habits, profile, dateStr, dayName]);
+
+  const freeCount = pickableHours.filter((h) => !busyHours.has(h)).length;
 
   return (
     <motion.div
@@ -142,11 +162,17 @@ export default function ScheduleSheet({ habit, habits = [], profile, onClose, on
                 </p>
               </div>
               <div className="flex items-center justify-between bg-[#F5F0EB] rounded-xl p-3">
-                <button onClick={() => setDate(subDays(date, 1))} className="p-1">
+                <button
+                  onClick={() => changeDate(subDays(date, 1))}
+                  disabled={isToday}
+                  className="p-1 disabled:opacity-25"
+                >
                   <ChevronLeft className="w-4 h-4 text-[#8A8580]" />
                 </button>
-                <p className="text-sm font-medium text-[#1A1A1A]">{format(date, "EEEE, MMM d")}</p>
-                <button onClick={() => setDate(addDays(date, 1))} className="p-1">
+                <p className="text-sm font-medium text-[#1A1A1A]">
+                  {isToday ? "Today" : format(date, "EEEE, MMM d")}
+                </p>
+                <button onClick={() => changeDate(addDays(date, 1))} className="p-1">
                   <ChevronRight className="w-4 h-4 text-[#8A8580]" />
                 </button>
               </div>
@@ -157,10 +183,10 @@ export default function ScheduleSheet({ habit, habits = [], profile, onClose, on
           <div className="mb-2">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold text-[#4A5568] uppercase tracking-wide">Available Times</p>
-              <p className="text-[10px] text-[#B0AAA4]">{24 - busyHours.size} free hours</p>
+              <p className="text-[10px] text-[#B0AAA4]">{freeCount} free hours</p>
             </div>
             <div className="grid grid-cols-4 gap-2 mb-6">
-              {Array.from({ length: 24 }, (_, h) => h).map((h) => {
+              {pickableHours.map((h) => {
                 const isBusy = busyHours.has(h);
                 const isSelected = selectedHour === h;
                 return (
