@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Loader2, RefreshCw, Send } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, RefreshCw, Send, Sparkles } from "lucide-react";
 import { invokeAI } from "@/lib/plans";
 import { buildExplorePrompt, buildExploreFollowUp, EXPLORE_SCHEMA } from "./explorePrompt";
 
@@ -16,11 +16,11 @@ async function loadKnowledge() {
   };
 }
 
-// One line of a note, read back through their whole wall and their library,
-// with room to keep pulling on it.
-export default function NoteExploreView({ note, parent, partnerName, onBack }) {
+// One dump (or one line of it) read back through their whole wall and their library,
+// one lap at a time, with room to ask in between.
+export default function NoteExploreView({ subject, context, partnerName, backLabel, onBack }) {
   const [knowledge, setKnowledge] = useState(null);
-  const [reading, setReading] = useState(null);
+  const [laps, setLaps] = useState([]);
   const [busy, setBusy] = useState(true);
   const [failed, setFailed] = useState(false);
   const [thread, setThread] = useState([]);
@@ -29,21 +29,22 @@ export default function NoteExploreView({ note, parent, partnerName, onBack }) {
   const endRef = useRef(null);
   const who = partnerName || "your partner";
 
-  const explore = async () => {
+  const run = async (earlier) => {
     setBusy(true);
     setFailed(false);
     try {
       const kb = knowledge || (await loadKnowledge());
       if (!knowledge) setKnowledge(kb);
       const res = await invokeAI("note_explore", {
-        prompt: buildExplorePrompt({ partnerName: who, note, parent, ...kb }),
+        prompt: buildExplorePrompt({ partnerName: who, subject, context, ...kb, laps: earlier }),
         response_json_schema: EXPLORE_SCHEMA,
       });
       if (!res?.read) {
         setFailed(true);
         return;
       }
-      setReading(res);
+      setLaps([...earlier, res]);
+      setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 80);
     } catch (error) {
       setFailed(true);
     } finally {
@@ -52,7 +53,7 @@ export default function NoteExploreView({ note, parent, partnerName, onBack }) {
   };
 
   useEffect(() => {
-    explore();
+    run([]);
   }, []);
 
   const ask = async () => {
@@ -64,10 +65,10 @@ export default function NoteExploreView({ note, parent, partnerName, onBack }) {
       const answer = await invokeAI("note_explore", {
         prompt: buildExploreFollowUp({
           partnerName: who,
-          note,
-          parent,
+          subject,
+          context,
           ...(knowledge || { dumps: [], sources: [] }),
-          reading,
+          laps,
           thread,
           question,
         }),
@@ -87,12 +88,12 @@ export default function NoteExploreView({ note, parent, partnerName, onBack }) {
       <div className="tw-head">
         <button type="button" className="tw-back" onClick={onBack}>
           <ArrowLeft className="w-3.5 h-3.5" />
-          The note
+          {backLabel || "Back"}
         </button>
-        <span className="tw-head-stamp">Going deeper</span>
-        {reading && (
+        <span className="tw-head-stamp">Digging in</span>
+        {laps.length > 0 && (
           <div className="tw-head-tools">
-            <button type="button" className="tw-icon-btn" onClick={explore} aria-label="Read it again">
+            <button type="button" className="tw-icon-btn" onClick={() => run([])} aria-label="Start it over">
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -101,84 +102,92 @@ export default function NoteExploreView({ note, parent, partnerName, onBack }) {
 
       <div className="tw-scroll tw-detail-scroll">
         <div className="tw-detail-inner">
-          <p className="tw-stamp">The line you picked</p>
+          <p className="tw-stamp">What you're digging into</p>
           <blockquote className="tw-explore-line">
-            {note?.text || (note?.voice_uri ? "A recording you added." : "A photo you added.")}
+            {subject || "A recording or a photo you added."}
           </blockquote>
 
-          {busy ? (
-            <p className="tw-explore-loading">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Going back through everything you've written…
-            </p>
-          ) : failed ? (
-            <div className="tw-foot" style={{ marginTop: 0 }}>
-              <span className="tw-small" style={{ margin: 0, flex: 1 }}>That didn't come through just now.</span>
-              <button type="button" className="tw-later" onClick={explore}>Try again</button>
-            </div>
-          ) : (
-            <>
-              <section className="tw-block">
+          {laps.map((lap, index) => (
+            <section key={index} className="tw-lap">
+              {index > 0 && <p className="tw-stamp">Lap {index + 1}</p>}
+
+              <div className="tw-block">
                 <div className="tw-block-head">
                   <p className="tw-stamp">What {who} sees</p>
                 </div>
-                <p className="tw-scribble">{reading.read}</p>
-              </section>
+                <p className="tw-scribble">{lap.read}</p>
+              </div>
 
-              {reading.threads?.length > 0 && (
-                <section className="tw-block">
+              {lap.threads?.length > 0 && (
+                <div className="tw-block">
                   <div className="tw-block-head">
                     <p className="tw-stamp">Threads back through your own material</p>
                   </div>
                   <ul className="tw-threads">
-                    {reading.threads.map((item, index) => (
-                      <li key={index} className="tw-thread">
+                    {lap.threads.map((item, i) => (
+                      <li key={i} className="tw-thread">
                         <p className="tw-thread-label">{item.label}</p>
                         <p className="tw-thread-detail">{item.detail}</p>
                       </li>
                     ))}
                   </ul>
-                </section>
+                </div>
               )}
 
-              {reading.question && (
-                <section className="tw-block">
+              {lap.question && (
+                <div className="tw-block">
                   <div className="tw-block-head">
                     <p className="tw-stamp">Worth sitting with</p>
                   </div>
-                  <p className="tw-ask-q-line">{reading.question}</p>
-                </section>
+                  <p className="tw-ask-q-line">{lap.question}</p>
+                </div>
               )}
 
-              {reading.move?.title && (
-                <section className="tw-block">
+              {lap.move?.title && (
+                <div className="tw-block">
                   <div className="tw-block-head">
                     <p className="tw-stamp">Where it could go</p>
                   </div>
-                  <p className="tw-action-title" style={{ marginTop: 0 }}>{reading.move.title}</p>
-                  <p className="tw-action-copy">{reading.move.description}</p>
-                  {reading.move.minutes ? (
-                    <p className="tw-action-meta">{reading.move.minutes} min</p>
-                  ) : null}
-                </section>
-              )}
-
-              {thread.map((turn, index) => (
-                <div key={index} className="tw-ask">
-                  <p className="tw-ask-you">{turn.q}</p>
-                  <p className="tw-ask-back">{turn.a}</p>
+                  <p className="tw-action-title" style={{ marginTop: 0 }}>{lap.move.title}</p>
+                  <p className="tw-action-copy">{lap.move.description}</p>
+                  {lap.move.minutes ? <p className="tw-action-meta">{lap.move.minutes} min</p> : null}
                 </div>
-              ))}
-
-              {asking && (
-                <p className="tw-explore-loading">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Reading…
-                </p>
               )}
-              <div ref={endRef} />
-            </>
+            </section>
+          ))}
+
+          {busy ? (
+            <p className="tw-explore-loading">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              {laps.length ? "Going a level further…" : "Going back through everything you've written…"}
+            </p>
+          ) : failed ? (
+            <div className="tw-foot" style={{ marginTop: 0 }}>
+              <span className="tw-small" style={{ margin: 0, flex: 1 }}>That didn't come through just now.</span>
+              <button type="button" className="tw-later" onClick={() => run(laps)}>Try again</button>
+            </div>
+          ) : (
+            <button type="button" className="tw-go-deeper" onClick={() => run(laps)}>
+              <Sparkles className="w-4 h-4" />
+              Keep going
+              <ArrowRight className="w-4 h-4" />
+            </button>
           )}
+
+          {thread.map((turn, index) => (
+            <div key={index} className="tw-ask">
+              <p className="tw-ask-you">{turn.q}</p>
+              <p className="tw-ask-back">{turn.a}</p>
+            </div>
+          ))}
+
+          {asking && (
+            <p className="tw-explore-loading">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Reading…
+            </p>
+          )}
+          <div ref={endRef} />
         </div>
       </div>
 
@@ -195,16 +204,16 @@ export default function NoteExploreView({ note, parent, partnerName, onBack }) {
                 }
               }}
               rows={1}
-              placeholder="Keep pulling on it…"
-              aria-label="Ask about this line"
+              placeholder="Ask something specific…"
+              aria-label="Ask about this"
               className="tw-textarea tw-ask-input"
-              disabled={busy || failed}
+              disabled={busy}
             />
             <button
               type="button"
               className="tw-send"
               onClick={ask}
-              disabled={!draft.trim() || asking || busy || failed}
+              disabled={!draft.trim() || asking || busy}
               aria-label="Send"
             >
               <Send className="w-4 h-4" />

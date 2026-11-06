@@ -2,10 +2,11 @@ import React, { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Check, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Pencil, Sparkles, Trash2 } from "lucide-react";
 import DumpActionCard from "./DumpActionCard";
 import NoteAdditionView from "./NoteAdditionView";
 import NoteBlockHead from "./NoteBlockHead";
+import NoteExploreView from "./NoteExploreView";
 import NoteFollowUp from "./NoteFollowUp";
 import NoteFollowUpBar from "./NoteFollowUpBar";
 import { shortTitle } from "./DumpNoteFront";
@@ -18,6 +19,7 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
   const [editDraft, setEditDraft] = useState(entry.text || "");
   const [confirming, setConfirming] = useState(false);
   const [openAddition, setOpenAddition] = useState(null);
+  const [exploring, setExploring] = useState(false);
   const [editingReflection, setEditingReflection] = useState(false);
   const [reflectionDraft, setReflectionDraft] = useState(entry.reflection || "");
   const scrollRef = useRef(null);
@@ -96,6 +98,18 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
           await deleteFollowUp(openAddition);
           setOpenAddition(null);
         }}
+      />
+    );
+  }
+
+  if (exploring) {
+    return (
+      <NoteExploreView
+        subject={entry.text}
+        context={entry.reflection || ""}
+        partnerName={partnerName}
+        backLabel="The note"
+        onBack={() => setExploring(false)}
       />
     );
   }
@@ -213,7 +227,18 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
                   </div>
                 </>
               ) : entry.reflection ? (
-                <p className="tw-scribble">{entry.reflection}</p>
+                <button
+                  type="button"
+                  className="tw-scribble tw-scribble-btn"
+                  onClick={() => setExploring(true)}
+                  aria-label="Keep digging into this"
+                >
+                  {entry.reflection}
+                  <span className="tw-scribble-more">
+                    Keep going
+                    <ArrowRight className="w-3 h-3" />
+                  </span>
+                </button>
               ) : (
                 <p className="tw-small" style={{ margin: 0 }}>Nothing came back on this one.</p>
               )}
@@ -223,6 +248,17 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
               )}
 
               {!reflecting && entry.reflection && <DumpActionCard entry={entry} />}
+
+              {!reflecting && !editing && !editingReflection && (
+                <button
+                  type="button"
+                  className="tw-explore-cta"
+                  onClick={() => setExploring(true)}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Dig deeper into this with {partnerName || "your partner"}
+                </button>
+              )}
             </div>
           </article>
 

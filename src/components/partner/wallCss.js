@@ -247,9 +247,23 @@ export const WALL_CSS = `
 .tw-ask-you{align-self:flex-end;margin:0;max-width:88%;padding:10px 14px;border-radius:14px 14px 3px 14px;background:#2f4a4e;color:#fff7e7;font-size:14px;line-height:1.5}
 .tw-ask-back{margin:0;padding:12px 15px;border-radius:3px 14px 14px 14px;background:rgba(255,250,240,.85);border:1px solid rgba(95,75,49,.16);font-size:15px;line-height:1.6;color:#33464a;white-space:pre-wrap}
 .tw-ask-input{min-height:46px}
+.tw-scribble-btn{display:block;width:100%;text-align:left;border:0;background:transparent;padding:0;cursor:pointer;font-family:inherit;transition:color .16s}
+.tw-scribble-btn:hover{color:#2f4a4e}
+.tw-scribble-btn:disabled{cursor:default}
+.tw-scribble-btn:focus-visible{outline:3px solid #547a7d;outline-offset:4px;border-radius:4px}
+.tw-scribble-more{display:inline-flex;align-items:center;gap:5px;margin-top:11px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-style:normal;font-weight:700;color:#4a6b6f;border-bottom:1px solid rgba(53,77,81,.4);padding-bottom:2px}
+.tw-scribble-btn:hover .tw-scribble-more{color:#2f4a4e;border-color:rgba(47,74,78,.7)}
+.tw-lap{display:flex;flex-direction:column;gap:16px}
+.tw-lap+.tw-lap{margin-top:22px;padding-top:18px;border-top:1px dashed rgba(95,75,49,.32)}
+.tw-go-deeper{display:inline-flex;align-items:center;justify-content:center;gap:9px;align-self:flex-start;padding:13px 20px;border:0;border-radius:10px;background:#e8b263;color:#2c3a3d;font:700 13px/1 system-ui,-apple-system,sans-serif;letter-spacing:.02em;cursor:pointer;box-shadow:0 3px 0 #c18d4e;transition:background-color .18s,box-shadow .18s,transform .18s}
+.tw-go-deeper:hover{background:#f0c681;box-shadow:0 5px 14px rgba(154,119,76,.4)}
+.tw-go-deeper:active{transform:scale(.97)}
+.tw-go-deeper:focus-visible{outline:3px solid #547a7d;outline-offset:3px}
+.tw-go-deeper svg:last-child{opacity:.7}
 
 @media (max-width:767px){
   .tw-explore-cta{width:100%;justify-content:center;padding:13px 15px;font-size:13px}
+  .tw-go-deeper{width:100%;align-self:stretch;padding:14px 18px;font-size:13.5px}
 }
 
 @media (hover:none){

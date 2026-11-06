@@ -43,9 +43,10 @@ export default function NoteUnitView({ item, parent, partnerName, onBack, onChan
   if (exploring) {
     return (
       <NoteExploreView
-        note={item}
-        parent={parent}
+        subject={item.text}
+        context={parent?.text || ""}
         partnerName={partnerName}
+        backLabel="The note"
         onBack={() => setExploring(false)}
       />
     );
@@ -127,7 +128,7 @@ export default function NoteUnitView({ item, parent, partnerName, onBack, onChan
             {!editing && (
               <button type="button" className="tw-explore-cta" onClick={() => setExploring(true)}>
                 <Sparkles className="w-4 h-4" />
-                Explore this with {partnerName || "your partner"}
+                Dig deeper with {partnerName || "your partner"}
               </button>
             )}
 
