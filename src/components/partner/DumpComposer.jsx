@@ -11,6 +11,7 @@ export default function DumpComposer({ onDrop, busy }) {
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState("");
   const inputRef = useRef(null);
+  const textRef = useRef(null);
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
   const streamRef = useRef(null);
@@ -20,6 +21,14 @@ export default function DumpComposer({ onDrop, busy }) {
     clearInterval(timerRef.current);
     streamRef.current?.getTracks().forEach((t) => t.stop());
   }, []);
+
+  // The bar grows with what they say instead of scrolling inside a fixed box.
+  useEffect(() => {
+    const el = textRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 132)}px`;
+  }, [text, status]);
 
   const pickPhoto = (chosen) => {
     if (preview) URL.revokeObjectURL(preview);
@@ -122,6 +131,8 @@ export default function DumpComposer({ onDrop, busy }) {
             <Mic />
           </button>
           <textarea
+            ref={textRef}
+            rows={1}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {

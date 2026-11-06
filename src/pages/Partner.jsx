@@ -30,7 +30,7 @@ export default function Partner() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-8.5rem)] lg:h-screen overflow-hidden">
+    <div className="flex flex-col h-[calc(100dvh-8.5rem-env(safe-area-inset-bottom))] lg:h-screen overflow-hidden">
       <div className="px-3 py-2.5 sm:p-4 border-b border-[#E8E4DF] bg-white/70 backdrop-blur-lg flex-shrink-0">
         <div className="max-w-3xl mx-auto flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-[#1A1A1A] flex items-center justify-center flex-shrink-0">
