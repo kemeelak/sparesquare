@@ -171,8 +171,9 @@ export default function Layout({ children, currentPageName }) {
         </nav>
       </aside>
 
-      {/* Mobile top bar with the account menu */}
-      <MobileMenu />
+      {/* Mobile top bar with the account menu. The Partner screen carries its own,
+          merged header, so it never stacks two bars. */}
+      {currentPageName !== "Partner" && <MobileMenu />}
 
       {/* Mobile Bottom Nav */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-[#E8E4DF] z-50 pb-safe">
@@ -197,7 +198,7 @@ export default function Layout({ children, currentPageName }) {
       </nav>
 
       {/* Main Content */}
-      <main className="lg:ml-20 min-h-screen pt-14 pb-20 lg:pt-0 lg:pb-0">
+      <main className={`lg:ml-20 min-h-screen pb-20 lg:pt-0 lg:pb-0 ${currentPageName === "Partner" ? "pt-0" : "pt-14"}`}>
         {children}
       </main>
 

@@ -19,7 +19,7 @@ const formatHour = (h) => {
   return `${h - 12} PM`;
 };
 
-export default function ScheduleSheet({ habit, habits = [], profile, onClose, onSchedule }) {
+export default function ScheduleSheet({ habit, habits = [], profile, onClose, onSchedule, showRepeat = true }) {
   const [date, setDate] = useState(new Date());
   const [selectedHour, setSelectedHour] = useState(null);
   const [repeat, setRepeat] = useState("none");
@@ -130,6 +130,7 @@ export default function ScheduleSheet({ habit, habits = [], profile, onClose, on
           </div>
 
           {/* Repeat toggle */}
+          {showRepeat && (
           <div className="mb-4">
             <div className="flex items-center gap-1.5 mb-2">
               <RefreshCw className="w-3.5 h-3.5 text-[#8A8580]" />
@@ -151,6 +152,7 @@ export default function ScheduleSheet({ habit, habits = [], profile, onClose, on
               ))}
             </div>
           </div>
+          )}
 
           {/* Date selector — only show for non-daily repeats */}
           {repeat !== "daily" && repeat !== "weekdays" && (

@@ -76,6 +76,15 @@ export const WALL_CSS = `
 .tw-action-copy{font-size:13px;line-height:1.5;color:#5C5C5C;margin:0}
 .tw-action-meta{font-size:12px;color:#8A8580;margin:7px 0 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .tw-actions{margin-top:15px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tw-move-acts{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.tw-mini{display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;padding:4px 0;color:#8A8580;font:600 11.5px/1 'Inter',-apple-system,sans-serif;cursor:pointer;transition:color .16s}
+.tw-mini:hover{color:#1A1A1A}
+.tw-mini:disabled{opacity:.5;cursor:default}
+.tw-mini:focus-visible{outline:2px solid #7C9A82;outline-offset:3px;border-radius:4px}
+.tw-mini svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tw-mini+.tw-mini{border-left:1px solid #E8E4DF;padding-left:10px}
+.tw-move-done{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:600;color:#7C9A82}
+.tw-move-done svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .tw-do{border:0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:10px 14px;border-radius:10px;background:#1A1A1A;color:#FFFFFF;font:600 12px/1 'Inter',-apple-system,sans-serif;transition:background-color .18s,transform .18s}
 .tw-do:hover{background:#333333}
 .tw-later{border:0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:10px 14px;border-radius:10px;background:#F5F0EB;color:#1A1A1A;font:600 12px/1 'Inter',-apple-system,sans-serif;transition:background-color .18s,transform .18s}

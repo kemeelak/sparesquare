@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, ArrowRight, Loader2, RefreshCw, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarPlus, Check, Loader2, RefreshCw, Send, Sparkles } from "lucide-react";
+import { format } from "date-fns";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { invokeAI } from "@/lib/plans";
+import ScheduleSheet from "@/components/backlog/ScheduleSheet";
 import ExploreThread from "./ExploreThread";
 import { buildExplorePrompt, buildExploreFollowUp, EXPLORE_SCHEMA } from "./explorePrompt";
 
@@ -29,6 +32,54 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
   const [asking, setAsking] = useState(false);
   const endRef = useRef(null);
   const who = partnerName || "your partner";
+  const [moves, setMoves] = useState({}); // lap index -> saving | done | scheduled
+  const [scheduling, setScheduling] = useState(null); // { index, move }
+  const queryClient = useQueryClient();
+
+  // The same grid data the schedule picker uses on the backlog screen.
+  const { data: habits } = useQuery({
+    queryKey: ["habits"],
+    queryFn: () => base44.entities.HabitBlock.filter({}, "-created_date", 200).then((page) => page?.items ?? page ?? []),
+    initialData: [],
+  });
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => base44.entities.UserProfile.filter({}, "-created_date", 1).then((page) => (page?.items ?? page ?? [])[0] || null),
+  });
+
+  const saveMove = async (index, move, extra) => {
+    setMoves((prev) => ({ ...prev, [index]: "saving" }));
+    await base44.entities.HabitBlock.create({
+      title: move.title,
+      description: move.description || "",
+      duration_minutes: move.minutes || 20,
+      source: "From going deeper",
+      ...extra,
+    });
+    queryClient.invalidateQueries({ queryKey: ["habits"] });
+    return null;
+  };
+
+  // Straight onto the grid, already counted — no backlog stop.
+  const logNow = async (index, move) => {
+    await saveMove(index, move, {
+      status: "completed",
+      scheduled_date: format(new Date(), "yyyy-MM-dd"),
+      scheduled_hour: new Date().getHours(),
+    });
+    setMoves((prev) => ({ ...prev, [index]: "done" }));
+  };
+
+  const scheduleMove = async (hour, date) => {
+    const { index, move } = scheduling;
+    setScheduling(null);
+    await saveMove(index, move, {
+      status: "confirmed",
+      scheduled_date: format(date, "yyyy-MM-dd"),
+      scheduled_hour: hour,
+    });
+    setMoves((prev) => ({ ...prev, [index]: "scheduled" }));
+  };
 
   const run = async (earlier) => {
     setBusy(true);
@@ -154,6 +205,33 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
                   <p className="tw-action-title" style={{ marginTop: 0 }}>{lap.move.title}</p>
                   <p className="tw-action-copy">{lap.move.description}</p>
                   {lap.move.minutes ? <p className="tw-action-meta">{lap.move.minutes} min</p> : null}
+
+                  <div className="tw-move-acts">
+                    {moves[index] === "done" ? (
+                      <span className="tw-move-done"><Check /> Done — logged on your grid</span>
+                    ) : moves[index] === "scheduled" ? (
+                      <span className="tw-move-done"><Check /> Scheduled on your grid</span>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="tw-mini"
+                          disabled={moves[index] === "saving"}
+                          onClick={() => logNow(index, lap.move)}
+                        >
+                          <Check /> Did it now
+                        </button>
+                        <button
+                          type="button"
+                          className="tw-mini"
+                          disabled={moves[index] === "saving"}
+                          onClick={() => setScheduling({ index, move: lap.move })}
+                        >
+                          <CalendarPlus /> Schedule
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
             </section>
@@ -224,6 +302,17 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
           </div>
         </div>
       </div>
+
+      {scheduling && (
+        <ScheduleSheet
+          habit={{ ...scheduling.move, duration_minutes: scheduling.move.minutes || 20 }}
+          habits={habits}
+          profile={profile}
+          showRepeat={false}
+          onClose={() => setScheduling(null)}
+          onSchedule={scheduleMove}
+        />
+      )}
     </div>
   );
 }
