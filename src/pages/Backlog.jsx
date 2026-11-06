@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
-import { Layers, Calendar, Zap, Clock, Trash2, ArrowRight, Plus } from "lucide-react";
+import { Layers, Calendar, Zap, Clock, Trash2, ArrowRight, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ScheduleSheet from "../components/backlog/ScheduleSheet";
@@ -65,6 +65,17 @@ export default function Backlog() {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.HabitBlock.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["habits"] }),
+  });
+
+  // Straight to done: it counts on today's grid without ever being scheduled.
+  const doneMutation = useMutation({
+    mutationFn: (habit) =>
+      base44.entities.HabitBlock.update(habit.id, {
+        status: "completed",
+        scheduled_date: format(new Date(), "yyyy-MM-dd"),
+        scheduled_hour: new Date().getHours(),
+      }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["habits"] }),
   });
 
@@ -208,8 +219,18 @@ export default function Backlog() {
                 </Button>
                 <Button
                   size="sm"
+                  variant="outline"
+                  onClick={() => doneMutation.mutate(habit)}
+                  disabled={doneMutation.isPending}
+                  className="ml-auto rounded-xl border-[#E8E4DF] text-[#1A1A1A] hover:bg-[#F5F0EB]"
+                >
+                  <Check className="w-3.5 h-3.5 mr-1.5" />
+                  Did it
+                </Button>
+                <Button
+                  size="sm"
                   onClick={() => setScheduling(habit)}
-                  className="ml-auto bg-[#7C9A82] hover:bg-[#6B8A71] text-white rounded-xl"
+                  className="bg-[#7C9A82] hover:bg-[#6B8A71] text-white rounded-xl"
                 >
                   <Calendar className="w-3.5 h-3.5 mr-1.5" />
                   Schedule
