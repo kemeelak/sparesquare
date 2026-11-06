@@ -208,3 +208,45 @@ export function PartnerArt() {
     </div>
   );
 }
+
+// What the dump gives back: the note, the one thing underneath it, and the move written out.
+export function DumpArt() {
+  return (
+    <div className="w-full">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="bg-[#FFF7E7] rounded-lg px-3 py-2 shadow-lg max-w-[90%]"
+      >
+        <p className="text-[8.5px] uppercase tracking-[0.12em] text-[#8A7A5E] mb-1">Dumped · 11:42pm</p>
+        <p className="text-[11.5px] leading-snug text-[#33464A]">
+          “Been meaning to email Dani for three weeks and I keep not doing it.”
+        </p>
+      </motion.div>
+
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.6 }}
+        className="text-[10.5px] leading-snug text-[#A9C4AE] mt-2 pl-1"
+      >
+        Back to you: “Three weeks of silence is what's actually weighing on you.”
+      </motion.p>
+
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.05, duration: 0.35 }}
+        className="mt-2 bg-white/10 rounded-2xl rounded-tl-sm px-3 py-2 max-w-[92%]"
+      >
+        <p className="text-[8.5px] uppercase tracking-[0.12em] text-[#D4A574] mb-1">
+          ✍️ Draft the email for me
+        </p>
+        <p className="text-[11px] leading-snug text-white/85">
+          “Hi Dani — I've been meaning to write for weeks, and I'm sorry I went quiet…”
+        </p>
+      </motion.div>
+    </div>
+  );
+}

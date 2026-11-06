@@ -24,8 +24,14 @@ const STEPS = [
   {
     emoji: "💬",
     title: "Your partner, who knows your week",
-    body: "Your AI coach sees your schedule, your habits, and everything in your library. Short replies, always with a next step.",
-    where: "Partner",
+    body: "Your coach sees your schedule, your habits, and everything in your library. Short replies, always with a next step.",
+    where: "Partner · Talk",
+  },
+  {
+    emoji: "🗒️",
+    title: "Dump it instead of carrying it",
+    body: "Rant, type or drop a voice note. Open it and it comes back as the one thing underneath, the move to make today — and the email or message you've been avoiding, drafted so you only have to send it.",
+    where: "Partner · Dump",
   },
   {
     emoji: "📚",

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft } from "lucide-react";
-import { GridArt, DetailArt, LibraryArt, PartnerArt, PlacedArt } from "@/components/onboarding/introArt";
+import { GridArt, DetailArt, DumpArt } from "@/components/onboarding/introArt";
 
 const SCENES = [
   {
@@ -11,29 +11,17 @@ const SCENES = [
     Art: GridArt,
   },
   {
-    eyebrow: "Your books",
-    title: "Turn what you read into a habit",
-    body: "Add a book, podcast or video. It gets broken into the ideas worth keeping and the habits you can actually do.",
-    Art: LibraryArt,
+    eyebrow: "Your partner",
+    title: "Dump it instead of carrying it",
+    body: "Say it, type it, or drop in a photo. It comes back as the one thing underneath and the move to make — even the email you keep avoiding, written for you.",
+    Art: DumpArt,
   },
   {
-    eyebrow: "Your coach",
-    title: "A coach that already knows your day",
-    body: "It sees your empty squares and what you told it, then picks the one habit that fits today.",
-    Art: PartnerArt,
-  },
-  {
-    eyebrow: "What I need",
+    eyebrow: "First step",
     title: "Tell me about your real day",
-    body: "When you wake, when you sleep, and what you can't move. Say it out loud or type it.",
+    body: "When you wake, when you sleep, what can't move. Say it out loud, and you leave with one habit in an hour you actually have.",
     Art: DetailArt,
     hint: ["🎙️ Say it out loud", "✍️ Or type it", "✅ You check it before saving"],
-  },
-  {
-    eyebrow: "What happens next",
-    title: "One small habit, in a real hour",
-    body: "A few questions, no forms. You leave with one habit sitting in an hour you actually have free.",
-    Art: PlacedArt,
   },
 ];
 
