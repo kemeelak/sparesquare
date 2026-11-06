@@ -3,9 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import DumpEntryCard from "./DumpEntryCard";
 import DumpComposer from "./DumpComposer";
-import { Mic } from "lucide-react";
 import { invokeAI } from "@/lib/plans";
 import { buildDumpPrompt, DUMP_SCHEMA } from "./dumpPrompt";
+import { WALL_CSS } from "./wallCss";
 
 export default function DumpMode({ currentUser, profile, partnerName }) {
   const [working, setWorking] = useState([]);
@@ -62,35 +62,55 @@ export default function DumpMode({ currentUser, profile, partnerName }) {
   const empty = entries.length === 0 && working.length === 0;
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-6" style={{ WebkitOverflowScrolling: "touch" }}>
-        <div className="max-w-2xl mx-auto">
-          {empty ? (
-            <div className="py-10 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-[#F5EDE4] flex items-center justify-center mx-auto mb-4">
-                <Mic className="w-7 h-7 text-[#D4A574]" />
-              </div>
-              <h2 className="text-lg font-semibold text-[#1A1A1A] mb-1.5">Say it out loud</h2>
-              <p className="text-sm text-[#8A8580] max-w-sm mx-auto leading-relaxed">
+    <div className="tw-wall relative flex h-full min-h-0 flex-col justify-between overflow-hidden px-[26px] pt-[26px] pb-[22px] md:px-[58px] md:pt-[42px] md:pb-[30px]">
+      <style>{WALL_CSS}</style>
+
+      {empty ? (
+        <>
+          <div className="tw-top">
+            <article className="tw-note">
+              <span className="tw-pin" aria-hidden="true" />
+              <h2 className="tw-h2">Say it out loud</h2>
+              <p className="tw-copy">
                 Press the mic below and talk. Out loud, unfiltered, half-formed, all of it.
                 {" "}{partnerName} writes it down, reads it, and hands back one small move.
               </p>
-              <p className="text-xs text-[#B0AAA4] mt-3">Typing and photos work too.</p>
+              <p className="tw-small">Typing and photos work too.</p>
+            </article>
+            <article className="tw-note">
+              <span className="tw-pin tw-pin-alt" aria-hidden="true" />
+              <p className="tw-scribble">Hit the mic and just talk. Easier than finding the words to type.</p>
+            </article>
+          </div>
+
+          <div className="tw-center">
+            <div className="tw-seal" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 3v18M3 12h18M6 6l12 12M18 6 6 18" />
+              </svg>
             </div>
-          ) : (
-            <>
-              {working.map((entry) => (
-                <DumpEntryCard key={entry.id} entry={entry} reflecting />
-              ))}
-              {entries.map((entry) => (
-                <DumpEntryCard key={entry.id} entry={entry} />
-              ))}
-            </>
-          )}
+          </div>
+        </>
+      ) : (
+        <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+          <div className="tw-pairs">
+            {working.map((entry) => (
+              <DumpEntryCard key={entry.id} entry={entry} reflecting />
+            ))}
+            {entries.map((entry) => (
+              <DumpEntryCard key={entry.id} entry={entry} />
+            ))}
+          </div>
         </div>
+      )}
+
+      <div className="flex-shrink-0">
+        <DumpComposer onDrop={handleDrop} busy={working.length > 0} />
       </div>
 
-      <DumpComposer onDrop={handleDrop} busy={working.length > 0} />
+      <div className="tw-dock" aria-hidden="true">
+        <i /><i /><i />
+      </div>
     </div>
   );
 }

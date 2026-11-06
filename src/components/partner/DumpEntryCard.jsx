@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import DumpActionCard from "./DumpActionCard";
 
+// One dump and the answer it pulled back, pinned side by side and tied together.
 export default function DumpEntryCard({ entry, reflecting }) {
   const [photo, setPhoto] = useState(null);
 
@@ -22,37 +22,37 @@ export default function DumpEntryCard({ entry, reflecting }) {
     : "just now";
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
-      <p className="text-[11px] text-[#B0AAA4] mb-1.5">{stamp}</p>
-
-      <div className="bg-white border border-[#E8E4DF] rounded-2xl rounded-tl-md px-4 py-3">
-        {entry.text && (
-          <p className="text-sm text-[#1A1A1A] leading-relaxed whitespace-pre-wrap">{entry.text}</p>
-        )}
+    <div className="tw-pair">
+      <article className="tw-note">
+        <span className="tw-pin" aria-hidden="true" />
+        <p className="tw-stamp">{stamp}</p>
+        {entry.text && <p className="tw-body">{entry.text}</p>}
         {photo && (
-          <img
-            src={photo}
-            alt="What you dropped in"
-            className={`w-full max-h-72 object-cover rounded-xl ${entry.text ? "mt-2.5" : ""}`}
-          />
+          <img src={photo} alt="What you dropped in" className="tw-photo" />
         )}
-      </div>
+      </article>
 
-      {reflecting ? (
-        <p className="mt-2 text-xs text-[#B0AAA4] animate-pulse pl-1">Reading it…</p>
-      ) : entry.reflection ? (
-        <>
-          <div className="mt-2 flex items-start gap-2 pl-1">
-            <div className="w-5 h-5 rounded-md bg-[#1A1A1A] flex items-center justify-center flex-shrink-0 mt-0.5">
-              <span className="text-white text-[8px] font-bold">S²</span>
-            </div>
-            <p className="text-sm text-[#4A5568] leading-relaxed">{entry.reflection}</p>
-          </div>
-          <DumpActionCard entry={entry} />
-        </>
-      ) : (
-        <p className="mt-2 text-xs text-[#B0AAA4] pl-1">Nothing came back on this one.</p>
-      )}
-    </motion.div>
+      <article className="tw-note tw-note-answer">
+        <span className="tw-pin tw-pin-alt" aria-hidden="true" />
+        {reflecting ? (
+          <p className="tw-scribble animate-pulse">Reading it…</p>
+        ) : entry.reflection ? (
+          <>
+            <p className="tw-scribble">{entry.reflection}</p>
+            <DumpActionCard entry={entry} />
+          </>
+        ) : (
+          <p className="tw-small" style={{ margin: 0 }}>Nothing came back on this one.</p>
+        )}
+      </article>
+
+      <span className="tw-join" aria-hidden="true">
+        <span className="tw-seal">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 3v18M3 12h18M6 6l12 12M18 6 6 18" />
+          </svg>
+        </span>
+      </span>
+    </div>
   );
 }

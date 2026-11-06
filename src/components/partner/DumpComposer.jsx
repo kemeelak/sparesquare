@@ -92,79 +92,65 @@ export default function DumpComposer({ onDrop, busy }) {
   const canSend = (text.trim() || file) && !busy && status === "idle";
 
   return (
-    <div className="border-t border-[#E8E4DF] bg-white/80 backdrop-blur-lg mb-14 lg:mb-0">
-      <div className="max-w-2xl mx-auto p-4">
-        {preview && status === "idle" && (
-          <div className="relative inline-block mb-3">
-            <img src={preview} alt="The photo you're adding" className="h-24 w-24 object-cover rounded-xl border border-[#E8E4DF]" />
-            <button onClick={() => pickPhoto(null)} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center" aria-label="Remove photo">
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        )}
+    <div className="tw-composer mb-14 lg:mb-0">
+      {preview && status === "idle" && (
+        <div className="tw-thumb-wrap">
+          <img src={preview} alt="The photo you're adding" className="tw-thumb" />
+          <button onClick={() => pickPhoto(null)} className="tw-dismiss" aria-label="Remove photo">
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
 
-        {status === "recording" ? (
-          <div className="flex items-center gap-3 bg-[#F5EDE4] border border-[#D4A574]/50 rounded-2xl px-4 py-3" style={{ minHeight: "46px" }}>
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
-            <span className="font-mono text-sm text-[#1A1A1A] tabular-nums">{mm}:{ss}</span>
-            <span className="text-xs text-[#8A8580] flex-1 min-w-0 truncate">Go on, I'm listening.</span>
-            <button onClick={stopRecording} className="w-10 h-10 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center flex-shrink-0" aria-label="Stop recording">
-              <Square className="w-4 h-4 fill-current" />
-            </button>
-          </div>
-        ) : status === "transcribing" ? (
-          <div className="flex items-center gap-3 bg-[#F5F0EB] rounded-2xl px-4 py-3" style={{ minHeight: "46px" }}>
-            <Loader2 className="w-4 h-4 text-[#D4A574] animate-spin flex-shrink-0" />
-            <span className="text-sm text-[#4A5568]">Writing down what you said…</span>
-          </div>
-        ) : (
-          <div className="flex items-end gap-2">
-            <button
-              onClick={startRecording}
-              disabled={busy}
-              className="relative w-11 h-11 rounded-full bg-[#D4A574] text-[#1A1A1A] flex items-center justify-center flex-shrink-0 hover:bg-[#c7955f] transition-colors disabled:opacity-50"
-              aria-label="Talk instead of typing"
-            >
-              <Mic className="w-5 h-5" />
-              {!text && !file && <span className="absolute inset-0 rounded-full ring-4 ring-[#D4A574]/25 animate-pulse" />}
-            </button>
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  send();
-                }
-              }}
-              rows={1}
-              placeholder="Talk it out with the mic, or type however it comes out."
-              className="flex-1 resize-none bg-[#F5F0EB] rounded-2xl px-4 py-3 text-sm text-[#1A1A1A] placeholder:text-[#B0AAA4] focus:outline-none focus:ring-2 focus:ring-[#D4A574]/40 max-h-40"
-              style={{ minHeight: "46px" }}
-            />
-            <button onClick={() => inputRef.current?.click()} disabled={busy}
-              className="p-2.5 rounded-xl text-[#8A8580] hover:bg-[#F5F0EB] hover:text-[#1A1A1A] transition-colors flex-shrink-0 disabled:opacity-50"
-              aria-label="Add a photo">
-              <ImagePlus className="w-5 h-5" />
-            </button>
-            <button onClick={send} disabled={!canSend}
-              className="w-11 h-11 rounded-xl bg-[#1A1A1A] text-white flex items-center justify-center flex-shrink-0 hover:bg-[#333] transition-colors disabled:opacity-30"
-              aria-label="Drop it in">
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4 h-4" />}
-            </button>
-          </div>
-        )}
+      {status === "recording" ? (
+        <div className="tw-compose-row">
+          <span className="tw-live" aria-hidden="true" />
+          <span className="tw-timer">{mm}:{ss}</span>
+          <span className="tw-listening">Go on, I'm listening.</span>
+          <button onClick={stopRecording} className="tw-stop" aria-label="Stop recording">
+            <Square className="w-4 h-4" style={{ fill: "currentColor", stroke: "none" }} />
+          </button>
+        </div>
+      ) : status === "transcribing" ? (
+        <div className="tw-transcribing">
+          <Loader2 className="w-5 h-5 animate-spin" style={{ color: "#e9b56d" }} />
+          <span>Writing down what you said…</span>
+        </div>
+      ) : (
+        <div className="tw-compose-row">
+          <button onClick={startRecording} disabled={busy} className="tw-round" aria-label="Talk instead of typing">
+            <Mic />
+          </button>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                send();
+              }
+            }}
+            aria-label="Dump"
+            placeholder="Talk it out with the mic, or type however it comes out."
+            className="tw-textarea"
+          />
+          <button onClick={() => inputRef.current?.click()} disabled={busy} className="tw-tool" aria-label="Add a photo">
+            <ImagePlus />
+          </button>
+          <button onClick={send} disabled={!canSend} className="tw-send" aria-label="Drop it in">
+            {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowUp />}
+          </button>
+        </div>
+      )}
 
-        <input ref={inputRef} type="file" accept="image/*" className="hidden"
-          onChange={(e) => pickPhoto(e.target.files?.[0] || null)} />
+      <input ref={inputRef} type="file" accept="image/*" className="hidden"
+        onChange={(e) => pickPhoto(e.target.files?.[0] || null)} />
 
-        {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
-        {!error && !text && !file && status === "idle" && (
-          <p className="text-[11px] text-[#8A8580] mt-2 pl-[3.25rem]">
-            Hit the mic and just talk. Easier than finding the words to type.
-          </p>
-        )}
-      </div>
+      {error ? (
+        <p className="tw-error">{error}</p>
+      ) : (!text && !file && status === "idle" && (
+        <p className="tw-hint">Hit the mic and just talk. Easier than finding the words to type.</p>
+      ))}
     </div>
   );
 }
