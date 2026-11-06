@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
-import { areaMeta, CATEGORY_EMOJI } from "@/lib/lifeAreas";
+import { areaMeta } from "@/lib/lifeAreas";
 
 // The move that came back with the reflection. It only lands on the grid if they say so.
 export default function DumpActionCard({ entry }) {
@@ -82,7 +82,27 @@ export default function DumpActionCard({ entry }) {
 
   return (
     <div>
-...
+      <p className="tw-action-title">{entry.action_title}</p>
+      {entry.action_description && <p className="tw-action-copy">{entry.action_description}</p>}
+      <p className="tw-action-meta">
+        {entry.action_minutes ? (
+          <span className="tw-meta-bit"><Clock className="w-3 h-3" />{entry.action_minutes} min</span>
+        ) : null}
+        <span className="tw-meta-bit">{area.emoji} {area.short}</span>
+      </p>
+      <div className="tw-actions">
+        <button onClick={addToGrid} disabled={status === "loading"} className="tw-do">
+          {status === "loading" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+          Put it on my grid
+        </button>
+        <button onClick={addToBacklog} disabled={status === "loading"} className="tw-later">
+          <Archive className="w-3.5 h-3.5" />
+          Save for later
+        </button>
+        <button onClick={drop} className="tw-drop" aria-label="Not this one">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 }

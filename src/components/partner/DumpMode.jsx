@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { Sparkles } from "lucide-react";
-import DumpEntryCard from "./DumpEntryCard";
+import { Plus, Sparkles } from "lucide-react";
+import DumpNoteFront from "./DumpNoteFront";
+import DumpNoteDetail from "./DumpNoteDetail";
 import DumpComposer from "./DumpComposer";
 import DumpSuggestions from "./DumpSuggestions";
 import { invokeAI } from "@/lib/plans";
@@ -13,6 +14,7 @@ import { WALL_CSS } from "./wallCss";
 export default function DumpMode({ currentUser, profile, partnerName }) {
   const [working, setWorking] = useState([]);
   const [suggesting, setSuggesting] = useState(false);
+  const [openId, setOpenId] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: entries } = useQuery({
@@ -48,6 +50,7 @@ export default function DumpMode({ currentUser, profile, partnerName }) {
       if (res) {
         const action = res.action || {};
         await base44.entities.DumpEntry.update(entry.id, {
+          title: res.title || "",
           reflection: res.reflection || "",
           action_title: action.title || "",
           action_description: action.description || "",
@@ -63,7 +66,9 @@ export default function DumpMode({ currentUser, profile, partnerName }) {
     }
   };
 
-  const empty = entries.length === 0 && working.length === 0;
+  const all = [...working, ...entries];
+  const open = openId ? all.find((entry) => entry.id === openId) : null;
+  const empty = all.length === 0;
 
   // One scroll column, one docked composer. Nothing floats, nothing overlaps,
   // so the bar never moves while the wall scrolls.
@@ -71,64 +76,81 @@ export default function DumpMode({ currentUser, profile, partnerName }) {
     <div className="tw-wall relative flex h-full min-h-0 flex-col overflow-hidden">
       <style>{WALL_CSS}</style>
 
-      <div className="tw-scroll flex-1 min-h-0 overflow-y-auto">
-        {empty ? (
-          <div className="tw-empty">
-            <div className="tw-top">
-              <article
-                className="tw-note tw-note-btn"
-                role="button"
-                tabIndex={0}
-                onClick={() => setSuggesting(true)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setSuggesting(true);
-                  }
-                }}
-              >
-                <span className="tw-pin" aria-hidden="true" />
-                <h2 className="tw-h2">Say it out loud</h2>
-                <p className="tw-copy">
-                  Press the mic below and talk. Out loud, unfiltered, half-formed, all of it.
-                  {" "}{partnerName} writes it down, reads it, and hands back one small move.
+      {open ? (
+        <DumpNoteDetail
+          key={open.id}
+          entry={open}
+          partnerName={partnerName}
+          reflecting={working.some((entry) => entry.id === open.id)}
+          onBack={() => setOpenId(null)}
+        />
+      ) : (
+        <>
+          <div className="tw-scroll flex-1 min-h-0 overflow-y-auto">
+            {empty ? (
+              <div className="tw-empty">
+                <div className="tw-top">
+                  <article
+                    className="tw-note tw-note-btn"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSuggesting(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSuggesting(true);
+                      }
+                    }}
+                  >
+                    <span className="tw-pin" aria-hidden="true" />
+                    <h2 className="tw-h2">Say it out loud</h2>
+                    <p className="tw-copy">
+                      Press the mic below and talk. Out loud, unfiltered, half-formed, all of it.
+                      {" "}{partnerName} gives it a title, reads it, and hands back one small move.
+                    </p>
+                    <p className="tw-small">Typing and photos work too.</p>
+                    <p className="tw-note-cta">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Tap to see {partnerName}'s ideas
+                    </p>
+                  </article>
+
+                  <article className="tw-note tw-note-quiet">
+                    <span className="tw-pin tw-pin-alt" aria-hidden="true" />
+                    <p className="tw-scribble">Hit the mic and just talk. Easier than finding the words to type.</p>
+                  </article>
+                </div>
+
+                <p className="tw-empty-line">
+                  Nothing pinned yet. Everything you drop gets a note of its own, and you can open it later to go deeper.
                 </p>
-                <p className="tw-small">Typing and photos work too.</p>
-                <p className="tw-note-cta">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Tap to see {partnerName}'s ideas
-                </p>
-              </article>
+              </div>
+            ) : (
+              <div className="tw-wall-grid">
+                <AnimatePresence initial={false}>
+                  {all.map((entry) => (
+                    <DumpNoteFront
+                      key={entry.id}
+                      entry={entry}
+                      reflecting={working.some((item) => item.id === entry.id)}
+                      onOpen={() => setOpenId(entry.id)}
+                    />
+                  ))}
+                </AnimatePresence>
 
-              <article className="tw-note tw-note-quiet">
-                <span className="tw-pin tw-pin-alt" aria-hidden="true" />
-                <p className="tw-scribble">Hit the mic and just talk. Easier than finding the words to type.</p>
-              </article>
-            </div>
-
-            <p className="tw-empty-line">
-              Nothing pinned yet. Whatever you drop stays yours — {partnerName} reads it and hands back one small move.
-            </p>
+                <button type="button" className="tw-front tw-front-add" onClick={() => setSuggesting(true)}>
+                  <Plus className="w-4 h-4" />
+                  <span>{partnerName} has ideas</span>
+                </button>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="tw-pairs-wrap">
-            <div className="tw-pairs">
-              <AnimatePresence initial={false}>
-                {working.map((entry) => (
-                  <DumpEntryCard key={entry.id} entry={entry} reflecting />
-                ))}
-                {entries.map((entry) => (
-                  <DumpEntryCard key={entry.id} entry={entry} />
-                ))}
-              </AnimatePresence>
-            </div>
-          </div>
-        )}
-      </div>
 
-      <div className="tw-bar">
-        <DumpComposer onDrop={handleDrop} busy={working.length > 0} />
-      </div>
+          <div className="tw-bar">
+            <DumpComposer onDrop={handleDrop} busy={working.length > 0} />
+          </div>
+        </>
+      )}
 
       <AnimatePresence>
         {suggesting && (

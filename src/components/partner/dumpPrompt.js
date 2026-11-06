@@ -1,10 +1,12 @@
 import { format } from "date-fns";
 import { bucketSettings } from "@/lib/lifeAreas";
 
-// What comes back after a dump: a reflection, plus one move they can actually make.
+// What comes back after a dump: the few words on the front of the card,
+// a reflection, and one move they can actually make.
 export const DUMP_SCHEMA = {
   type: "object",
   properties: {
+    title: { type: "string" },
     reflection: { type: "string" },
     action: {
       type: "object",
@@ -21,7 +23,7 @@ export const DUMP_SCHEMA = {
       required: ["title", "description", "minutes", "category", "life_area"],
     },
   },
-  required: ["reflection", "action"],
+  required: ["title", "reflection", "action"],
 };
 
 export function buildDumpPrompt({ partnerName, profile, text, hasPhoto }) {
@@ -49,7 +51,9 @@ ${hasPhoto ? "They also attached a photo. Only use what you genuinely see in it 
 WHAT YOU KNOW ABOUT THEM:
 - ${context}
 
-REPLY IN TWO PARTS.
+REPLY IN THREE PARTS.
+
+0. title — 2 to 5 words naming what this dump is actually about, the way they would label it later when scrolling back through a wall of notes. It goes on the front of the card, so it has to stand alone. No punctuation at the end, no quotes, no "note about", never a full sentence. "Sunday dread about Monday" yes. "The money conversation with my sister" yes. "Feeling stressed" no, too plain. If it is a photo with no words, name the moment instead.
 
 1. reflection — ONE or TWO sentences, 45 words maximum. Name what is actually underneath what they wrote, in plain words, the way someone who knows them would say it out loud across a table. No questions. No advice in this part. No therapy-speak ("it sounds like you're feeling"), no restating what they wrote, no "I hear you", no "that's valid". No em dashes, no semicolons, no "consider", no "it's worth noting", no lists, no headers, no bold.
    - If it is heavy — grief, shame, a fight, a rejection, a day that fell apart — name it gently and do not rush to fix it.

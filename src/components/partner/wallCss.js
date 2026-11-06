@@ -146,6 +146,44 @@ export const WALL_CSS = `
 @keyframes tw-taut{0%{transform:scaleX(.05);opacity:.35}100%{transform:scaleX(1);opacity:1}}
 @keyframes tw-pulse{0%,100%{opacity:1}50%{opacity:.35}}
 @keyframes tw-fade{from{opacity:0}to{opacity:1}}
+@keyframes tw-slide{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:translateX(0)}}
+
+/* ---- the wall of note fronts ---- */
+.tw-wall-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:22px;padding:26px 26px 30px;align-content:start}
+.tw-front{position:relative;display:flex;flex-direction:column;width:100%;text-align:left;background:#fff7e7;border:1px solid rgba(95,75,49,.14);border-radius:2px;padding:24px 20px 18px;box-shadow:0 8px 18px rgba(61,45,25,.16);cursor:pointer;transition:transform .2s,box-shadow .2s;animation:tw-arrive .45s cubic-bezier(.2,.8,.25,1) both;color:inherit;font:inherit}
+.tw-front:nth-child(3n+2){transform:rotate(.7deg)}
+.tw-front:nth-child(4n+3){transform:rotate(-.6deg)}
+.tw-front:hover{transform:translateY(-3px) rotate(0deg);box-shadow:0 14px 26px rgba(61,45,25,.24)}
+.tw-front:active{transform:scale(.985)}
+.tw-front:focus-visible{outline:3px solid #547a7d;outline-offset:4px}
+.tw-front-title{font-size:18px;font-weight:800;letter-spacing:-.35px;line-height:1.2;color:#24353a;margin:0;overflow-wrap:anywhere}
+.tw-front-snippet{font-size:13px;line-height:1.5;color:#6f7873;margin:7px 0 0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tw-front-photo{width:100%;height:88px;object-fit:cover;margin-top:12px;border:1px solid rgba(95,75,49,.16)}
+.tw-front-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.tw-front-bit{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#6d7a76;background:rgba(53,77,81,.07);border-radius:99px;padding:4px 8px}
+.tw-front-bit-done{color:#3f6b52;background:rgba(124,154,130,.16)}
+.tw-front-go{position:absolute;bottom:12px;right:12px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:rgba(53,77,81,.08);color:#3d5457}
+.tw-front-add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:104px;background:rgba(255,250,240,.5);border:1px dashed rgba(95,75,49,.4);color:#5c6a66;font-size:12px;letter-spacing:.1em;text-transform:uppercase;box-shadow:none}
+.tw-front-add:hover{background:rgba(255,250,240,.8);box-shadow:none}
+
+/* ---- one note, opened ---- */
+.tw-head{flex:none;display:flex;align-items:center;gap:10px;padding:10px 14px;background:#cfae7c;border-bottom:1px solid rgba(110,82,45,.24);box-shadow:0 6px 14px rgba(72,50,26,.1)}
+.tw-back{display:inline-flex;align-items:center;gap:6px;border:0;cursor:pointer;padding:8px 11px;border-radius:9px;background:rgba(255,250,240,.72);color:#33464a;font:600 11px/1 system-ui,-apple-system,sans-serif;letter-spacing:.1em;text-transform:uppercase;transition:background-color .18s,transform .18s}
+.tw-back:hover{background:#fffaf0}
+.tw-back:active{transform:scale(.95)}
+.tw-back:focus-visible{outline:3px solid #547a7d;outline-offset:3px}
+.tw-head-stamp{margin-left:auto;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#6d5b3f}
+.tw-head-tools{display:flex;gap:2px}
+.tw-head-tools .tw-icon-btn{color:#6d5b3f}
+.tw-head-tools .tw-icon-btn:hover{background:rgba(255,250,240,.7);color:#33464a}
+.tw-detail-scroll{flex:1;min-height:0;overflow-y:auto}
+.tw-detail-inner{max-width:660px;margin:0 auto;padding:20px 18px 28px;display:flex;flex-direction:column;gap:18px}
+.tw-detail-title{font-size:27px;line-height:1.12;letter-spacing:-.9px;font-weight:850;color:#20343a;margin:2px 0 0;overflow-wrap:anywhere;animation:tw-slide .3s cubic-bezier(.2,.8,.25,1) both}
+.tw-detail-note{transform:none;padding:24px 22px 20px;animation:tw-slide .34s cubic-bezier(.2,.8,.25,1) .04s both}
+.tw-detail-answer{transform:none;padding:24px 22px 20px;animation:tw-slide .34s cubic-bezier(.2,.8,.25,1) .1s both}
+.tw-follows{display:flex;flex-direction:column;gap:10px}
+.tw-follow{background:rgba(255,250,240,.72);border:1px solid rgba(95,75,49,.16);border-left:3px solid rgba(212,103,78,.5);padding:14px 16px 12px;box-shadow:0 3px 10px rgba(61,45,25,.1);animation:tw-slide .28s cubic-bezier(.2,.8,.25,1) both}
+.tw-follow-stamp{margin:8px 0 0;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8a8b82}
 
 @media (hover:none){
   .tw-note-btn:hover{transform:none;box-shadow:0 8px 18px rgba(61,45,25,.16)}
@@ -192,18 +230,15 @@ export const WALL_CSS = `
   .tw-suggest-copy{font-size:13px}
   .tw-suggest-add,.tw-suggest-saved{width:100%;align-self:stretch;justify-content:center;padding:12px 14px;font-size:13px}
   .tw-sheet-foot{margin-top:14px}
-}
-
-  .tw-sheet-backdrop{padding:0;align-items:flex-end}
-  .tw-sheet{max-width:none;max-height:90dvh;padding:16px 16px calc(18px + env(safe-area-inset-bottom));border-radius:18px 18px 0 0;border-bottom:0;box-shadow:0 -14px 40px rgba(38,26,12,.36)}
-  .tw-sheet-grip{display:block;width:44px;height:4px;border-radius:99px;background:#d9c9a6;margin:0 auto 14px}
-  .tw-sheet-title{font-size:21px;letter-spacing:-.5px}
-  .tw-sheet-close{width:38px;height:38px;background:#e9e0cb}
-  .tw-suggests{grid-template-columns:1fr;gap:10px;margin-top:14px}
-  .tw-suggest{padding:14px 14px 13px}
-  .tw-suggest-title{font-size:15.5px}
-  .tw-suggest-copy{font-size:13px}
-  .tw-suggest-add,.tw-suggest-saved{width:100%;align-self:stretch;justify-content:center;padding:12px 14px;font-size:13px}
-  .tw-sheet-foot{margin-top:14px}
+  .tw-wall-grid{grid-template-columns:1fr;gap:14px;padding:16px 12px 20px}
+  .tw-front,.tw-front:nth-child(3n+2),.tw-front:nth-child(4n+3){transform:none;padding:20px 16px 16px}
+  .tw-front-title{font-size:17px}
+  .tw-front-photo{height:74px}
+  .tw-front-add{min-height:84px}
+  .tw-detail-inner{padding:16px 12px 22px;gap:14px}
+  .tw-detail-title{font-size:22px;letter-spacing:-.6px}
+  .tw-detail-note,.tw-detail-answer{padding:18px 16px 16px}
+  .tw-head{padding:8px 10px}
+  .tw-head-stamp{display:none}
 }
 `;

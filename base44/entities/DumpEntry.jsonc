@@ -2,6 +2,10 @@
   "name": "DumpEntry",
   "type": "object",
   "properties": {
+    "title": {
+      "type": "string",
+      "description": "The few words on the front of the card \u2014 what this dump is about"
+    },
     "text": {
       "type": "string",
       "description": "Whatever they got out of their head \u2014 a rant, a worry, something they're stuck on"
@@ -56,6 +60,22 @@
         "dropped"
       ],
       "default": "suggested"
+    },
+    "follow_ups": {
+      "type": "array",
+      "description": "Notes the member added onto the same dump later, in the order they added them",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "description": "When it was added, ISO"
+          }
+        }
+      }
     }
   },
   "required": [],
