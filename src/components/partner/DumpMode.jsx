@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import DumpEntryCard from "./DumpEntryCard";
 import DumpComposer from "./DumpComposer";
@@ -94,12 +95,14 @@ export default function DumpMode({ currentUser, profile, partnerName }) {
       ) : (
         <div className="flex-1 min-h-0 overflow-y-auto pr-1">
           <div className="tw-pairs">
-            {working.map((entry) => (
-              <DumpEntryCard key={entry.id} entry={entry} reflecting />
-            ))}
-            {entries.map((entry) => (
-              <DumpEntryCard key={entry.id} entry={entry} />
-            ))}
+            <AnimatePresence initial={false}>
+              {working.map((entry) => (
+                <DumpEntryCard key={entry.id} entry={entry} reflecting />
+              ))}
+              {entries.map((entry) => (
+                <DumpEntryCard key={entry.id} entry={entry} />
+              ))}
+            </AnimatePresence>
           </div>
         </div>
       )}

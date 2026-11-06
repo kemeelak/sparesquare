@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -31,7 +31,19 @@ export default function Backlog() {
   const currentUser = useCurrentUser();
   const [scheduling, setScheduling] = useState(null);
   const [capturing, setCapturing] = useState(false);
+  // Arriving from a dump: the item it just became gets lit up for a moment.
+  const [flashId, setFlashId] = useState(
+    () => new URLSearchParams(window.location.search).get("highlight")
+  );
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!flashId) return undefined;
+    const el = document.getElementById(`habit-${flashId}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const timer = setTimeout(() => setFlashId(null), 2600);
+    return () => clearTimeout(timer);
+  }, [flashId]);
 
   const { data: habits, isLoading } = useQuery({
     queryKey: ["habits"],
@@ -148,11 +160,16 @@ export default function Backlog() {
           {backlogHabits.map((habit) => (
             <motion.div
               key={habit.id}
+              id={`habit-${habit.id}`}
               layout
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, x: -100 }}
-              className="bg-white rounded-2xl border border-[#E8E4DF] p-4"
+              className={`rounded-2xl border p-4 transition-colors duration-500 ${
+                flashId === habit.id
+                  ? "border-[#D4A574] bg-[#FFFBF3] ring-2 ring-[#D4A574]"
+                  : "border-[#E8E4DF] bg-white"
+              }`}
             >
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#F5F0EB] flex items-center justify-center text-lg flex-shrink-0">

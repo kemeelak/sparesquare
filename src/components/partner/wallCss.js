@@ -76,6 +76,25 @@ export const WALL_CSS = `
 .tw-later{border:0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:9px 12px;border-radius:8px;background:#f0eadb;color:#33464a;font:600 12px/1 system-ui,-apple-system,sans-serif;transition:background-color .18s,transform .18s}
 .tw-later:hover{background:#e4d8bc}
 .tw-kept{margin-top:15px;display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#566e73}
+
+.tw-note-live{padding-bottom:46px}
+.tw-card-tools{position:absolute;bottom:10px;right:12px;display:flex;gap:4px;opacity:0;transition:opacity .18s}
+.tw-note:hover .tw-card-tools,.tw-card-tools:focus-within{opacity:1}
+.tw-icon-btn{width:26px;height:26px;border:0;border-radius:7px;background:transparent;color:#9a958a;display:grid;place-items:center;cursor:pointer;transition:background-color .18s,color .18s}
+.tw-icon-btn:hover{background:rgba(53,77,81,.1);color:#33464a}
+.tw-icon-btn:focus-visible{outline:3px solid #547a7d;outline-offset:2px}
+.tw-icon-danger:hover{background:rgba(212,103,78,.14);color:#a8482f}
+.tw-edit{box-sizing:border-box;width:100%;min-height:96px;resize:vertical;padding:12px 14px;border:1px solid #d8ccae;border-radius:8px;background:#fffdf8;color:#26383d;font:16px/1.55 system-ui,-apple-system,sans-serif;box-shadow:inset 0 1px 3px rgba(76,55,29,.06)}
+.tw-edit:focus-visible{outline:3px solid #547a7d;outline-offset:3px}
+.tw-foot{margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+.tw-do-danger{background:#d4674e;box-shadow:0 3px 0 #a8482f}
+.tw-do-danger:hover{background:#df7b61;box-shadow:0 4px 9px #a8482f55}
+.tw-moved{margin-top:15px;display:flex;flex-direction:column;gap:7px}
+.tw-moved-text{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#24353a;line-height:1.35}
+.tw-moved-link{display:inline-flex;align-items:center;gap:5px;align-self:flex-start;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#354d51;text-decoration:none;border-bottom:1px solid rgba(53,77,81,.35);padding-bottom:2px;transition:color .18s,border-color .18s}
+.tw-moved-link:hover{color:#d4674e;border-color:rgba(212,103,78,.5)}
+.tw-moved-link:focus-visible{outline:3px solid #547a7d;outline-offset:3px}
 .tw-drop{margin-left:auto;border:0;background:transparent;color:#84877e;cursor:pointer;display:grid;place-items:center;padding:4px}
 .tw-drop:hover{color:#d4674e}
 
@@ -96,5 +115,6 @@ export const WALL_CSS = `
   .tw-note{padding:26px 22px 24px}
   .tw-copy{font-size:16px}
   .tw-hint,.tw-error{margin-left:0}
+  .tw-card-tools{opacity:1}
 }
 `;
