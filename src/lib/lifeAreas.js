@@ -16,6 +16,31 @@ export const AREA_KEYS = LIFE_AREAS.map((a) => a.key);
 
 export const areaMeta = (key) => LIFE_AREAS.find((a) => a.key === key) || LIFE_AREAS[0];
 
+// The member's own version of the five buckets: what they call each one, what they said
+// belongs inside it, and which one matters most. Anything they never touched keeps the
+// default, so a profile with no settings behaves exactly as before.
+export function bucketSettings(profile) {
+  const saved = Array.isArray(profile?.bucket_settings) ? profile.bucket_settings : [];
+  const own = new Map();
+  saved.forEach((bucket) => {
+    if (bucket?.key) own.set(bucket.key, bucket);
+  });
+
+  return LIFE_AREAS.map((area, index) => {
+    const mine = own.get(area.key) || {};
+    const label = (mine.label || "").trim() || area.label;
+    return {
+      ...area,
+      label,
+      short: label.length > 12 ? `${label.slice(0, 11)}…` : label,
+      emoji: mine.emoji || area.emoji,
+      hidden: mine.hidden === true,
+      priority: typeof mine.priority === "number" ? mine.priority : index + 1,
+      includes: Array.isArray(mine.includes) ? mine.includes.filter(Boolean) : [],
+    };
+  });
+}
+
 export const CATEGORY_EMOJI = {
   fitness: "🏃",
   mindfulness: "🧘",
@@ -49,9 +74,16 @@ const TITLE_HINTS = [
   { area: "work", words: ["email", "deep work", "client", "invoice", "meeting", "study", "review", "project", "plan ", "write "] },
 ];
 
-export function areaOf(habit) {
+export function areaOf(habit, settings) {
   if (habit?.life_area && AREA_KEYS.includes(habit.life_area)) return habit.life_area;
   const title = (habit?.title || "").toLowerCase();
+
+  // Anything they said belongs in a bucket outranks our own guessing.
+  const own = (settings || []).find((area) =>
+    (area.includes || []).some((phrase) => phrase && title.includes(String(phrase).toLowerCase()))
+  );
+  if (own) return own.key;
+
   const hinted = TITLE_HINTS.find(({ words }) => words.some((w) => title.includes(w)));
   if (hinted) return hinted.area;
   return CATEGORY_AREA[habit?.category] || "work";
@@ -99,6 +131,17 @@ export function mixFromWeights(weights) {
   return mix;
 }
 
+// Ranked buckets become the split their week is measured against: the bucket on top
+// carries five shares of the week, the one at the bottom carries one.
+export function mixFromPriorities(settings) {
+  const weights = {};
+  (settings || []).forEach((area) => {
+    const priority = Number(area.priority) || 5;
+    weights[area.key] = Math.max(1, 6 - priority);
+  });
+  return mixFromWeights(weights);
+}
+
 // What their hours *should* look like, from what they told us they're working on.
 // Not equal fifths — the shares follow their own words. The split they let slip during
 // onboarding is the truest thing we have, so it wins over anything inferred later.
@@ -140,6 +183,7 @@ const round1 = (n) => Math.round(n * 10) / 10;
 
 export function computeBalance(habits, profile, windowDays = 7) {
   const mix = buildMix(profile);
+  const settings = bucketSettings(profile);
   const today = new Date();
   const cutoff = format(subDays(today, windowDays - 1), "yyyy-MM-dd");
 
@@ -154,7 +198,7 @@ export function computeBalance(habits, profile, windowDays = 7) {
     doneCountBy[k] = 0;
   });
   done.forEach((h) => {
-    const area = areaOf(h);
+    const area = areaOf(h, settings);
     hoursBy[area] += (h.duration_minutes || 30) / 60;
     doneCountBy[area] += 1;
   });
@@ -163,24 +207,28 @@ export function computeBalance(habits, profile, windowDays = 7) {
   habits
     .filter((h) => h.status === "completed" && h.scheduled_date)
     .forEach((h) => {
-      const area = areaOf(h);
+      const area = areaOf(h, settings);
       if (!lastBy[area] || h.scheduled_date > lastBy[area]) lastBy[area] = h.scheduled_date;
     });
 
-  const buckets = LIFE_AREAS.map((area) => {
-    const share = mix[area.key] || 0;
-    const target = round1((share / 100) * WEEKLY_HOURS);
-    const hours = round1(hoursBy[area.key]);
-    return {
-      ...area,
-      share,
-      target,
-      hours,
-      count: doneCountBy[area.key],
-      quietDays: lastBy[area.key] ? differenceInCalendarDays(today, parseISO(lastBy[area.key])) : null,
-      progress: target > 0 ? hours / target : 0,
-    };
-  });
+  // Only the buckets they keep visible, topped by the one they said matters most.
+  const buckets = settings
+    .filter((area) => !area.hidden)
+    .sort((a, b) => a.priority - b.priority)
+    .map((area) => {
+      const share = mix[area.key] || 0;
+      const target = round1((share / 100) * WEEKLY_HOURS);
+      const hours = round1(hoursBy[area.key]);
+      return {
+        ...area,
+        share,
+        target,
+        hours,
+        count: doneCountBy[area.key],
+        quietDays: lastBy[area.key] ? differenceInCalendarDays(today, parseISO(lastBy[area.key])) : null,
+        progress: target > 0 ? hours / target : 0,
+      };
+    });
 
   return {
     buckets,
@@ -192,6 +240,7 @@ export function computeBalance(habits, profile, windowDays = 7) {
 
 export function balanceHeadline({ buckets, doneCount }) {
   if (!doneCount) return "Nothing logged this week yet. Complete one block and these bottles start filling.";
+  if (!buckets.length) return "No buckets on show — turn one back on in Edit to see where your hours went.";
 
   const strongest = [...buckets].sort((a, b) => b.hours - a.hours)[0];
   const empties = buckets.filter((b) => b.hours === 0);

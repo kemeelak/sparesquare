@@ -6,9 +6,11 @@ import { LIFE_AREAS, areaMeta } from "@/lib/lifeAreas";
 
 // One habit, once — however many times it repeats. Opening the row is how you
 // move the whole thing to another bucket.
-export default function BucketHabitRow({ group, onMove }) {
+export default function BucketHabitRow({ group, onMove, settings }) {
   const [open, setOpen] = useState(false);
-  const area = areaMeta(group.area);
+  // Their own bucket names and emoji, so moving something reads in their language.
+  const buckets = settings?.length ? settings : LIFE_AREAS;
+  const area = buckets.find((option) => option.key === group.area) || areaMeta(group.area);
   const repeats = group.totalCount > 1;
 
   const meta = [];
@@ -46,7 +48,7 @@ export default function BucketHabitRow({ group, onMove }) {
           >
             <div className="px-3 pb-2.5 flex items-center gap-1">
               <span className="text-[9px] text-[#B0AAA4] mr-1">Move to</span>
-              {LIFE_AREAS.map((option) => {
+              {buckets.map((option) => {
                 const active = option.key === group.area;
                 return (
                   <button

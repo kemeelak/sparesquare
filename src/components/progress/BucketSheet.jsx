@@ -15,7 +15,7 @@ const commonest = (numbers) => {
   return top ? Number(top[0]) : 0;
 };
 
-export default function BucketSheet({ bucket, habits = [], onClose }) {
+export default function BucketSheet({ bucket, habits = [], settings, onClose }) {
   const queryClient = useQueryClient();
   const [added, setAdded] = useState([]);
   const [busy, setBusy] = useState(null);
@@ -26,7 +26,7 @@ export default function BucketSheet({ bucket, habits = [], onClose }) {
   const groups = useMemo(() => {
     const map = new Map();
     habits
-      .filter((h) => areaOf(h) === bucket.key)
+      .filter((h) => areaOf(h, settings) === bucket.key)
       .forEach((h) => {
         const key = (h.title || "").trim().toLowerCase();
         const group = map.get(key) || {
@@ -37,7 +37,7 @@ export default function BucketSheet({ bucket, habits = [], onClose }) {
           weekCount: 0,
           totalCount: 0,
           lastDate: null,
-          area: areaOf(h),
+          area: areaOf(h, settings),
           ids: [],
         };
         group.ids.push(h.id);
@@ -54,7 +54,7 @@ export default function BucketSheet({ bucket, habits = [], onClose }) {
     return [...map.values()]
       .map((g) => ({ ...g, minutes: commonest(g.minutes) }))
       .sort((a, b) => b.weekCount - a.weekCount || b.totalCount - a.totalCount);
-  }, [habits, bucket.key, cutoff, todayStr]);
+  }, [habits, bucket.key, cutoff, todayStr, settings]);
 
   const inBacklog = new Set(
     habits.filter((h) => h.status === "backlog").map((h) => (h.title || "").trim().toLowerCase())
@@ -108,6 +108,19 @@ export default function BucketSheet({ bucket, habits = [], onClose }) {
         <p className="text-xs text-[#8A8580] mb-4">
           {bucket.hours}h this week toward ~{bucket.target}h. Each habit shows once, however often it repeats.
         </p>
+        {bucket.includes?.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 -mt-2 mb-4">
+            {bucket.includes.map((phrase) => (
+              <span
+                key={phrase}
+                className="px-2 py-0.5 rounded-full text-[11px]"
+                style={{ backgroundColor: bucket.tint, color: bucket.color }}
+              >
+                {phrase}
+              </span>
+            ))}
+          </div>
+        )}
 
         <p className="text-[10px] font-semibold uppercase tracking-wide text-[#B0AAA4] mb-2">What's in here</p>
         {groups.length === 0 ? (
@@ -117,7 +130,7 @@ export default function BucketSheet({ bucket, habits = [], onClose }) {
         ) : (
           <div className="space-y-1.5">
             {groups.slice(0, 8).map((group) => (
-              <BucketHabitRow key={group.key} group={group} onMove={move} />
+              <BucketHabitRow key={group.key} group={group} onMove={move} settings={settings} />
             ))}
             {groups.length > 8 && (
               <p className="text-[10px] text-[#B0AAA4] pt-0.5">+{groups.length - 8} more in this bucket</p>

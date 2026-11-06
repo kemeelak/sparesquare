@@ -1,13 +1,16 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
-import { computeBalance, balanceHeadline } from "@/lib/lifeAreas";
+import { Sparkles, SlidersHorizontal } from "lucide-react";
+import { computeBalance, balanceHeadline, bucketSettings } from "@/lib/lifeAreas";
 import BucketSheet from "@/components/progress/BucketSheet";
+import BucketEditor from "@/components/progress/BucketEditor";
 
 export default function BalanceCard({ habits = [], profile }) {
   const [openBucket, setOpenBucket] = useState(null);
+  const [editing, setEditing] = useState(false);
   const balance = computeBalance(habits, profile);
   const headline = balanceHeadline(balance);
+  const settings = bucketSettings(profile);
 
   return (
     <>
@@ -19,7 +22,18 @@ export default function BalanceCard({ habits = [], profile }) {
       >
         <div className="flex items-baseline justify-between mb-1">
           <p className="font-semibold text-[#1A1A1A] text-sm">Your five buckets</p>
-          <span className="text-[10px] text-[#B0AAA4]">last 7 days</span>
+          <div className="flex items-center gap-2.5">
+            <span className="text-[10px] text-[#B0AAA4]">last 7 days</span>
+            {profile && (
+              <button
+                onClick={() => setEditing(true)}
+                className="inline-flex items-center gap-1 text-[10px] font-medium text-[#8A8580] hover:text-[#1A1A1A] transition-colors"
+              >
+                <SlidersHorizontal className="w-3 h-3" />
+                Edit
+              </button>
+            )}
+          </div>
         </div>
         <p className="text-[11px] text-[#8A8580] mb-3">Where your logged hours actually went.</p>
 
@@ -28,7 +42,10 @@ export default function BalanceCard({ habits = [], profile }) {
           <p className="text-[12px] text-[#6B5B48] leading-snug">{headline}</p>
         </div>
 
-        <div className="grid grid-cols-5 gap-1.5">
+        <div
+          className="grid gap-1.5"
+          style={{ gridTemplateColumns: `repeat(${Math.max(1, balance.buckets.length)}, minmax(0, 1fr))` }}
+        >
           {balance.buckets.map((b, i) => {
             const fill = Math.min(100, Math.round(b.progress * 100));
             const full = b.progress >= 1;
@@ -83,7 +100,8 @@ export default function BalanceCard({ habits = [], profile }) {
         </div>
 
         <p className="text-[10px] text-[#B0AAA4] mt-4 leading-snug">
-          Bottles fill toward the split your own goals suggest, not equal fifths. Tap one to see or move what's inside.
+          Bottles fill toward the split your goals and the order you ranked them in, not equal fifths. Tap one to see
+          or move what's inside.
         </p>
       </motion.div>
 
@@ -91,8 +109,13 @@ export default function BalanceCard({ habits = [], profile }) {
         <BucketSheet
           bucket={openBucket}
           habits={habits}
+          settings={settings}
           onClose={() => setOpenBucket(null)}
         />
+      )}
+
+      {editing && profile && (
+        <BucketEditor profile={profile} onClose={() => setEditing(false)} />
       )}
     </>
   );

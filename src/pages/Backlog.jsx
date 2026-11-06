@@ -3,10 +3,11 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
-import { Layers, Calendar, Zap, Clock, Trash2, ArrowRight } from "lucide-react";
+import { Layers, Calendar, Zap, Clock, Trash2, ArrowRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ScheduleSheet from "../components/backlog/ScheduleSheet";
+import QuickCaptureSheet from "@/components/backlog/QuickCaptureSheet";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 
 const energyColors = {
@@ -29,6 +30,7 @@ const categoryEmoji = {
 export default function Backlog() {
   const currentUser = useCurrentUser();
   const [scheduling, setScheduling] = useState(null);
+  const [capturing, setCapturing] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: habits, isLoading } = useQuery({
@@ -124,11 +126,20 @@ export default function Backlog() {
   return (
     <div className="p-4 lg:p-8 max-w-2xl mx-auto">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">Backlog</h1>
-        <p className="text-sm text-[#8A8580]">
-          {backlogHabits.length} habits waiting for a Spare Square
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-[#1A1A1A] tracking-tight">Backlog</h1>
+          <p className="text-sm text-[#8A8580]">
+            {backlogHabits.length} habits waiting for a Spare Square
+          </p>
+        </div>
+        <Button
+          onClick={() => setCapturing(true)}
+          className="flex-shrink-0 bg-[#1A1A1A] hover:bg-[#333] text-white rounded-xl"
+        >
+          <Plus className="w-4 h-4 mr-1.5" />
+          Add
+        </Button>
       </div>
 
       {/* Habits */}
@@ -201,6 +212,13 @@ export default function Backlog() {
           <p className="text-sm text-[#8A8580]">Add sources in the Library or chat with your Partner</p>
         </div>
       )}
+
+      {/* Add something — typed freely, filed by the AI */}
+      <AnimatePresence>
+        {capturing && (
+          <QuickCaptureSheet profile={profile} onClose={() => setCapturing(false)} />
+        )}
+      </AnimatePresence>
 
       {/* Schedule Sheet */}
       <AnimatePresence>

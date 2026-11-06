@@ -26,6 +26,7 @@ export const FEATURE_COSTS: Record<string, number> = {
   next_read: 6, // web-search suggestion for the shelf
   nudge_motivation: 2, // partner pep talk
   schedule_parse: 4, // free-text schedule -> blocks
+  quick_capture: 2, // a typed thing to get done -> a backlog item
   commute_plan: 4, // web-search commute suggestions
 };
 

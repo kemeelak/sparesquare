@@ -162,6 +162,43 @@
         }
       }
     },
+    "bucket_settings": {
+      "type": "array",
+      "description": "The member's own version of the five buckets \u2014 what each is called, what belongs in it, and which one matters most right now",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [
+              "work",
+              "people",
+              "faith",
+              "fun",
+              "health"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "emoji": {
+            "type": "string"
+          },
+          "hidden": {
+            "type": "boolean"
+          },
+          "priority": {
+            "type": "number"
+          },
+          "includes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
     "commute": {
       "type": "object",
       "description": "Opt-in commute setup: when and how the user travels, and what they like to consume on the way",
