@@ -353,7 +353,7 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
                   </div>
                   <p className="tw-action-title" style={{ marginTop: 0 }}>{lap.move.title}</p>
                   <p className="tw-action-copy">{lap.move.description}</p>
-                  {lap.move.minutes && lap.move.kind !== "behaviour" ? <p className="tw-action-meta">{lap.move.minutes} min</p> : null}
+                  {lap.move.minutes ? <p className="tw-action-meta">{lap.move.minutes} min</p> : null}
 
                   <div className="tw-move-acts">
                     {moves[lap.id] === "done" ? (
@@ -362,15 +362,6 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
                       <span className="tw-move-done"><Check /> Scheduled on your grid</span>
                     ) : moves[lap.id] === "held" ? (
                       <span className="tw-move-done"><Check /> Held — {who} keeps this one on you</span>
-                    ) : lap.move.kind === "behaviour" ? (
-                      <button
-                        type="button"
-                        className="tw-mini"
-                        disabled={moves[lap.id] === "saving"}
-                        onClick={() => holdMove({ ...lap.move, id: lap.id })}
-                      >
-                        <Handshake /> Hold me accountable
-                      </button>
                     ) : (
                       <>
                         <button
@@ -388,6 +379,14 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
                           onClick={() => setScheduling({ ...lap.move, id: lap.id })}
                         >
                           <CalendarPlus /> Schedule
+                        </button>
+                        <button
+                          type="button"
+                          className="tw-mini"
+                          disabled={moves[lap.id] === "saving"}
+                          onClick={() => holdMove({ ...lap.move, id: lap.id })}
+                        >
+                          <Handshake /> Hold me accountable
                         </button>
                       </>
                     )}
