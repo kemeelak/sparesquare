@@ -78,9 +78,30 @@ function lapsBlock(laps) {
     .join("\n\n");
 }
 
-export function buildExplorePrompt({ partnerName, subject, context, dumps, sources, laps }) {
+// What they swiped away: not what they were looking for. Never come back to it.
+function droppedBlock(dropped) {
+  const lines = (dropped || [])
+    .map((entry) => {
+      const threads = (entry.threads || []).filter(Boolean);
+      return [
+        entry.read ? `- What you said: ${entry.read}` : "",
+        threads.length ? `  Threads you used: ${threads.join(" / ")}` : "",
+        entry.question ? `  Question you asked: ${entry.question}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+    })
+    .filter(Boolean);
+  if (!lines.length) return "";
+  return `DIRECTIONS THEY ALREADY SWIPED AWAY AS NOT IT (they read these and said no, not what they were looking for):
+${lines.join("\n")}
+That is a real signal about where not to go. Do not repeat these, do not rephrase them, do not land on the same idea in softer words, and do not use the same threads, the same source angle or the same kind of question again. Go somewhere genuinely different: another part of their wall, another corner of the source, or something harder and more specific they have not touched.`;
+}
+
+export function buildExplorePrompt({ partnerName, subject, context, dumps, sources, laps, dropped }) {
   const prior = lapsBlock(laps);
   const deeper = (laps || []).length > 0;
+  const turnedDown = droppedBlock(dropped);
 
   return `${partnerName} is going back over something this person wrote, because they asked to keep digging into it. ${deeper ? "This is a later lap: they read what came back and pressed to go further." : "This is the first pass."}
 
@@ -98,6 +119,7 @@ ${shelfBlock(sources)}
 
 ${SOURCE_RULES}
 ${prior ? `\nWHAT YOU HAVE ALREADY SAID ON THE WAY DOWN:\n${prior}\n` : ""}
+${turnedDown ? `\n${turnedDown}\n` : ""}
 REPLY IN FOUR PARTS. Return only the JSON.
 
 0. read — 2 to 3 sentences, 60 words maximum. What this is actually about, now that you have seen the rest of their wall. ${deeper ? "This lap has to land somewhere the earlier laps did not: the thing underneath what you already named, the part they have not said out loud." : "Plain words, the way someone who knows them would say it across a table."} No restating their line back, no therapy-speak ("it sounds like you're feeling"), no "I hear you", no "that's valid", no advice here, no em dashes, no semicolons, no lists, no headers, no bold. If their wall is nearly empty, work from the line itself and say less, not more.

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, ArrowRight, CalendarPlus, Check, Loader2, RefreshCw, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bookmark, CalendarPlus, Check, Loader2, RefreshCw, Send, Sparkles, X } from "lucide-react";
 import { format } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { invokeAI } from "@/lib/plans";
@@ -36,6 +36,8 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
   const [moves, setMoves] = useState({}); // lap id -> saving | done | scheduled
   const [scheduling, setScheduling] = useState(null); // the move being scheduled
   const [savedId, setSavedId] = useState(null);
+  const [bookmarks, setBookmarks] = useState([]); // points they kept
+  const [dropped, setDropped] = useState([]); // directions they swiped away as not it
   const queryClient = useQueryClient();
 
   // The same grid data the schedule picker uses on the backlog screen.
@@ -84,13 +86,15 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
   };
 
   // Everything they dig up here is kept, so walking out and back in reads the same.
-  const persist = async (nextLaps, nextThread) => {
+  const persist = async (patch = {}) => {
     const payload = {
       entry_id: entryId || "",
       subject: subject || "",
       context: context || "",
-      laps: nextLaps,
-      thread: nextThread,
+      laps: patch.laps ?? laps,
+      thread: patch.thread ?? thread,
+      bookmarks: patch.bookmarks ?? bookmarks,
+      dropped: patch.dropped ?? dropped,
     };
     try {
       if (savedId) {
@@ -104,22 +108,62 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
     }
   };
 
-  // A layer they didn't want is gone for good, not just hidden this time.
-  const dropLap = (id) => {
-    const next = laps.filter((lap) => lap.id !== id);
+  // Swiping a layer away is them saying "not what I'm looking for" — so it goes,
+  // the partner is told never to come back with it, and a fresh angle comes in its place.
+  const rejectLap = (id) => {
+    const lap = laps.find((item) => item.id === id);
+    if (!lap) return;
+    const next = laps.filter((item) => item.id !== id);
+    const nextDropped = [
+      ...dropped,
+      {
+        read: lap.read || "",
+        threads: (lap.threads || []).map((t) => t.label).filter(Boolean),
+        question: lap.question || "",
+      },
+    ];
+    const nextBookmarks = bookmarks.filter((b) => b.lap_id !== id);
     setLaps(next);
+    setDropped(nextDropped);
+    setBookmarks(nextBookmarks);
     setMoves({});
-    persist(next, thread);
+    persist({ laps: next, dropped: nextDropped, bookmarks: nextBookmarks });
+    if (!busy) run(next, nextDropped);
   };
 
-  const run = async (earlier) => {
+  // Keeping a point is a bookmark on the idea itself, not on the layer around it.
+  const bookmarkKey = (lap, kind, index) => `${lap.id}:${kind}:${index}`;
+
+  const keepPoint = (lap, kind, index, label, detail) => {
+    const key = bookmarkKey(lap, kind, index);
+    const already = bookmarks.some((b) => b.key === key);
+    const next = already
+      ? bookmarks.filter((b) => b.key !== key)
+      : [
+          ...bookmarks,
+          { key, lap_id: lap.id, kind, label: label || "", detail: detail || "", at: new Date().toISOString() },
+        ];
+    setBookmarks(next);
+    persist({ bookmarks: next });
+  };
+
+  const isKept = (lap, kind, index) => bookmarks.some((b) => b.key === bookmarkKey(lap, kind, index));
+
+  const letGo = (point) => {
+    const next = bookmarks.filter((b) => b.key !== point.key);
+    setBookmarks(next);
+    persist({ bookmarks: next });
+  };
+
+  const run = async (earlier, avoid) => {
+    const skip = avoid ?? dropped;
     setBusy(true);
     setFailed(false);
     try {
       const kb = knowledge || (await loadKnowledge());
       if (!knowledge) setKnowledge(kb);
       const res = await invokeAI("note_explore", {
-        prompt: buildExplorePrompt({ partnerName: who, subject, context, ...kb, laps: earlier }),
+        prompt: buildExplorePrompt({ partnerName: who, subject, context, ...kb, laps: earlier, dropped: skip }),
         response_json_schema: EXPLORE_SCHEMA,
         // So a source they have read can be looked up, not just quoted from memory.
         add_context_from_internet: true,
@@ -131,7 +175,7 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
       }
       const next = [...earlier, { ...res, id: res.id || `lap_${Date.now()}` }];
       setLaps(next);
-      persist(next, thread);
+      persist({ laps: next, dropped: skip });
       setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 80);
     } catch (error) {
       setFailed(true);
@@ -152,6 +196,8 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
       const found = (page?.items ?? page ?? [])[0];
       if (!alive) return;
       if (found?.id) setSavedId(found.id);
+      setBookmarks(found?.bookmarks || []);
+      setDropped(found?.dropped || []);
       const kept = (found?.laps || []).map((lap, i) => ({ ...lap, id: lap.id || `lap_kept_${i}` }));
       if (kept.length) {
         setLaps(kept);
@@ -192,7 +238,7 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
         { q: question, a: typeof answer === "string" && answer.trim() ? answer.trim() : "That one didn't come through. Ask me again." },
       ];
       setThread(nextThread);
-      persist(laps, nextThread);
+      persist({ thread: nextThread });
     } finally {
       setAsking(false);
       setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 60);
@@ -209,7 +255,15 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
         <span className="tw-head-stamp">Digging in</span>
         {laps.length > 0 && (
           <div className="tw-head-tools">
-            <button type="button" className="tw-icon-btn" onClick={() => run([])} aria-label="Start it over">
+            <button
+              type="button"
+              className="tw-icon-btn"
+              onClick={() => {
+                setDropped([]);
+                run([], []);
+              }}
+              aria-label="Start it over"
+            >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -223,16 +277,27 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
             {subject || "A recording or a photo you added."}
           </blockquote>
 
-          {laps.length > 0 && <p className="tw-swipe-note">Swipe a layer left to drop it</p>}
+          {laps.length > 0 && (
+            <p className="tw-swipe-note">Swipe a layer left if it isn't it — keep the points worth holding on to</p>
+          )}
 
           {laps.map((lap, index) => (
-            <SwipeDismiss key={lap.id} onDismiss={() => dropLap(lap.id)}>
+            <SwipeDismiss key={lap.id} onDismiss={() => rejectLap(lap.id)}>
             <section className="tw-lap">
               {index > 0 && <p className="tw-stamp">Lap {index + 1}</p>}
 
               <div className="tw-block">
                 <div className="tw-block-head">
                   <p className="tw-stamp">What {who} sees</p>
+                  <button
+                    type="button"
+                    className={`tw-keep ${isKept(lap, "read", 0) ? "is-kept" : ""}`}
+                    onClick={() => keepPoint(lap, "read", 0, "What came back", lap.read)}
+                    aria-pressed={isKept(lap, "read", 0)}
+                    aria-label={isKept(lap, "read", 0) ? "Let this point go" : "Keep this point"}
+                  >
+                    <Bookmark className="w-3.5 h-3.5" fill={isKept(lap, "read", 0) ? "currentColor" : "none"} />
+                  </button>
                 </div>
                 <p className="tw-scribble">{lap.read}</p>
               </div>
@@ -244,7 +309,13 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
                   </div>
                   <ul className="tw-threads">
                     {lap.threads.map((item, i) => (
-                      <ExploreThread key={i} label={item.label} detail={item.detail} />
+                      <ExploreThread
+                        key={i}
+                        label={item.label}
+                        detail={item.detail}
+                        kept={isKept(lap, "thread", i)}
+                        onKeep={() => keepPoint(lap, "thread", i, item.label, item.detail)}
+                      />
                     ))}
                   </ul>
                 </div>
@@ -254,6 +325,15 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
                 <div className="tw-block">
                   <div className="tw-block-head">
                     <p className="tw-stamp">Worth sitting with</p>
+                    <button
+                      type="button"
+                      className={`tw-keep ${isKept(lap, "question", 0) ? "is-kept" : ""}`}
+                      onClick={() => keepPoint(lap, "question", 0, "Worth sitting with", lap.question)}
+                      aria-pressed={isKept(lap, "question", 0)}
+                      aria-label={isKept(lap, "question", 0) ? "Let this question go" : "Keep this question"}
+                    >
+                      <Bookmark className="w-3.5 h-3.5" fill={isKept(lap, "question", 0) ? "currentColor" : "none"} />
+                    </button>
                   </div>
                   <p className="tw-ask-q-line">{lap.question}</p>
                 </div>
@@ -296,6 +376,13 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
                   </div>
                 </div>
               )}
+
+              <div className="tw-lap-foot">
+                <button type="button" className="tw-notit" onClick={() => rejectLap(lap.id)}>
+                  <X className="w-3.5 h-3.5" />
+                  Not this one
+                </button>
+              </div>
             </section>
             </SwipeDismiss>
           ))}
@@ -316,6 +403,32 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
               Keep going
               <ArrowRight className="w-4 h-4" />
             </button>
+          )}
+
+          {bookmarks.length > 0 && (
+            <div className="tw-block tw-kept-points">
+              <div className="tw-block-head">
+                <p className="tw-stamp">Kept</p>
+              </div>
+              <ul className="tw-kept-list">
+                {bookmarks.map((point) => (
+                  <li key={point.key} className="tw-kept-item">
+                    <div className="tw-kept-body">
+                      <p className="tw-kept-label">{point.label || "A point"}</p>
+                      {point.detail && <p className="tw-kept-detail">{point.detail}</p>}
+                    </div>
+                    <button
+                      type="button"
+                      className="tw-icon-btn"
+                      onClick={() => letGo(point)}
+                      aria-label="Let this point go"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
 
           {thread.map((turn, index) => (

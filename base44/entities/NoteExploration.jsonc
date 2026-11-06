@@ -16,7 +16,7 @@
     },
     "laps": {
       "type": "array",
-      "description": "Each layer of the dig, in the order it was opened \u2014 they can drop the ones they don't want",
+      "description": "Each layer of the dig, in the order it was opened \u2014 they can swipe away the ones that aren't it",
       "items": {
         "type": "object",
         "properties": {
@@ -56,6 +56,60 @@
                 "type": "number"
               }
             }
+          }
+        }
+      }
+    },
+    "bookmarks": {
+      "type": "array",
+      "description": "The points they kept while digging, so they can come back to them",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "lap_id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "read",
+              "thread",
+              "question"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "description": "When they kept it, ISO"
+          }
+        }
+      }
+    },
+    "dropped": {
+      "type": "array",
+      "description": "Directions they swiped away as not what they were looking for, so the partner never comes back with them",
+      "items": {
+        "type": "object",
+        "properties": {
+          "read": {
+            "type": "string"
+          },
+          "threads": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "question": {
+            "type": "string"
           }
         }
       }

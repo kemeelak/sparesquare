@@ -83,6 +83,26 @@ export const WALL_CSS = `
 .tw-swipe-body{position:relative;background:#FAF8F5;border-radius:12px;padding:0 6px;margin:0 -6px;will-change:transform}
 .tw-swipe-note{margin:0;font-size:11px;letter-spacing:.04em;color:#B0AAA4}
 @media (min-width:1024px){.tw-swipe-note{display:none}}
+/* keeping a point, and saying a layer isn't it */
+.tw-thread-row{display:flex;align-items:center;gap:8px}
+.tw-thread-row .tw-thread-toggle{flex:1;min-width:0}
+.tw-keep{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;flex:none;border:0;border-radius:8px;background:transparent;color:#8A8580;cursor:pointer;transition:background-color .16s,color .16s,transform .16s}
+.tw-keep:hover{background:#F5F0EB;color:#1A1A1A}
+.tw-keep:active{transform:scale(.9)}
+.tw-keep.is-kept{background:#F5EDE4;color:#B07B3C}
+.tw-keep:focus-visible{outline:2px solid #7C9A82;outline-offset:2px}
+.tw-kept-points{padding-top:16px;border-top:1px solid #E8E4DF}
+.tw-kept-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.tw-kept-item{display:flex;align-items:flex-start;gap:10px;background:#F5EDE4;border:1px solid #EBDCC8;border-radius:12px;padding:11px 12px;animation:tw-slide .26s cubic-bezier(.2,.8,.25,1) both}
+.tw-kept-body{flex:1;min-width:0}
+.tw-kept-label{margin:0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:#8A6A3C}
+.tw-kept-detail{margin:5px 0 0;font-size:13.5px;line-height:1.5;color:#5C5C5C;overflow-wrap:anywhere}
+.tw-lap-foot{display:flex;justify-content:flex-end;margin-top:6px}
+.tw-notit{display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;padding:6px 2px;color:#8A8580;font:600 10.5px/1 'Inter',-apple-system,sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:color .16s,transform .16s}
+.tw-notit:hover{color:#C0533F}
+.tw-notit:active{transform:scale(.94)}
+.tw-notit:focus-visible{outline:2px solid #7C9A82;outline-offset:3px;border-radius:4px}
+.tw-notit svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .tw-mini{display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;padding:4px 0;color:#8A8580;font:600 11.5px/1 'Inter',-apple-system,sans-serif;cursor:pointer;transition:color .16s}
 .tw-mini:hover{color:#1A1A1A}
 .tw-mini:disabled{opacity:.5;cursor:default}
