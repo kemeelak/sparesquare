@@ -23,6 +23,7 @@ export const EXPLORE_SCHEMA = {
         title: { type: "string" },
         description: { type: "string" },
         minutes: { type: "number" },
+        kind: { type: "string", enum: ["do", "behaviour"] },
       },
       required: ["title", "description", "minutes"],
     },
@@ -129,6 +130,8 @@ REPLY IN FOUR PARTS. Return only the JSON.
 2. question — one question they probably have not asked themselves. Under 18 words. Specific to their situation, not a therapy prompt, not "how does that make you feel", no question mark stacking. ${deeper ? "Not a question you asked on an earlier lap." : ""} It should be answerable by someone sitting still for a minute.
 
 3. move — the one thing this is pointing at, doable today or tomorrow in under 20 minutes. A title they would recognise on their grid (5 words max), one line of description saying exactly when or how, and minutes as a number. ${deeper ? "A different and slightly braver step than the one you offered before, never the same move again." : ""} Never "journal about it", "reflect on this", "sit with it", "practice self care", "set a boundary". If it is about a person, the move involves that person. If it is about work, it is one real deliverable or one conversation.
+
+   kind — "do" when this is a real task they could tick off today or put on their grid. "behaviour" only when the honest answer is not a task at all: a way of acting next time, a pattern, a promise to themselves that cannot be finished in one sitting. Most moves are "do". Choose "behaviour" only when there is genuinely nothing they can do about it in the next day, and then make the title the behaviour itself in 5 words or fewer ("Say no without explaining", "Ask before assuming the worst") with minutes left at 5.
 
 Return only the JSON.`;
 }

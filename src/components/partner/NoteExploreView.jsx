@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, ArrowRight, Bookmark, CalendarPlus, Check, Loader2, RefreshCw, Send, Sparkles, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bookmark, CalendarPlus, Check, Handshake, Loader2, RefreshCw, Send, Sparkles, X } from "lucide-react";
 import { format } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { invokeAI } from "@/lib/plans";
@@ -72,6 +72,13 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
       scheduled_hour: new Date().getHours(),
     });
     setMoves((prev) => ({ ...prev, [move.id]: "done" }));
+  };
+
+  // Not a task they can tick off: it waits in the backlog with their partner on it,
+  // so the next conversation is where they get held to it.
+  const holdMove = async (move) => {
+    await saveMove(move, { status: "backlog", source: "Holding you accountable" });
+    setMoves((prev) => ({ ...prev, [move.id]: "held" }));
   };
 
   const scheduleMove = async (hour, date) => {
@@ -346,13 +353,24 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
                   </div>
                   <p className="tw-action-title" style={{ marginTop: 0 }}>{lap.move.title}</p>
                   <p className="tw-action-copy">{lap.move.description}</p>
-                  {lap.move.minutes ? <p className="tw-action-meta">{lap.move.minutes} min</p> : null}
+                  {lap.move.minutes && lap.move.kind !== "behaviour" ? <p className="tw-action-meta">{lap.move.minutes} min</p> : null}
 
                   <div className="tw-move-acts">
                     {moves[lap.id] === "done" ? (
                       <span className="tw-move-done"><Check /> Done — logged on your grid</span>
                     ) : moves[lap.id] === "scheduled" ? (
                       <span className="tw-move-done"><Check /> Scheduled on your grid</span>
+                    ) : moves[lap.id] === "held" ? (
+                      <span className="tw-move-done"><Check /> Held — {who} keeps this one on you</span>
+                    ) : lap.move.kind === "behaviour" ? (
+                      <button
+                        type="button"
+                        className="tw-mini"
+                        disabled={moves[lap.id] === "saving"}
+                        onClick={() => holdMove({ ...lap.move, id: lap.id })}
+                      >
+                        <Handshake /> Hold me accountable
+                      </button>
                     ) : (
                       <>
                         <button
