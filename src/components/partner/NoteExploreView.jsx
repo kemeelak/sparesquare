@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { invokeAI } from "@/lib/plans";
 import ScheduleSheet from "@/components/backlog/ScheduleSheet";
 import ExploreThread from "./ExploreThread";
+import SwipeDismiss from "./SwipeDismiss";
 import { buildExplorePrompt, buildExploreFollowUp, EXPLORE_SCHEMA } from "./explorePrompt";
 
 // What the partner already knows of them: everything they have dumped, and what is on the shelf.
@@ -22,7 +23,7 @@ async function loadKnowledge() {
 
 // One dump (or one line of it) read back through their whole wall and their library,
 // one lap at a time, with room to ask in between.
-export default function NoteExploreView({ subject, context, partnerName, backLabel, onBack }) {
+export default function NoteExploreView({ subject, context, partnerName, backLabel, onBack, entryId }) {
   const [knowledge, setKnowledge] = useState(null);
   const [laps, setLaps] = useState([]);
   const [busy, setBusy] = useState(true);
@@ -32,8 +33,9 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
   const [asking, setAsking] = useState(false);
   const endRef = useRef(null);
   const who = partnerName || "your partner";
-  const [moves, setMoves] = useState({}); // lap index -> saving | done | scheduled
-  const [scheduling, setScheduling] = useState(null); // { index, move }
+  const [moves, setMoves] = useState({}); // lap id -> saving | done | scheduled
+  const [scheduling, setScheduling] = useState(null); // the move being scheduled
+  const [savedId, setSavedId] = useState(null);
   const queryClient = useQueryClient();
 
   // The same grid data the schedule picker uses on the backlog screen.
@@ -47,8 +49,8 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
     queryFn: () => base44.entities.UserProfile.filter({}, "-created_date", 1).then((page) => (page?.items ?? page ?? [])[0] || null),
   });
 
-  const saveMove = async (index, move, extra) => {
-    setMoves((prev) => ({ ...prev, [index]: "saving" }));
+  const saveMove = async (move, extra) => {
+    setMoves((prev) => ({ ...prev, [move.id]: "saving" }));
     await base44.entities.HabitBlock.create({
       title: move.title,
       description: move.description || "",
@@ -61,24 +63,53 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
   };
 
   // Straight onto the grid, already counted — no backlog stop.
-  const logNow = async (index, move) => {
-    await saveMove(index, move, {
+  const logNow = async (move) => {
+    await saveMove(move, {
       status: "completed",
       scheduled_date: format(new Date(), "yyyy-MM-dd"),
       scheduled_hour: new Date().getHours(),
     });
-    setMoves((prev) => ({ ...prev, [index]: "done" }));
+    setMoves((prev) => ({ ...prev, [move.id]: "done" }));
   };
 
   const scheduleMove = async (hour, date) => {
-    const { index, move } = scheduling;
+    const move = scheduling;
     setScheduling(null);
-    await saveMove(index, move, {
+    await saveMove(move, {
       status: "confirmed",
       scheduled_date: format(date, "yyyy-MM-dd"),
       scheduled_hour: hour,
     });
-    setMoves((prev) => ({ ...prev, [index]: "scheduled" }));
+    setMoves((prev) => ({ ...prev, [move.id]: "scheduled" }));
+  };
+
+  // Everything they dig up here is kept, so walking out and back in reads the same.
+  const persist = async (nextLaps, nextThread) => {
+    const payload = {
+      entry_id: entryId || "",
+      subject: subject || "",
+      context: context || "",
+      laps: nextLaps,
+      thread: nextThread,
+    };
+    try {
+      if (savedId) {
+        await base44.entities.NoteExploration.update(savedId, payload);
+        return;
+      }
+      const created = await base44.entities.NoteExploration.create(payload);
+      setSavedId(created.id);
+    } catch (error) {
+      // Reading it right now still works; it just won't be here next time.
+    }
+  };
+
+  // A layer they didn't want is gone for good, not just hidden this time.
+  const dropLap = (id) => {
+    const next = laps.filter((lap) => lap.id !== id);
+    setLaps(next);
+    setMoves({});
+    persist(next, thread);
   };
 
   const run = async (earlier) => {
@@ -98,7 +129,9 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
         setFailed(true);
         return;
       }
-      setLaps([...earlier, res]);
+      const next = [...earlier, { ...res, id: res.id || `lap_${Date.now()}` }];
+      setLaps(next);
+      persist(next, thread);
       setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 80);
     } catch (error) {
       setFailed(true);
@@ -107,8 +140,32 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
     }
   };
 
+  // Pick up where they left off, or open it for the first time.
   useEffect(() => {
-    run([]);
+    let alive = true;
+    (async () => {
+      const page = await base44.entities.NoteExploration.filter(
+        { entry_id: entryId || "", subject: subject || "" },
+        "-created_date",
+        1
+      );
+      const found = (page?.items ?? page ?? [])[0];
+      if (!alive) return;
+      if (found?.id) setSavedId(found.id);
+      const kept = (found?.laps || []).map((lap, i) => ({ ...lap, id: lap.id || `lap_kept_${i}` }));
+      if (kept.length) {
+        setLaps(kept);
+        setThread(found.thread || []);
+        setBusy(false);
+        return;
+      }
+      run([]);
+    })().catch(() => {
+      if (alive) run([]);
+    });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const ask = async () => {
@@ -130,10 +187,12 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
         add_context_from_internet: true,
         model: "gemini_3_flash",
       });
-      setThread((prev) => [
-        ...prev,
+      const nextThread = [
+        ...thread,
         { q: question, a: typeof answer === "string" && answer.trim() ? answer.trim() : "That one didn't come through. Ask me again." },
-      ]);
+      ];
+      setThread(nextThread);
+      persist(laps, nextThread);
     } finally {
       setAsking(false);
       setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 60);
@@ -164,8 +223,11 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
             {subject || "A recording or a photo you added."}
           </blockquote>
 
+          {laps.length > 0 && <p className="tw-swipe-note">Swipe a layer left to drop it</p>}
+
           {laps.map((lap, index) => (
-            <section key={index} className="tw-lap">
+            <SwipeDismiss key={lap.id} onDismiss={() => dropLap(lap.id)}>
+            <section className="tw-lap">
               {index > 0 && <p className="tw-stamp">Lap {index + 1}</p>}
 
               <div className="tw-block">
@@ -207,25 +269,25 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
                   {lap.move.minutes ? <p className="tw-action-meta">{lap.move.minutes} min</p> : null}
 
                   <div className="tw-move-acts">
-                    {moves[index] === "done" ? (
+                    {moves[lap.id] === "done" ? (
                       <span className="tw-move-done"><Check /> Done — logged on your grid</span>
-                    ) : moves[index] === "scheduled" ? (
+                    ) : moves[lap.id] === "scheduled" ? (
                       <span className="tw-move-done"><Check /> Scheduled on your grid</span>
                     ) : (
                       <>
                         <button
                           type="button"
                           className="tw-mini"
-                          disabled={moves[index] === "saving"}
-                          onClick={() => logNow(index, lap.move)}
+                          disabled={moves[lap.id] === "saving"}
+                          onClick={() => logNow({ ...lap.move, id: lap.id })}
                         >
                           <Check /> Did it now
                         </button>
                         <button
                           type="button"
                           className="tw-mini"
-                          disabled={moves[index] === "saving"}
-                          onClick={() => setScheduling({ index, move: lap.move })}
+                          disabled={moves[lap.id] === "saving"}
+                          onClick={() => setScheduling({ ...lap.move, id: lap.id })}
                         >
                           <CalendarPlus /> Schedule
                         </button>
@@ -235,6 +297,7 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
                 </div>
               )}
             </section>
+            </SwipeDismiss>
           ))}
 
           {busy ? (
@@ -305,7 +368,7 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
 
       {scheduling && (
         <ScheduleSheet
-          habit={{ ...scheduling.move, duration_minutes: scheduling.move.minutes || 20 }}
+          habit={{ ...scheduling, duration_minutes: scheduling.minutes || 20 }}
           habits={habits}
           profile={profile}
           showRepeat={false}

@@ -9,7 +9,7 @@ import NoteUnitView from "./NoteUnitView";
 import { shortTitle } from "./DumpNoteFront";
 
 // One addition, opened on its own — so anything they pile onto it has a place to land.
-export default function NoteAdditionView({ item, partnerName, onBack, onChange, onDelete }) {
+export default function NoteAdditionView({ item, entryId, partnerName, onBack, onChange, onDelete }) {
   const [photo, setPhoto] = useState(null);
   const [voice, setVoice] = useState(null);
   const [editing, setEditing] = useState(false);
@@ -61,6 +61,7 @@ export default function NoteAdditionView({ item, partnerName, onBack, onChange, 
       <NoteUnitView
         item={note}
         parent={item}
+        entryId={entryId}
         partnerName={partnerName}
         onBack={() => setOpenNote(null)}
         onChange={(patch) => saveNote(openNote, patch)}

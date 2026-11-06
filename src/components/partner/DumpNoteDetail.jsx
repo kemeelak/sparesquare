@@ -91,6 +91,7 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
     return (
       <NoteAdditionView
         item={addition}
+        entryId={entry.id}
         partnerName={partnerName}
         onBack={() => setOpenAddition(null)}
         onChange={(next) => updateFollowUp(openAddition, next)}
@@ -105,6 +106,7 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
   if (exploring) {
     return (
       <NoteExploreView
+        entryId={entry.id}
         subject={entry.text}
         context={entry.reflection || ""}
         partnerName={partnerName}

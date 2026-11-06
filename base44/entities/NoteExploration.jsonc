@@ -1,0 +1,96 @@
+{
+  "name": "NoteExploration",
+  "type": "object",
+  "properties": {
+    "entry_id": {
+      "type": "string",
+      "description": "The dump this dig belongs to"
+    },
+    "subject": {
+      "type": "string",
+      "description": "The exact line or addition they were digging into"
+    },
+    "context": {
+      "type": "string",
+      "description": "Whatever sat around it when they opened it"
+    },
+    "laps": {
+      "type": "array",
+      "description": "Each layer of the dig, in the order it was opened \u2014 they can drop the ones they don't want",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "read": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "threads": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "detail": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "move": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "minutes": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      }
+    },
+    "thread": {
+      "type": "array",
+      "description": "What they asked while digging, and what came back",
+      "items": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string"
+          },
+          "a": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "subject"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

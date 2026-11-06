@@ -8,7 +8,7 @@ import { shortTitle } from "./DumpNoteFront";
 
 // One note from inside a thread, opened on its own so it can be read properly,
 // rewritten, or taken back out.
-export default function NoteUnitView({ item, parent, partnerName, onBack, onChange, onDelete }) {
+export default function NoteUnitView({ item, parent, entryId, partnerName, onBack, onChange, onDelete }) {
   const [photo, setPhoto] = useState(null);
   const [voice, setVoice] = useState(null);
   const [editing, setEditing] = useState(false);
@@ -43,6 +43,7 @@ export default function NoteUnitView({ item, parent, partnerName, onBack, onChan
   if (exploring) {
     return (
       <NoteExploreView
+        entryId={entryId}
         subject={item.text}
         context={parent?.text || ""}
         partnerName={partnerName}

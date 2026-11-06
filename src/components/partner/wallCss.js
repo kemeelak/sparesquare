@@ -77,6 +77,12 @@ export const WALL_CSS = `
 .tw-action-meta{font-size:12px;color:#8A8580;margin:7px 0 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .tw-actions{margin-top:15px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .tw-move-acts{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+/* a layer can be swiped away to the left */
+.tw-swipe{position:relative;overflow:hidden;border-radius:12px}
+.tw-swipe-hint{position:absolute;top:50%;right:6px;transform:translateY(-50%);font:600 10px/1 'Inter',-apple-system,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#C0533F;pointer-events:none}
+.tw-swipe-body{position:relative;background:#FAF8F5;border-radius:12px;padding:0 6px;margin:0 -6px;will-change:transform}
+.tw-swipe-note{margin:0;font-size:11px;letter-spacing:.04em;color:#B0AAA4}
+@media (min-width:1024px){.tw-swipe-note{display:none}}
 .tw-mini{display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;padding:4px 0;color:#8A8580;font:600 11.5px/1 'Inter',-apple-system,sans-serif;cursor:pointer;transition:color .16s}
 .tw-mini:hover{color:#1A1A1A}
 .tw-mini:disabled{opacity:.5;cursor:default}
