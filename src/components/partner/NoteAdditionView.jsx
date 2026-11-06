@@ -5,6 +5,7 @@ import { ArrowLeft, Check, Pencil, Trash2 } from "lucide-react";
 import NoteBlockHead from "./NoteBlockHead";
 import NoteFollowUp from "./NoteFollowUp";
 import NoteFollowUpBar from "./NoteFollowUpBar";
+import NoteUnitView from "./NoteUnitView";
 import { shortTitle } from "./DumpNoteFront";
 
 // One addition, opened on its own — so anything they pile onto it has a place to land.
@@ -15,6 +16,7 @@ export default function NoteAdditionView({ item, partnerName, onBack, onChange, 
   const [draft, setDraft] = useState(item.text || "");
   const [confirming, setConfirming] = useState(false);
   const scrollRef = useRef(null);
+  const [openNote, setOpenNote] = useState(null);
   const notes = item.notes || [];
 
   useEffect(() => {
@@ -51,6 +53,22 @@ export default function NoteAdditionView({ item, partnerName, onBack, onChange, 
 
   const deleteNote = (index) =>
     onChange({ ...item, notes: notes.filter((_, i) => i !== index) });
+
+  const note = openNote !== null ? notes[openNote] : null;
+
+  if (note) {
+    return (
+      <NoteUnitView
+        item={note}
+        onBack={() => setOpenNote(null)}
+        onChange={(patch) => saveNote(openNote, patch)}
+        onDelete={() => {
+          deleteNote(openNote);
+          setOpenNote(null);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -139,6 +157,7 @@ export default function NoteAdditionView({ item, partnerName, onBack, onChange, 
                   item={note}
                   onSave={(patch) => saveNote(index, patch)}
                   onDelete={() => deleteNote(index)}
+                  onOpen={() => setOpenNote(index)}
                 />
               ))}
             </section>
