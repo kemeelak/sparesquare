@@ -15,6 +15,7 @@ export default function DumpSuggestions({ profile, partnerName, onClose }) {
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const [added, setAdded] = useState({});
+  const [done, setDone] = useState({});
   const [pending, setPending] = useState(null);
   const queryClient = useQueryClient();
 
@@ -59,6 +60,25 @@ export default function DumpSuggestions({ profile, partnerName, onClose }) {
     });
     queryClient.invalidateQueries({ queryKey: ["habits"] });
     setAdded((prev) => ({ ...prev, [index]: created?.id || true }));
+    setPending(null);
+  };
+
+  // Already done it: log it as complete today so it shows up on the grid and in their week.
+  const doNow = async (item, index) => {
+    setPending(index);
+    const created = await base44.entities.HabitBlock.create({
+      title: item.title,
+      description: item.description || "",
+      duration_minutes: item.minutes || 15,
+      category: item.category || "general",
+      life_area: item.life_area || undefined,
+      source: "Suggested for you",
+      status: "completed",
+      scheduled_date: new Date().toISOString().slice(0, 10),
+      scheduled_hour: new Date().getHours(),
+    });
+    queryClient.invalidateQueries({ queryKey: ["habits"] });
+    setDone((prev) => ({ ...prev, [index]: created?.id || true }));
     setPending(null);
   };
 
@@ -108,8 +128,10 @@ export default function DumpSuggestions({ profile, partnerName, onClose }) {
                 key={`${item.title}-${index}`}
                 item={item}
                 savedId={added[index]}
+                doneId={done[index]}
                 pending={pending === index}
                 onAdd={() => add(item, index)}
+                onDone={() => doNow(item, index)}
               />
             ))}
           </div>

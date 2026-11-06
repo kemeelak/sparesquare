@@ -43,6 +43,14 @@ export default function DumpActionCard({ entry }) {
 
   const addToBacklog = () => save({ status: "backlog" }, "backlog");
 
+  // They already did it — log it as done today so it counts on the grid and in their week.
+  const didItNow = () =>
+    save({
+      status: "completed",
+      scheduled_date: format(new Date(), "yyyy-MM-dd"),
+      scheduled_hour: new Date().getHours(),
+    }, "done");
+
   const drop = async () => {
     setHidden(true);
     await base44.entities.DumpEntry.update(entry.id, { action_status: "dropped" });
@@ -50,6 +58,8 @@ export default function DumpActionCard({ entry }) {
   };
 
   if (hidden || !entry.action_title) return null;
+
+  const donePrefix = (to) => (to === "done" ? "Done — " : "");
 
   // It just moved: the card turns into a link straight to where it went.
   if (movedTo) {
@@ -60,12 +70,14 @@ export default function DumpActionCard({ entry }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.28, ease: [0.2, 0.8, 0.25, 1] }}
       >
-        <span className="tw-moved-text"><Check className="w-4 h-4" /> {entry.action_title}</span>
+        <span className="tw-moved-text">
+          <Check className="w-4 h-4" /> {donePrefix(movedTo)}{entry.action_title}
+        </span>
         <Link
           to={movedTo === "backlog" ? `/Backlog?highlight=${savedId || ""}` : "/"}
           className="tw-moved-link"
         >
-          {movedTo === "backlog" ? "Open it in your backlog" : "On your grid"}
+          {movedTo === "backlog" ? "Open it in your backlog" : movedTo === "done" ? "Logged on your grid" : "On your grid"}
           <ArrowRight className="w-3 h-3" />
         </Link>
       </motion.div>
@@ -91,7 +103,11 @@ export default function DumpActionCard({ entry }) {
         <span className="tw-meta-bit">{area.emoji} {area.short}</span>
       </p>
       <div className="tw-actions">
-        <button onClick={addToGrid} disabled={status === "loading"} className="tw-do">
+        <button onClick={didItNow} disabled={status === "loading"} className="tw-do tw-do-done">
+          {status === "loading" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+          I did it now
+        </button>
+        <button onClick={addToGrid} disabled={status === "loading"} className="tw-later">
           {status === "loading" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
           Put it on my grid
         </button>

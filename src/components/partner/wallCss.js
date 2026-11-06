@@ -101,6 +101,8 @@ export const WALL_CSS = `
 
 .tw-do-danger{background:#d4674e;box-shadow:0 3px 0 #a8482f}
 .tw-do-danger:hover{background:#df7b61;box-shadow:0 4px 9px #a8482f55}
+.tw-do-done{background:#6d9479;box-shadow:0 3px 0 #518060}
+.tw-do-done:hover{background:#7fa98c;box-shadow:0 4px 9px #51806055}
 .tw-moved{margin-top:15px;display:flex;flex-direction:column;gap:7px}
 .tw-moved-text{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#24353a;line-height:1.35}
 .tw-moved-link{display:inline-flex;align-items:center;gap:5px;align-self:flex-start;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#354d51;text-decoration:none;border-bottom:1px solid rgba(53,77,81,.35);padding-bottom:2px;transition:color .18s,border-color .18s}
@@ -134,6 +136,7 @@ export const WALL_CSS = `
 .tw-suggest-copy{font-size:12.5px;line-height:1.5;color:#586369;margin:4px 0 0}
 .tw-meta-bit{display:inline-flex;align-items:center;gap:4px}
 .tw-suggest-add{margin-top:14px;align-self:flex-start}
+.tw-suggest-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-self:flex-start}
 .tw-suggest-saved{margin-top:14px;align-self:flex-start}
 .tw-suggest-skel{height:104px;animation:tw-pulse 1.4s ease-in-out infinite;background:#f3e8d2;border:1px dashed rgba(95,75,49,.24)}
 
@@ -260,6 +263,8 @@ export const WALL_CSS = `
   .tw-suggest-title{font-size:15.5px}
   .tw-suggest-copy{font-size:13px}
   .tw-suggest-add,.tw-suggest-saved{width:100%;align-self:stretch;justify-content:center;padding:12px 14px;font-size:13px}
+  .tw-suggest-acts{width:100%;align-self:stretch;flex-direction:column}
+  .tw-suggest-acts .tw-do,.tw-suggest-acts .tw-later{width:100%;justify-content:center;padding:12px 14px;font-size:13px}
   .tw-sheet-foot{margin-top:14px}
   .tw-wall-grid{grid-template-columns:1fr;gap:14px;padding:16px 12px 20px}
   .tw-front,.tw-front:nth-child(3n+2),.tw-front:nth-child(4n+3){transform:none;padding:20px 16px 16px}

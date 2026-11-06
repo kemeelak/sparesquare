@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { Check, Clock, Loader2, Plus } from "lucide-react";
 import { areaMeta, CATEGORY_EMOJI } from "@/lib/lifeAreas";
 
-// One suggested move: what it is, how long, which bucket, and the one thing you can do with it.
-export default function SuggestionCard({ item, savedId, pending, onAdd }) {
+// One suggested move: what it is, how long, which bucket, and the two things you can do with it —
+// do it now, or park it in the backlog.
+export default function SuggestionCard({ item, savedId, doneId, pending, onAdd, onDone }) {
   const area = areaMeta(item.life_area);
 
   return (
@@ -17,7 +18,11 @@ export default function SuggestionCard({ item, savedId, pending, onAdd }) {
         <span>{CATEGORY_EMOJI[item.category] || "⚡"}</span>
       </p>
 
-      {savedId ? (
+      {doneId ? (
+        <Link to="/" className="tw-moved-link tw-suggest-saved">
+          <Check className="w-3 h-3" /> Done just now
+        </Link>
+      ) : savedId ? (
         <Link
           to={`/Backlog?highlight=${typeof savedId === "string" ? savedId : ""}`}
           className="tw-moved-link tw-suggest-saved"
@@ -25,10 +30,16 @@ export default function SuggestionCard({ item, savedId, pending, onAdd }) {
           <Check className="w-3 h-3" /> In your backlog
         </Link>
       ) : (
-        <button onClick={onAdd} disabled={pending} className="tw-do tw-suggest-add">
-          {pending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-          Add to backlog
-        </button>
+        <div className="tw-suggest-acts">
+          <button onClick={onDone} disabled={pending} className="tw-do tw-do-done">
+            {pending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+            I did it now
+          </button>
+          <button onClick={onAdd} disabled={pending} className="tw-later">
+            <Plus className="w-3.5 h-3.5" />
+            Add to backlog
+          </button>
+        </div>
       )}
     </div>
   );
