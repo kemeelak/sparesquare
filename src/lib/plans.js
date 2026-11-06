@@ -39,6 +39,7 @@ export const FEATURE_COSTS = [
   { label: "Planning what to do on a commute", cost: 4 },
   { label: "Adding something to your backlog", cost: 2 },
   { label: "A few ideas for your backlog", cost: 3 },
+  { label: "Going deeper into one note", cost: 3 },
 ];
 
 export async function invokeAI(feature, params) {

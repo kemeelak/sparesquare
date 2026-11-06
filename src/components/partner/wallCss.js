@@ -230,6 +230,28 @@ export const WALL_CSS = `
 .tw-block-edit:focus-visible{outline:3px solid #547a7d;outline-offset:2px}
 .tw-block-edit svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
+/* ---- going deeper: one line, read back through everything ---- */
+.tw-explore-cta{display:inline-flex;align-items:center;gap:8px;margin-top:18px;padding:11px 15px;border:1px solid rgba(53,77,81,.28);border-radius:99px;background:#2f4a4e;color:#fff7e7;font:700 12px/1 system-ui,-apple-system,sans-serif;letter-spacing:.02em;cursor:pointer;box-shadow:0 3px 0 #22383b;transition:background-color .18s,box-shadow .18s,transform .18s}
+.tw-explore-cta:hover{background:#3d5d61;box-shadow:0 4px 12px rgba(34,56,59,.4)}
+.tw-explore-cta:active{transform:scale(.97)}
+.tw-explore-cta:focus-visible{outline:3px solid #547a7d;outline-offset:3px}
+.tw-explore-cta svg{color:#e8b263}
+.tw-explore-line{margin:0;padding:14px 16px;border-left:3px solid #d4674e;background:#fff7e7;font-size:16px;line-height:1.55;color:#33464a;white-space:pre-wrap;overflow-wrap:anywhere}
+.tw-explore-loading{display:flex;align-items:center;gap:9px;margin:0;font-size:13px;color:#566e73}
+.tw-threads{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:13px}
+.tw-thread{padding-left:14px;border-left:2px solid rgba(53,77,81,.22)}
+.tw-thread-label{margin:0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#4a6b6f;font-weight:700}
+.tw-thread-detail{margin:5px 0 0;font-size:15px;line-height:1.55;color:#33464a}
+.tw-ask-q-line{margin:0;font-size:17px;line-height:1.5;font-style:italic;font-weight:600;color:#566e73}
+.tw-ask{display:flex;flex-direction:column;gap:8px}
+.tw-ask-you{align-self:flex-end;margin:0;max-width:88%;padding:10px 14px;border-radius:14px 14px 3px 14px;background:#2f4a4e;color:#fff7e7;font-size:14px;line-height:1.5}
+.tw-ask-back{margin:0;padding:12px 15px;border-radius:3px 14px 14px 14px;background:rgba(255,250,240,.85);border:1px solid rgba(95,75,49,.16);font-size:15px;line-height:1.6;color:#33464a;white-space:pre-wrap}
+.tw-ask-input{min-height:46px}
+
+@media (max-width:767px){
+  .tw-explore-cta{width:100%;justify-content:center;padding:13px 15px;font-size:13px}
+}
+
 @media (hover:none){
   .tw-note-btn:hover{transform:none;box-shadow:0 8px 18px rgba(61,45,25,.16)}
   .tw-card-tools{opacity:1}

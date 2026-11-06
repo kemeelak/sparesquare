@@ -60,6 +60,8 @@ export default function NoteAdditionView({ item, partnerName, onBack, onChange, 
     return (
       <NoteUnitView
         item={note}
+        parent={item}
+        partnerName={partnerName}
         onBack={() => setOpenNote(null)}
         onChange={(patch) => saveNote(openNote, patch)}
         onDelete={() => {

@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Check, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, Pencil, Sparkles, Trash2 } from "lucide-react";
 import NoteBlockHead from "./NoteBlockHead";
+import NoteExploreView from "./NoteExploreView";
 import { shortTitle } from "./DumpNoteFront";
 
 // One note from inside a thread, opened on its own so it can be read properly,
 // rewritten, or taken back out.
-export default function NoteUnitView({ item, onBack, onChange, onDelete }) {
+export default function NoteUnitView({ item, parent, partnerName, onBack, onChange, onDelete }) {
   const [photo, setPhoto] = useState(null);
   const [voice, setVoice] = useState(null);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(item.text || "");
   const [confirming, setConfirming] = useState(false);
+  const [exploring, setExploring] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -37,6 +39,17 @@ export default function NoteUnitView({ item, onBack, onChange, onDelete }) {
     if (next === (item.text || "")) return;
     await onChange({ text: next });
   };
+
+  if (exploring) {
+    return (
+      <NoteExploreView
+        note={item}
+        parent={parent}
+        partnerName={partnerName}
+        onBack={() => setExploring(false)}
+      />
+    );
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -109,6 +122,13 @@ export default function NoteUnitView({ item, onBack, onChange, onDelete }) {
                 {photo && <img src={photo} alt="A photo you added" className="tw-photo" />}
                 {voice && <audio controls preload="none" src={voice} className="tw-audio tw-audio-lead" />}
               </>
+            )}
+
+            {!editing && (
+              <button type="button" className="tw-explore-cta" onClick={() => setExploring(true)}>
+                <Sparkles className="w-4 h-4" />
+                Explore this with {partnerName || "your partner"}
+              </button>
             )}
 
             {confirming && (
