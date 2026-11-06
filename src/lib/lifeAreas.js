@@ -16,6 +16,17 @@ export const AREA_KEYS = LIFE_AREAS.map((a) => a.key);
 
 export const areaMeta = (key) => LIFE_AREAS.find((a) => a.key === key) || LIFE_AREAS[0];
 
+export const CATEGORY_EMOJI = {
+  fitness: "🏃",
+  mindfulness: "🧘",
+  learning: "📚",
+  nutrition: "🥗",
+  sleep: "😴",
+  productivity: "⚡",
+  social: "👥",
+  creative: "🎨",
+};
+
 // A habit with no life area of its own borrows one from its category.
 const CATEGORY_AREA = {
   fitness: "health",

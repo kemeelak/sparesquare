@@ -103,7 +103,7 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, calend
     return dates;
   };
 
-  const handleSaveEvent = async ({ title, duration, category, energy, repeat, emoji }) => {
+  const handleSaveEvent = async ({ title, duration, category, energy, repeat, emoji, lifeArea }) => {
     const dates = getDatesToSchedule(repeat);
     await Promise.all(dates.map(d =>
       createEventMutation.mutateAsync({
@@ -115,6 +115,7 @@ export default function HourDetailSheet({ hour, date, habits, unmovables, calend
         category,
         energy_level: energy,
         emoji,
+        life_area: lifeArea,
       })
     ));
     setShowAddEvent(false);

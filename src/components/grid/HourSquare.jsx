@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Check, Sparkles, Lock } from "lucide-react";
+import { areaMeta, areaOf } from "@/lib/lifeAreas";
 
 const categoryIcons = {
   fitness: "🏃",
@@ -27,6 +28,7 @@ export default function HourSquare({ hour, unmovable, habit, habits = [], calend
   let textClass = "text-[#B0AAA4]";
   let emoji = null;
   let multiCount = null;
+  let style = undefined;
 
   if (isSleep) {
     bgClass = "bg-[#2D3748] border-[#2D3748]";
@@ -49,12 +51,17 @@ export default function HourSquare({ hour, unmovable, habit, habits = [], calend
       else emoji = "🔒";
     }
   } else if (habit) {
+    // A habit square wears its bucket, so the grid shows where your hours go.
+    const area = areaMeta(areaOf(habit));
     const isConfirmed = habit.status === "confirmed" || habit.status === "completed";
     const isCompleted = habit.status === "completed";
-    bgClass = isConfirmed
-      ? "bg-[#7C9A82] border-[#7C9A82]"
-      : "bg-transparent border-[#7C9A82] border-dashed border-2";
-    textClass = isConfirmed ? "text-white" : "text-[#7C9A82]";
+    bgClass = isConfirmed ? "" : "border-dashed";
+    textClass = "";
+    style = {
+      backgroundColor: isConfirmed ? area.color : area.tint,
+      borderColor: area.color,
+      color: isConfirmed ? "#FFFFFF" : area.color,
+    };
     emoji = isCompleted ? "✅" : (habit.emoji || categoryIcons[habit.category] || "✨");
     multiCount = habits.length > 1 ? habits.length : null;
   } else if (isCommute) {
@@ -74,6 +81,7 @@ export default function HourSquare({ hour, unmovable, habit, habits = [], calend
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={() => onSquareClick?.(hour)}
+      style={style}
       className={`relative w-full aspect-square rounded-xl border-2 ${bgClass} ${textClass} 
         flex flex-col items-center justify-center transition-colors duration-200 cursor-pointer p-1`}
     >
@@ -82,7 +90,7 @@ export default function HourSquare({ hour, unmovable, habit, habits = [], calend
       </span>
       {emoji && <span className="text-base leading-none mt-1">{emoji}</span>}
       {countBadge && (
-        <span className="absolute top-0.5 right-1 text-[8px] font-bold bg-white/30 rounded-full px-1 leading-tight">
+        <span className="absolute top-0.5 right-1 text-[8px] font-bold bg-black/10 rounded-full px-1 leading-tight">
           {countBadge}
         </span>
       )}

@@ -1,10 +1,10 @@
 import React from "react";
-import { Lock, Sparkles, Leaf, Moon, Car } from "lucide-react";
+import { Lock, Sparkles, Moon, Car } from "lucide-react";
+import { LIFE_AREAS } from "@/lib/lifeAreas";
 
 const items = [
   { label: "Unmovable", color: "bg-[#4A5568]", icon: Lock },
   { label: "Commute", color: "bg-[#4A5568]", icon: Car },
-  { label: "Habit", color: "bg-[#7C9A82]", icon: Leaf },
   { label: "Spare", color: "bg-[#F5EDE4] border border-dashed border-[#D4A574]", icon: Sparkles },
   { label: "Sleep", color: "bg-[#2D3748]", icon: Moon },
 ];
@@ -22,6 +22,23 @@ export default function GridLegend() {
           </span>
         </div>
       ))}
+
+      {/* Habit squares take their bucket's colour */}
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        <div className="flex items-center gap-0.5">
+          {LIFE_AREAS.map((area) => (
+            <div
+              key={area.key}
+              title={area.label}
+              className="w-2 h-2 rounded-full"
+              style={{ backgroundColor: area.color }}
+            />
+          ))}
+        </div>
+        <span className="text-[10px] lg:text-xs font-medium text-[#8A8580] whitespace-nowrap">
+          Buckets
+        </span>
+      </div>
     </div>
   );
 }

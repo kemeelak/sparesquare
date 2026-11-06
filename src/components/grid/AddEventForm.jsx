@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, RotateCcw } from "lucide-react";
 import EmojiPicker from "@/components/shared/EmojiPicker";
+import { LIFE_AREAS, areaOf } from "@/lib/lifeAreas";
 
 const CATEGORIES = [
   { value: "fitness", emoji: "💪" },
@@ -42,6 +43,9 @@ export default function AddEventForm({ hour, dateStr, onSave, onCancel, isPendin
   const [repeat, setRepeat] = useState("none");
   const [selectedDays, setSelectedDays] = useState([]);
   const [emoji, setEmoji] = useState("");
+  const [lifeArea, setLifeArea] = useState(null);
+  // The bucket follows the category and the words in the title until they pick one.
+  const activeArea = lifeArea || areaOf({ category, title });
 
   const toggleDay = (day) => {
     setSelectedDays(prev =>
@@ -60,7 +64,7 @@ export default function AddEventForm({ hour, dateStr, onSave, onCancel, isPendin
     const finalRepeat = repeat === "custom_days" && selectedDays.length > 0
       ? selectedDays
       : repeat;
-    onSave({ title: title.trim(), duration, category, energy, repeat: finalRepeat, emoji });
+    onSave({ title: title.trim(), duration, category, energy, repeat: finalRepeat, emoji, lifeArea: activeArea });
   };
 
   return (
@@ -122,6 +126,30 @@ export default function AddEventForm({ hour, dateStr, onSave, onCancel, isPendin
               <span className="capitalize">{c.value}</span>
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Life area / bucket */}
+      <div>
+        <p className="text-xs text-[#8A8580] mb-1.5">Which part of your life is this for?</p>
+        <div className="flex flex-wrap gap-1.5">
+          {LIFE_AREAS.map((area) => {
+            const active = activeArea === area.key;
+            return (
+              <button
+                key={area.key}
+                onClick={() => setLifeArea(area.key)}
+                title={area.label}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 border ${
+                  active ? "text-white border-transparent" : "bg-white border-[#E8E4DF] text-[#4A5568] hover:border-[#1A1A1A]"
+                }`}
+                style={active ? { backgroundColor: area.color } : undefined}
+              >
+                <span>{area.emoji}</span>
+                <span>{area.short}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
