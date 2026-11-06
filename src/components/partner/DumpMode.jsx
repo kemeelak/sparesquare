@@ -66,7 +66,7 @@ export default function DumpMode({ currentUser, profile, partnerName }) {
   const empty = entries.length === 0 && working.length === 0;
 
   return (
-    <div className="tw-wall relative flex h-full min-h-0 flex-col justify-between overflow-hidden px-[26px] pt-[26px] pb-[22px] md:px-[58px] md:pt-[42px] md:pb-[30px]">
+    <div className="tw-wall relative flex h-full min-h-0 flex-col justify-between overflow-hidden px-3 pt-3 pb-3 sm:px-6 sm:pt-6 sm:pb-4 md:px-[58px] md:pt-[42px] md:pb-[30px]">
       <style>{WALL_CSS}</style>
 
       {empty ? (
@@ -93,10 +93,10 @@ export default function DumpMode({ currentUser, profile, partnerName }) {
               <p className="tw-small">Typing and photos work too.</p>
               <p className="tw-note-cta">
                 <Sparkles className="w-3.5 h-3.5" />
-                {partnerName} has a few ideas for you
+                Tap to see {partnerName}'s ideas
               </p>
             </article>
-            <article className="tw-note">
+            <article className="tw-note tw-note-quiet">
               <span className="tw-pin tw-pin-alt" aria-hidden="true" />
               <p className="tw-scribble">Hit the mic and just talk. Easier than finding the words to type.</p>
             </article>

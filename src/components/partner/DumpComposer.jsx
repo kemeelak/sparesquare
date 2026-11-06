@@ -92,7 +92,7 @@ export default function DumpComposer({ onDrop, busy }) {
   const canSend = (text.trim() || file) && !busy && status === "idle";
 
   return (
-    <div className="tw-composer mb-14 lg:mb-0">
+    <div className="tw-composer">
       {preview && status === "idle" && (
         <div className="tw-thumb-wrap">
           <img src={preview} alt="The photo you're adding" className="tw-thumb" />
@@ -117,7 +117,7 @@ export default function DumpComposer({ onDrop, busy }) {
           <span>Writing down what you said…</span>
         </div>
       ) : (
-        <div className="tw-compose-row">
+        <div className="tw-compose-row tw-compose-stack">
           <button onClick={startRecording} disabled={busy} className="tw-round" aria-label="Talk instead of typing">
             <Mic />
           </button>

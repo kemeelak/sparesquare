@@ -1,23 +1,27 @@
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import { Check, Clock, Loader2, Plus, X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
 import { invokeAI } from "@/lib/plans";
 import { buildSuggestPrompt, SUGGEST_SCHEMA } from "./suggestPrompt";
-import { areaMeta, CATEGORY_EMOJI } from "@/lib/lifeAreas";
+import SuggestionCard from "./SuggestionCard";
 
 // A few things worth trying, pulled from what the wall already knows about them.
+// Rendered into the page body so it always opens on top, whatever the wall is doing.
 export default function DumpSuggestions({ profile, partnerName, onClose }) {
   const [items, setItems] = useState(null);
   const [error, setError] = useState("");
+  const [attempt, setAttempt] = useState(0);
   const [added, setAdded] = useState({});
   const [pending, setPending] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
     let alive = true;
+    setItems(null);
+    setError("");
     invokeAI("dump_suggest", {
       prompt: buildSuggestPrompt({ partnerName, profile }),
       response_json_schema: SUGGEST_SCHEMA,
@@ -26,15 +30,21 @@ export default function DumpSuggestions({ profile, partnerName, onClose }) {
         if (!alive) return;
         const list = (res?.suggestions || []).slice(0, 4);
         setItems(list);
-        if (!list.length) setError("Nothing came up just now. Try again in a moment.");
+        if (!list.length) setError("Nothing came up just now.");
       })
       .catch(() => {
         if (!alive) return;
         setItems([]);
-        setError("I couldn't pull anything up just now. Try again in a moment.");
+        setError("I couldn't pull anything up just now.");
       });
     return () => { alive = false; };
-  }, []);
+  }, [attempt]);
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   const add = async (item, index) => {
     setPending(index);
@@ -52,16 +62,21 @@ export default function DumpSuggestions({ profile, partnerName, onClose }) {
     setPending(null);
   };
 
-  return (
+  return createPortal(
     <div className="tw-sheet-backdrop" onClick={onClose}>
       <motion.div
         className="tw-sheet"
-        onClick={(e) => e.stopPropagation()}
-        initial={{ opacity: 0, y: 26 }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Ideas for your backlog"
+        initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 18 }}
-        transition={{ duration: 0.26, ease: [0.2, 0.8, 0.25, 1] }}
+        transition={{ duration: 0.24, ease: [0.2, 0.8, 0.25, 1] }}
+        onClick={(e) => e.stopPropagation()}
       >
+        <div className="tw-sheet-grip" aria-hidden="true" />
+
         <div className="tw-sheet-head">
           <div>
             <p className="tw-stamp">From {partnerName}</p>
@@ -73,52 +88,36 @@ export default function DumpSuggestions({ profile, partnerName, onClose }) {
         </div>
 
         {items === null ? (
-          <div className="tw-suggests">
-            {[0, 1, 2, 3].map((i) => <div key={i} className="tw-suggest-skel" />)}
-          </div>
+          <>
+            <p className="tw-sheet-loading">
+              <Loader2 className="w-4 h-4 animate-spin" /> Reading your week…
+            </p>
+            <div className="tw-suggests">
+              {[0, 1, 2, 3].map((i) => <div key={i} className="tw-suggest-skel" />)}
+            </div>
+          </>
         ) : items.length === 0 ? (
-          <p className="tw-small">{error}</p>
+          <div className="tw-sheet-empty">
+            <p className="tw-small">{error}</p>
+            <button onClick={() => setAttempt((a) => a + 1)} className="tw-later">Try again</button>
+          </div>
         ) : (
           <div className="tw-suggests">
-            {items.map((item, index) => {
-              const area = areaMeta(item.life_area);
-              const savedId = added[index];
-              return (
-                <div key={`${item.title}-${index}`} className="tw-suggest">
-                  <p className="tw-suggest-title">{item.title}</p>
-                  <p className="tw-suggest-copy">{item.description}</p>
-                  <p className="tw-action-meta">
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                      <Clock className="w-3 h-3" />{item.minutes || 15}min
-                    </span>
-                    <span>· {area.emoji} {area.short}</span>
-                    <span>{CATEGORY_EMOJI[item.category] || "⚡"}</span>
-                  </p>
-
-                  {savedId ? (
-                    <Link to={`/Backlog?highlight=${typeof savedId === "string" ? savedId : ""}`} className="tw-moved-link" style={{ marginTop: 10 }}>
-                      <Check className="w-3 h-3" /> In your backlog
-                    </Link>
-                  ) : (
-                    <div className="tw-actions" style={{ marginTop: 10 }}>
-                      <button onClick={() => add(item, index)} disabled={pending === index} className="tw-later">
-                        {pending === index
-                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          : <Plus className="w-3.5 h-3.5" />}
-                        Add to backlog
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {items.map((item, index) => (
+              <SuggestionCard
+                key={`${item.title}-${index}`}
+                item={item}
+                savedId={added[index]}
+                pending={pending === index}
+                onAdd={() => add(item, index)}
+              />
+            ))}
           </div>
         )}
 
-        <p className="tw-hint" style={{ marginLeft: 0 }}>
-          Built from your goals and the way your week is shaped. Nothing is saved until you add it.
-        </p>
+        <p className="tw-sheet-foot">Built from your goals and the way your week is shaped. Nothing is saved until you add it.</p>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -30,8 +30,8 @@ export default function Partner() {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <div className="p-4 border-b border-[#E8E4DF] bg-white/70 backdrop-blur-lg flex-shrink-0">
+    <div className="flex flex-col h-[calc(100dvh-8.5rem)] lg:h-screen overflow-hidden">
+      <div className="px-3 py-2.5 sm:p-4 border-b border-[#E8E4DF] bg-white/70 backdrop-blur-lg flex-shrink-0">
         <div className="max-w-3xl mx-auto flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-[#1A1A1A] flex items-center justify-center flex-shrink-0">
             <span className="text-white font-bold text-sm">S²</span>
@@ -51,7 +51,7 @@ export default function Partner() {
               <button
                 key={option.id}
                 onClick={() => changeMode(option.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
                   mode === option.id ? "bg-white text-[#1A1A1A] shadow-sm" : "text-[#8A8580] hover:text-[#1A1A1A]"
                 }`}
               >
