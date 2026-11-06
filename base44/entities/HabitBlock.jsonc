@@ -61,6 +61,17 @@
       ],
       "description": "Category of the habit"
     },
+    "life_area": {
+      "type": "string",
+      "enum": [
+        "work",
+        "people",
+        "faith",
+        "fun",
+        "health"
+      ],
+      "description": "Which life bucket this time counts toward. Left empty it is guessed from the category."
+    },
     "emoji": {
       "type": "string",
       "description": "Custom emoji for this habit (overrides category default)"

@@ -11,6 +11,7 @@ import ThreadSidebar from "../components/chat/ThreadSidebar";
 import QuickPrompts from "../components/chat/QuickPrompts";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import { invokeAI } from "@/lib/plans";
+import { balanceForPrompt } from "@/lib/lifeAreas";
 
 const categoryColors = {
   fitness: "text-orange-600", mindfulness: "text-purple-600", learning: "text-blue-600",
@@ -145,6 +146,9 @@ USER PROFILE:
 - Challenges: ${(profile?.challenges || []).join(", ") || "Not shared"}
 - Already does consistently (NEVER suggest these back, and don't re-teach them): ${(profile?.existing_habits || []).join(", ") || "Not shared"}
 - Other things they've told us about their life (use them naturally when relevant; don't recite them back): ${(profile?.extra_notes || []).join("; ") || "Nothing yet"}
+
+${balanceForPrompt(habits, profile)}
+Use this to notice drift, never to report numbers. If a bucket has gone quiet for a week or more and it matters to what they're telling you, name the bucket in passing and offer one small block for it. Never list their buckets or read the hours back to them.
 
 TODAY'S SCHEDULE (${today}, current hour: ${currentHour}:00):
 - Confirmed/Suggested: ${todayHabits.filter(h => ["confirmed","suggested"].includes(h.status)).map(h => `${h.scheduled_hour}:00 ${h.title} (${h.duration_minutes || "?"}min)`).join(", ") || "None"}

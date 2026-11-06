@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import HealthCard from "@/components/health/HealthCard";
 import HealthWeek from "@/components/health/HealthWeek";
+import BalanceCard from "@/components/progress/BalanceCard";
 
 export default function Progress() {
   const currentUser = useCurrentUser();
@@ -60,22 +61,6 @@ export default function Progress() {
   const allCompleted = habits.filter(h => h.status === "completed");
   const totalScheduled = habits.filter(h => h.status !== "backlog");
 
-  // Category breakdown
-  const categoryCounts = {};
-  allCompleted.forEach(h => {
-    const cat = h.category || "other";
-    categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-  });
-  const topCategories = Object.entries(categoryCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4);
-
-  const categoryEmoji = {
-    fitness: "💪", mindfulness: "🧘", learning: "📚",
-    nutrition: "🥗", sleep: "😴", productivity: "⚡",
-    social: "❤️", creative: "🎨",
-  };
-
   return (
     <div className="p-4 lg:p-8 max-w-2xl mx-auto">
       {/* Header */}
@@ -110,6 +95,9 @@ export default function Progress() {
           </motion.div>
         ))}
       </div>
+
+      {/* The five buckets — where the hours actually went */}
+      <BalanceCard habits={habits} profile={profile} />
 
       {/* Wearable: sleep + activity */}
       <HealthCard />
@@ -148,37 +136,6 @@ export default function Progress() {
           </div>
         )}
       </motion.div>
-
-      {/* Category breakdown */}
-      {topCategories.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl p-5 border border-[#E8E4DF] mb-6"
-        >
-          <p className="font-semibold text-[#1A1A1A] text-sm mb-4">Top Habit Categories</p>
-          <div className="space-y-3">
-            {topCategories.map(([cat, count]) => (
-              <div key={cat} className="flex items-center gap-3">
-                <span className="text-lg">{categoryEmoji[cat] || "⭐"}</span>
-                <div className="flex-1">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium text-[#1A1A1A] capitalize">{cat}</span>
-                    <span className="text-xs text-[#8A8580]">{count}x</span>
-                  </div>
-                  <div className="h-2 bg-[#F5F0EB] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-[#7C9A82] rounded-full"
-                      style={{ width: `${Math.min(100, (count / (topCategories[0][1] || 1)) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
 
       {/* Goals from profile */}
       {profile?.goals?.length > 0 && (
