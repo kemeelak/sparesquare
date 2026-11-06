@@ -98,6 +98,25 @@ export const WALL_CSS = `
 .tw-drop{margin-left:auto;border:0;background:transparent;color:#84877e;cursor:pointer;display:grid;place-items:center;padding:4px}
 .tw-drop:hover{color:#d4674e}
 
+.tw-note-btn{cursor:pointer;transition:box-shadow .2s,transform .2s}
+.tw-note-btn:hover{box-shadow:0 13px 26px rgba(61,45,25,.24);transform:rotate(-1.4deg) translateY(-3px)}
+.tw-note-btn:focus-visible{outline:3px solid #547a7d;outline-offset:4px}
+.tw-note-cta{margin:18px 0 0;display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#354d51;border-bottom:1px solid rgba(53,77,81,.35);padding-bottom:2px}
+
+.tw-sheet-backdrop{position:absolute;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center;padding:26px;background:rgba(52,37,20,.42)}
+.tw-sheet{position:relative;width:100%;max-width:820px;max-height:100%;overflow-y:auto;background:#fffaf0;border:1px solid #c9b58f;box-shadow:0 18px 40px rgba(52,37,20,.32);padding:26px 28px 22px;animation:tw-arrive .4s cubic-bezier(.2,.8,.25,1) both}
+.tw-sheet-head{display:flex;align-items:flex-start;gap:14px}
+.tw-sheet-title{font-size:26px;letter-spacing:-.8px;font-weight:850;color:#24353a;margin:2px 0 0;line-height:1.1}
+.tw-sheet-close{margin-left:auto;width:30px;height:30px;border-radius:8px;border:0;background:#f0eadb;color:#33464a;display:grid;place-items:center;cursor:pointer;transition:background-color .18s,transform .18s}
+.tw-sheet-close:hover{background:#e4d8bc}
+.tw-sheet-close:active{transform:scale(.94)}
+.tw-sheet-close:focus-visible{outline:3px solid #547a7d;outline-offset:3px}
+.tw-suggests{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+.tw-suggest{background:#fff7e7;border:1px solid rgba(95,75,49,.14);padding:16px 17px 14px;box-shadow:0 4px 12px rgba(61,45,25,.12)}
+.tw-suggest-title{font-size:15px;font-weight:700;color:#24353a;margin:0;line-height:1.25}
+.tw-suggest-copy{font-size:12.5px;line-height:1.5;color:#586369;margin:4px 0 0}
+.tw-suggest-skel{height:104px;animation:tw-pulse 1.4s ease-in-out infinite;background:#f3e8d2;border:1px dashed rgba(95,75,49,.24)}
+
 .tw-dock{position:absolute;right:30px;bottom:26px;display:flex;gap:8px;opacity:.75}
 .tw-dock i{display:block;width:9px;height:9px;border-radius:50%;background:#d4674e}
 .tw-dock i:nth-child(2){background:#66878a}
@@ -116,5 +135,9 @@ export const WALL_CSS = `
   .tw-copy{font-size:16px}
   .tw-hint,.tw-error{margin-left:0}
   .tw-card-tools{opacity:1}
+  .tw-suggests{grid-template-columns:1fr}
+  .tw-sheet-backdrop{padding:0}
+  .tw-sheet{max-height:88%;padding:22px 18px 18px}
+  .tw-sheet-title{font-size:22px}
 }
 `;

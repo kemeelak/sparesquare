@@ -2,14 +2,17 @@ import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
+import { Sparkles } from "lucide-react";
 import DumpEntryCard from "./DumpEntryCard";
 import DumpComposer from "./DumpComposer";
+import DumpSuggestions from "./DumpSuggestions";
 import { invokeAI } from "@/lib/plans";
 import { buildDumpPrompt, DUMP_SCHEMA } from "./dumpPrompt";
 import { WALL_CSS } from "./wallCss";
 
 export default function DumpMode({ currentUser, profile, partnerName }) {
   const [working, setWorking] = useState([]);
+  const [suggesting, setSuggesting] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: entries } = useQuery({
@@ -69,7 +72,18 @@ export default function DumpMode({ currentUser, profile, partnerName }) {
       {empty ? (
         <>
           <div className="tw-top">
-            <article className="tw-note">
+            <article
+              className="tw-note tw-note-btn"
+              role="button"
+              tabIndex={0}
+              onClick={() => setSuggesting(true)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setSuggesting(true);
+                }
+              }}
+            >
               <span className="tw-pin" aria-hidden="true" />
               <h2 className="tw-h2">Say it out loud</h2>
               <p className="tw-copy">
@@ -77,6 +91,10 @@ export default function DumpMode({ currentUser, profile, partnerName }) {
                 {" "}{partnerName} writes it down, reads it, and hands back one small move.
               </p>
               <p className="tw-small">Typing and photos work too.</p>
+              <p className="tw-note-cta">
+                <Sparkles className="w-3.5 h-3.5" />
+                {partnerName} has a few ideas for you
+              </p>
             </article>
             <article className="tw-note">
               <span className="tw-pin tw-pin-alt" aria-hidden="true" />
@@ -114,6 +132,16 @@ export default function DumpMode({ currentUser, profile, partnerName }) {
       <div className="tw-dock" aria-hidden="true">
         <i /><i /><i />
       </div>
+
+      <AnimatePresence>
+        {suggesting && (
+          <DumpSuggestions
+            profile={profile}
+            partnerName={partnerName}
+            onClose={() => setSuggesting(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

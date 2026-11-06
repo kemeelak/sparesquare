@@ -28,6 +28,7 @@ export const FEATURE_COSTS: Record<string, number> = {
   schedule_parse: 4, // free-text schedule -> blocks
   quick_capture: 2, // a typed thing to get done -> a backlog item
   commute_plan: 4, // web-search commute suggestions
+  dump_suggest: 3, // a few things they could add to their backlog from the dump wall
 };
 
 export const PAID_PRODUCT_IDS = ["plus_monthly"];
