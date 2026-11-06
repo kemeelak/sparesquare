@@ -81,6 +81,30 @@
           "voice_uri": {
             "type": "string",
             "description": "Private storage path of a voice recording added with this note"
+          },
+          "notes": {
+            "type": "array",
+            "description": "Notes the member added onto this addition when they opened it, in order",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "at": {
+                  "type": "string",
+                  "description": "When it was added, ISO"
+                },
+                "photo_url": {
+                  "type": "string",
+                  "description": "Private storage path of a photo added with this note"
+                },
+                "voice_uri": {
+                  "type": "string",
+                  "description": "Private storage path of a voice recording added with this note"
+                }
+              }
+            }
           }
         }
       }

@@ -199,6 +199,14 @@ export const WALL_CSS = `
 .tw-voice-chip svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .tw-voice-chip button{border:0;background:transparent;cursor:pointer;color:#8a8b82;display:grid;place-items:center;padding:2px}
 
+/* what you wrote and what came back share one sheet */
+.tw-block+.tw-block{margin-top:16px;padding-top:15px;border-top:1px dashed rgba(95,75,49,.32)}
+.tw-follow-btn{cursor:pointer;transition:background-color .16s,box-shadow .16s,transform .16s}
+.tw-follow-btn:hover{background:rgba(255,250,240,.96);box-shadow:0 6px 16px rgba(61,45,25,.15)}
+.tw-follow-btn:active{transform:scale(.994)}
+.tw-follow-btn:focus-visible{outline:3px solid #547a7d;outline-offset:2px}
+.tw-audio-lead{margin-top:14px;height:40px}
+
 @media (hover:none){
   .tw-note-btn:hover{transform:none;box-shadow:0 8px 18px rgba(61,45,25,.16)}
   .tw-card-tools{opacity:1}

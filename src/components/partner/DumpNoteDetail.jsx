@@ -4,17 +4,19 @@ import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, Check, Pencil, Trash2 } from "lucide-react";
 import DumpActionCard from "./DumpActionCard";
+import NoteAdditionView from "./NoteAdditionView";
 import NoteFollowUp from "./NoteFollowUp";
 import NoteFollowUpBar from "./NoteFollowUpBar";
 import { shortTitle } from "./DumpNoteFront";
 
-// One dump, opened up: what they wrote, what came back, the move inside it,
-// and everything they have piled onto it since.
+// One dump, opened up: what they wrote and what came back on the same sheet,
+// the move inside it, and everything they have piled onto it since.
 export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack }) {
   const [photo, setPhoto] = useState(null);
   const [editing, setEditing] = useState(false);
   const [editDraft, setEditDraft] = useState(entry.text || "");
   const [confirming, setConfirming] = useState(false);
+  const [openAddition, setOpenAddition] = useState(null);
   const scrollRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -43,8 +45,10 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   };
 
-  const editFollowUp = (index, patch) =>
-    saveFollowUps(followUps.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+  const updateFollowUp = (index, next) =>
+    saveFollowUps(followUps.map((item, i) => (i === index ? next : item)));
+
+  const editFollowUp = (index, patch) => updateFollowUp(index, { ...followUps[index], ...patch });
 
   const deleteFollowUp = (index) => saveFollowUps(followUps.filter((_, i) => i !== index));
 
@@ -62,6 +66,23 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
     refresh();
     onBack();
   };
+
+  const addition = openAddition !== null ? followUps[openAddition] : null;
+
+  if (addition) {
+    return (
+      <NoteAdditionView
+        item={addition}
+        partnerName={partnerName}
+        onBack={() => setOpenAddition(null)}
+        onChange={(next) => updateFollowUp(openAddition, next)}
+        onDelete={async () => {
+          await deleteFollowUp(openAddition);
+          setOpenAddition(null);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -97,60 +118,62 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
 
           <article className="tw-note tw-detail-note">
             <span className="tw-pin" aria-hidden="true" />
-            <p className="tw-stamp">What you wrote</p>
 
-            {editing ? (
-              <>
-                <textarea
-                  value={editDraft}
-                  onChange={(e) => setEditDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") { setEditing(false); setEditDraft(entry.text || ""); }
-                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveEdit();
-                  }}
-                  aria-label="Edit this note"
-                  className="tw-edit"
-                  autoFocus
-                />
+            <div className="tw-block">
+              <p className="tw-stamp">What you wrote</p>
+
+              {editing ? (
+                <>
+                  <textarea
+                    value={editDraft}
+                    onChange={(e) => setEditDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") { setEditing(false); setEditDraft(entry.text || ""); }
+                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveEdit();
+                    }}
+                    aria-label="Edit this note"
+                    className="tw-edit"
+                    autoFocus
+                  />
+                  <div className="tw-foot">
+                    <button onClick={saveEdit} className="tw-do">
+                      <Check className="w-3.5 h-3.5" />
+                      Save
+                    </button>
+                    <button onClick={() => { setEditing(false); setEditDraft(entry.text || ""); }} className="tw-later">
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {entry.text ? <p className="tw-body">{entry.text}</p> : <p className="tw-small" style={{ margin: 0 }}>No words, just the photo.</p>}
+                  {photo && <img src={photo} alt="What you dropped in" className="tw-photo" />}
+                </>
+              )}
+
+              {confirming && (
                 <div className="tw-foot">
-                  <button onClick={saveEdit} className="tw-do">
-                    <Check className="w-3.5 h-3.5" />
-                    Save
-                  </button>
-                  <button onClick={() => { setEditing(false); setEditDraft(entry.text || ""); }} className="tw-later">
-                    Cancel
-                  </button>
+                  <span className="tw-small" style={{ margin: 0, flex: 1 }}>Delete this note for good?</span>
+                  <button onClick={remove} className="tw-do tw-do-danger">Delete</button>
+                  <button onClick={() => setConfirming(false)} className="tw-later">Keep it</button>
                 </div>
-              </>
-            ) : (
-              <>
-                {entry.text ? <p className="tw-body">{entry.text}</p> : <p className="tw-small" style={{ margin: 0 }}>No words, just the photo.</p>}
-                {photo && <img src={photo} alt="What you dropped in" className="tw-photo" />}
-              </>
-            )}
+              )}
+            </div>
 
-            {confirming && (
-              <div className="tw-foot">
-                <span className="tw-small" style={{ margin: 0, flex: 1 }}>Delete this note for good?</span>
-                <button onClick={remove} className="tw-do tw-do-danger">Delete</button>
-                <button onClick={() => setConfirming(false)} className="tw-later">Keep it</button>
-              </div>
-            )}
-          </article>
-
-          <article className="tw-note tw-note-answer tw-detail-answer">
-            <span className="tw-pin tw-pin-alt" aria-hidden="true" />
-            <p className="tw-stamp">Back to you</p>
-            {reflecting ? (
-              <p className="tw-scribble animate-pulse">Reading it…</p>
-            ) : entry.reflection ? (
-              <>
-                <p className="tw-scribble">{entry.reflection}</p>
-                <DumpActionCard entry={entry} />
-              </>
-            ) : (
-              <p className="tw-small" style={{ margin: 0 }}>Nothing came back on this one.</p>
-            )}
+            <div className="tw-block">
+              <p className="tw-stamp">Back to you</p>
+              {reflecting ? (
+                <p className="tw-scribble animate-pulse">Reading it…</p>
+              ) : entry.reflection ? (
+                <>
+                  <p className="tw-scribble">{entry.reflection}</p>
+                  <DumpActionCard entry={entry} />
+                </>
+              ) : (
+                <p className="tw-small" style={{ margin: 0 }}>Nothing came back on this one.</p>
+              )}
+            </div>
           </article>
 
           {followUps.length > 0 && (
@@ -162,6 +185,7 @@ export default function DumpNoteDetail({ entry, partnerName, reflecting, onBack 
                   item={item}
                   onSave={(patch) => editFollowUp(index, patch)}
                   onDelete={() => deleteFollowUp(index)}
+                  onOpen={() => setOpenAddition(index)}
                 />
               ))}
             </section>
