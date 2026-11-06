@@ -61,6 +61,22 @@
       ],
       "default": "suggested"
     },
+    "action_draft": {
+      "type": "object",
+      "description": "The email or message the partner wrote for them to send, once they asked for it",
+      "properties": {
+        "subject": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "at": {
+          "type": "string",
+          "description": "When it was written, ISO"
+        }
+      }
+    },
     "follow_ups": {
       "type": "array",
       "description": "Notes the member added onto the same dump later, in the order they added them",

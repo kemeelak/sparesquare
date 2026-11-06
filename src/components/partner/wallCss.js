@@ -111,6 +111,16 @@ export const WALL_CSS = `
 .tw-drop{margin-left:auto;border:0;background:transparent;color:#84877e;cursor:pointer;display:grid;place-items:center;padding:4px}
 .tw-drop:hover{color:#d4674e}
 
+.tw-draft-btn{margin-top:14px}
+.tw-draft{margin-top:16px;padding-top:14px;border-top:1px dashed rgba(95,75,49,.3)}
+.tw-draft-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+.tw-draft-head .tw-stamp{margin:0}
+.tw-draft-loading{margin:16px 0 0;padding-top:14px;border-top:1px dashed rgba(95,75,49,.3);display:flex;align-items:center;gap:9px;font-size:13px;color:#566e73}
+.tw-draft-subject{box-sizing:border-box;width:100%;padding:11px 13px;border:1px solid #d8ccae;border-radius:8px;background:#fffdf8;color:#26383d;font:600 15px/1.35 system-ui,-apple-system,sans-serif;box-shadow:inset 0 1px 3px rgba(76,55,29,.06)}
+.tw-draft-subject:focus-visible{outline:3px solid #547a7d;outline-offset:2px}
+.tw-draft-body{margin-top:9px;min-height:150px}
+.tw-foot a.tw-later{text-decoration:none}
+
 .tw-note-btn{cursor:pointer;transition:box-shadow .2s,transform .2s}
 .tw-note-btn:hover{box-shadow:0 13px 26px rgba(61,45,25,.24);transform:rotate(-1.4deg) translateY(-3px)}
 .tw-note-btn:focus-visible{outline:3px solid #547a7d;outline-offset:4px}
@@ -275,6 +285,18 @@ export const WALL_CSS = `
   .tw-detail-title{font-size:22px;letter-spacing:-.6px}
   .tw-detail-note,.tw-detail-answer{padding:18px 16px 16px}
   .tw-head{padding:8px 10px}
+
+  /* phones: every control is a full-width tap, nothing to mis-hit */
+  .tw-block-head{gap:8px;margin-bottom:8px}
+  .tw-block-edit{padding:7px 11px;font-size:10.5px}
+  .tw-block-edit svg{width:13px;height:13px}
+  .tw-actions{gap:8px}
+  .tw-actions .tw-do,.tw-actions .tw-later{flex:1 1 100%;justify-content:center;padding:12px 12px;font-size:13px}
+  .tw-actions .tw-drop{margin-left:auto;padding:8px}
+  .tw-draft-btn{width:100%;justify-content:center;padding:12px 12px;font-size:13px;margin-top:12px}
+  .tw-draft-body{min-height:180px}
+  .tw-foot .tw-do,.tw-foot .tw-later{flex:1 1 auto;justify-content:center;padding:11px 12px}
+  .tw-detail-inner{padding-bottom:calc(22px + env(safe-area-inset-bottom))}
   .tw-head-stamp{display:none}
 }
 `;

@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { Check, Clock, Loader2, Plus, X, Archive, ArrowRight } from "lucide-react";
+import { Check, Clock, Loader2, Plus, X, Archive, ArrowRight, PenLine } from "lucide-react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { areaMeta } from "@/lib/lifeAreas";
+import ActionDraft from "./ActionDraft";
 
 // The move that came back with the reflection. It only lands on the grid if they say so.
 export default function DumpActionCard({ entry }) {
@@ -15,6 +16,15 @@ export default function DumpActionCard({ entry }) {
   const [savedId, setSavedId] = useState(null);
   const queryClient = useQueryClient();
   const area = areaMeta(entry.action_life_area);
+  const [draftOpen, setDraftOpen] = useState(false);
+
+  // Only offer to write it when the move is something you actually send to someone.
+  const moveText = `${entry.action_title || ""} ${entry.action_description || ""}`;
+  const draftKind = /e-?mail/i.test(moveText)
+    ? "email"
+    : /\b(text|message|dm|reply|respond|reach out|check in|write to|call|apolog)/i.test(moveText)
+      ? "message"
+      : null;
 
   const save = async (extra, destination) => {
     setStatus("loading");
@@ -119,6 +129,15 @@ export default function DumpActionCard({ entry }) {
           <X className="w-4 h-4" />
         </button>
       </div>
+
+      {draftKind && (draftOpen || entry.action_draft ? (
+        <ActionDraft entry={entry} kind={draftKind} />
+      ) : (
+        <button onClick={() => setDraftOpen(true)} className="tw-do tw-draft-btn">
+          <PenLine className="w-3.5 h-3.5" />
+          {draftKind === "email" ? "Draft the email for me" : "Draft it for me"}
+        </button>
+      ))}
     </div>
   );
 }
