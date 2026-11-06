@@ -159,7 +159,7 @@ export default function NoteFollowUpBar({ onAdd, partnerName }) {
         </div>
       ) : status === "working" ? (
         <div className="tw-transcribing">
-          <Loader2 className="w-5 h-5 animate-spin" style={{ color: "#e9b56d" }} />
+          <Loader2 className="w-5 h-5 animate-spin" style={{ color: "#D4A574" }} />
           <span>Writing down what you said…</span>
         </div>
       ) : (
