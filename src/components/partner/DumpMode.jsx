@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Plus, Sparkles } from "lucide-react";
+import { Bookmark, Plus, Sparkles } from "lucide-react";
 import DumpNoteFront from "./DumpNoteFront";
 import DumpNoteDetail from "./DumpNoteDetail";
 import DumpComposer from "./DumpComposer";
@@ -34,6 +35,23 @@ export default function DumpMode({ currentUser, profile, partnerName }) {
     initialData: [],
     enabled: !!currentUser,
   });
+
+  // Points kept while digging belong to a note, so the wall can show how many it holds.
+  const { data: explorations } = useQuery({
+    queryKey: ["keptPoints", currentUser?.id],
+    queryFn: () => base44.entities.NoteExploration
+      .filter({ created_by_id: currentUser.id }, "-created_date", 200)
+      .then((page) => page?.items ?? page ?? []),
+    initialData: [],
+    enabled: !!currentUser,
+  });
+
+  const keptCount = (id) =>
+    explorations.reduce(
+      (total, row) => total + (row.entry_id === id ? row.bookmarks?.length || 0 : 0),
+      0
+    );
+  const keptTotal = explorations.reduce((total, row) => total + (row.bookmarks?.length || 0), 0);
 
   const handleDrop = async ({ text, file }) => {
     let photo_url = null;
@@ -96,6 +114,19 @@ export default function DumpMode({ currentUser, profile, partnerName }) {
         />
       ) : (
         <>
+          {!empty && (
+            <div className="flex flex-none items-center justify-between gap-3 px-4 pb-1 pt-3 sm:px-6">
+              <p className="tw-stamp" style={{ margin: 0 }}>Your wall</p>
+              <Link
+                to="/KeptHub"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#E8E4DF] bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#1A1A1A] transition-colors hover:bg-[#F5F0EB]"
+              >
+                <Bookmark className="w-3.5 h-3.5 text-[#D4A574]" fill="currentColor" />
+                Kept · {keptTotal}
+              </Link>
+            </div>
+          )}
+
           <div className="tw-scroll flex-1 min-h-0 overflow-y-auto">
             {empty ? (
               <div className="tw-empty">
@@ -143,6 +174,7 @@ export default function DumpMode({ currentUser, profile, partnerName }) {
                       key={entry.id}
                       entry={entry}
                       reflecting={working.some((item) => item.id === entry.id)}
+                      keptCount={keptCount(entry.id)}
                       onOpen={() => setOpenId(entry.id)}
                     />
                   ))}

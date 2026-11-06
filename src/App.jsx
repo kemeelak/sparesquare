@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/toaster"
 import Friends from './pages/Friends'
+import KeptHub from './pages/KeptHub'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import NavigationTracker from '@/lib/NavigationTracker'
@@ -66,6 +67,7 @@ const AuthenticatedApp = () => {
         />
       ))}
       <Route path="/Friends" element={<LayoutWrapper currentPageName="Friends"><Friends /></LayoutWrapper>} />
+      <Route path="/KeptHub" element={<LayoutWrapper currentPageName="KeptHub"><KeptHub /></LayoutWrapper>} />
       <Route path="/Account" element={<LayoutWrapper currentPageName="Account"><Account /></LayoutWrapper>} />
       <Route path="/Subscription" element={<LayoutWrapper currentPageName="Subscription"><Subscription /></LayoutWrapper>} />
       <Route path="/Settings" element={<LayoutWrapper currentPageName="Settings"><Settings /></LayoutWrapper>} />

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { base44 } from "@/api/base44Client";
-import { ArrowUpRight, Check, MessageSquare, Sparkles } from "lucide-react";
+import { ArrowUpRight, Bookmark, Check, MessageSquare, Sparkles } from "lucide-react";
 
 export function shortTitle(text) {
   const words = (text || "").trim().split(/\s+/).filter(Boolean);
@@ -11,7 +11,7 @@ export function shortTitle(text) {
 }
 
 // The front of one dump: just enough to recognise it. Tapping it goes deeper.
-export default function DumpNoteFront({ entry, reflecting, onOpen }) {
+export default function DumpNoteFront({ entry, reflecting, keptCount = 0, onOpen }) {
   const [photo, setPhoto] = useState(null);
 
   // Photos sit in private storage, so each one is opened with a short-lived link.
@@ -41,6 +41,12 @@ export default function DumpNoteFront({ entry, reflecting, onOpen }) {
 
         {!reflecting && (
           <div className="tw-front-meta">
+            {keptCount > 0 && (
+              <span className="tw-front-bit tw-front-bit-kept">
+                <Bookmark className="w-3 h-3" fill="currentColor" />
+                {keptCount} kept
+              </span>
+            )}
             {kept && (
               <span className="tw-front-bit tw-front-bit-done">
                 <Check className="w-3 h-3" />

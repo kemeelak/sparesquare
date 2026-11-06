@@ -205,6 +205,7 @@ export const WALL_CSS = `
 .tw-front-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
 .tw-front-bit{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;letter-spacing:.02em;color:#5C5C5C;background:#F5F0EB;border-radius:99px;padding:4px 9px}
 .tw-front-bit-done{color:#4F6B57;background:#E8F0EA}
+.tw-front-bit-kept{color:#8A6A3C;background:#F5EDE4}
 .tw-front-go{position:absolute;bottom:12px;right:12px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#F5F0EB;color:#5C5C5C}
 .tw-front-add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:104px;background:transparent;border:1px dashed #DCD6CF;color:#8A8580;font-size:11px;letter-spacing:.06em;font-weight:600;box-shadow:none}
 .tw-front-add:hover{background:#FFFFFF;border-color:#C9C2B9;box-shadow:none;transform:none}
