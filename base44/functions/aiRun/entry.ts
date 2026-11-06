@@ -83,6 +83,10 @@ export default async function (req: Request): Promise<Response> {
         ...(body.response_json_schema ? { response_json_schema: body.response_json_schema } : {}),
         ...(body.add_context_from_internet === true ? { add_context_from_internet: true } : {}),
         ...(body.model ? { model: body.model } : {}),
+        // A dropped photo arrives as a short-lived link the caller already holds.
+        ...(Array.isArray(body.file_urls) && body.file_urls.length
+          ? { file_urls: body.file_urls.filter((u: any) => typeof u === "string").slice(0, 4) }
+          : {}),
       });
     } catch (error) {
       await refund();

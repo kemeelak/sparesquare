@@ -1,0 +1,76 @@
+{
+  "name": "DumpEntry",
+  "type": "object",
+  "properties": {
+    "text": {
+      "type": "string",
+      "description": "Whatever they got out of their head \u2014 a rant, a worry, something they're stuck on"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "Private storage path of the photo they dropped in, if any"
+    },
+    "reflection": {
+      "type": "string",
+      "description": "The one thing that came back to them"
+    },
+    "action_title": {
+      "type": "string",
+      "description": "The single small move offered back"
+    },
+    "action_description": {
+      "type": "string"
+    },
+    "action_minutes": {
+      "type": "number"
+    },
+    "action_category": {
+      "type": "string",
+      "enum": [
+        "fitness",
+        "mindfulness",
+        "learning",
+        "nutrition",
+        "sleep",
+        "productivity",
+        "social",
+        "creative",
+        "general"
+      ]
+    },
+    "action_life_area": {
+      "type": "string",
+      "enum": [
+        "work",
+        "people",
+        "faith",
+        "fun",
+        "health"
+      ]
+    },
+    "action_status": {
+      "type": "string",
+      "enum": [
+        "suggested",
+        "kept",
+        "dropped"
+      ],
+      "default": "suggested"
+    }
+  },
+  "required": [],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
