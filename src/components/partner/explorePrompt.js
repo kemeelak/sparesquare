@@ -45,13 +45,27 @@ function wallBlock(dumps) {
 }
 
 function shelfBlock(sources) {
-  const lines = (sources || [])
-    .flatMap((s) => (s.learnings || []).slice(0, 2).map((l) => `- ${s.title}: ${l.principle}`))
-    .slice(0, 10);
+  const lines = (sources || []).slice(0, 12).map((s) => {
+    const facts = [s.type, s.author ? `by ${s.author}` : ""].filter(Boolean).join(", ");
+    const principles = (s.learnings || [])
+      .slice(0, 3)
+      .map((l) => l.principle)
+      .filter(Boolean)
+      .join(" | ");
+    const summary = s.summary ? ` What it is: ${s.summary}` : "";
+    return `- "${s.title}"${facts ? ` (${facts})` : ""}${summary}${principles ? `\n  Principles they took from it: ${principles}` : ""}`;
+  });
   return lines.length
     ? lines.join("\n")
     : "Their library is empty. Nothing can come from a book, podcast or video yet.";
 }
+
+// The principles are the core of a source, not the whole of it. When they read
+// scripture, a book or a podcast they actually know, the source itself is fair game.
+const SOURCE_RULES = `HOW TO USE WHAT THEY HAVE READ:
+The principles above are what they took from each source, and those stay the core. But a source is more than the principles pulled out of it. When it is a work you genuinely know, reach for the source itself: if it is scripture, the book and the passage, a verse they would recognise, the story it comes from; if it is a book or a podcast, the argument in that chapter, a line that is really in it, the example it is known for. Say it the way a well-read friend would in conversation, not like a citation ("the bit in Proverbs about a gentle answer" beats a reference list). Never put words in a text's mouth, and never invent a verse, chapter, quote, statistic or episode you are not sure of. If you cannot place it exactly, speak to what the source is known for rather than making a passage up.`;
+
+export { shelfBlock, SOURCE_RULES };
 
 // Everything already said on the way down, so the next lap cannot repeat it.
 function lapsBlock(laps) {
@@ -81,12 +95,14 @@ ${wallBlock(dumps)}
 
 WHAT IS ON THEIR SHELF (sources they actually read or listened to):
 ${shelfBlock(sources)}
+
+${SOURCE_RULES}
 ${prior ? `\nWHAT YOU HAVE ALREADY SAID ON THE WAY DOWN:\n${prior}\n` : ""}
 REPLY IN FOUR PARTS. Return only the JSON.
 
 0. read — 2 to 3 sentences, 60 words maximum. What this is actually about, now that you have seen the rest of their wall. ${deeper ? "This lap has to land somewhere the earlier laps did not: the thing underneath what you already named, the part they have not said out loud." : "Plain words, the way someone who knows them would say it across a table."} No restating their line back, no therapy-speak ("it sounds like you're feeling"), no "I hear you", no "that's valid", no advice here, no em dashes, no semicolons, no lists, no headers, no bold. If their wall is nearly empty, work from the line itself and say less, not more.
 
-1. threads — 2 or 3 real connections, each with a label of 5 words or fewer and a detail of one or two sentences. A thread has to point at something that genuinely exists in the material above: another dump of theirs, the same worry showing up twice, a source on their shelf that speaks to it. ${deeper ? "None of these may repeat a thread from an earlier lap. Go sideways into dumps you have not used yet, or further into the source." : ""} Use a shelf thread only when a principle above actually speaks to this, and name the source exactly as written. Never invent a source they have not added, never invent a dump that is not above. If their wall and shelf are nearly empty, return one thread about the line itself rather than padding with guesses.
+1. threads — 2 or 3 real connections, each with a label of 5 words or fewer and a detail of one or two sentences. A thread has to point at something that genuinely exists in the material above: another dump of theirs, the same worry showing up twice, a source on their shelf that speaks to it. ${deeper ? "None of these may repeat a thread from an earlier lap. Go sideways into dumps you have not used yet, or further into the source." : ""} Use a shelf thread only when that source actually speaks to this, and name it exactly as written. A shelf thread can come from the source itself, not only from the principles listed. Never invent a source they have not added, never invent a dump that is not above. If their wall and shelf are nearly empty, return one thread about the line itself rather than padding with guesses.
 
 2. question — one question they probably have not asked themselves. Under 18 words. Specific to their situation, not a therapy prompt, not "how does that make you feel", no question mark stacking. ${deeper ? "Not a question you asked on an earlier lap." : ""} It should be answerable by someone sitting still for a minute.
 
@@ -112,6 +128,8 @@ ${wallBlock(dumps)}
 WHAT IS ON THEIR SHELF:
 ${shelfBlock(sources)}
 
+${SOURCE_RULES}
+
 WHAT ${partnerName} HAS SAID SO FAR:
 ${last?.read || ""}
 ${last?.question ? `The question left with them: ${last.question}` : ""}
@@ -119,7 +137,7 @@ ${last?.question ? `The question left with them: ${last.question}` : ""}
 ${said ? `ALREADY SAID IN THIS TRACK:\n${said}\n\n` : ""}THEY NOW ASK:
 ${question}
 
-Answer in 2 to 4 sentences, 90 words maximum. Say the thing plainly rather than restating the question. Draw on their own wall and their shelf only when it genuinely fits, and name a source exactly as it is written above. If they ask something you cannot know, say what you can actually see instead of guessing. No lists, no headers, no bold, no em dashes, no therapy-speak. Do not offer to do anything you cannot do here.
+Answer in 2 to 4 sentences, 90 words maximum. Say the thing plainly rather than restating the question. Draw on their own wall and their shelf only when it genuinely fits, name a source exactly as it is written above, and if they ask about a specific passage, verse, chapter or episode, answer from the source itself when you know it. If they ask something you cannot know, say what you can actually see instead of guessing. No lists, no headers, no bold, no em dashes, no therapy-speak. Do not offer to do anything you cannot do here.
 
 Return only the reply text.`;
 }

@@ -241,7 +241,12 @@ export const WALL_CSS = `
 .tw-threads{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:13px}
 .tw-thread{padding-left:14px;border-left:2px solid rgba(53,77,81,.22)}
 .tw-thread-label{margin:0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#4a6b6f;font-weight:700}
-.tw-thread-detail{margin:5px 0 0;font-size:15px;line-height:1.55;color:#33464a}
+.tw-thread-detail{margin:7px 0 0;font-size:15px;line-height:1.55;color:#33464a;animation:tw-fade .18s ease both}
+.tw-thread-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:2px 0;border:0;background:transparent;cursor:pointer;text-align:left;font-family:inherit}
+.tw-thread-toggle:hover .tw-thread-label{color:#2f4a4e}
+.tw-thread-toggle:focus-visible{outline:3px solid #547a7d;outline-offset:3px;border-radius:4px}
+.tw-thread-chev{width:14px;height:14px;flex:none;color:#6d7a76;transition:transform .18s}
+.tw-thread-chev.is-open{transform:rotate(180deg)}
 .tw-ask-q-line{margin:0;font-size:17px;line-height:1.5;font-style:italic;font-weight:600;color:#566e73}
 .tw-ask{display:flex;flex-direction:column;gap:8px}
 .tw-ask-you{align-self:flex-end;margin:0;max-width:88%;padding:10px 14px;border-radius:14px 14px 3px 14px;background:#2f4a4e;color:#fff7e7;font-size:14px;line-height:1.5}

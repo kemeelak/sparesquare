@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, ArrowRight, Loader2, RefreshCw, Send, Sparkles } from "lucide-react";
 import { invokeAI } from "@/lib/plans";
+import ExploreThread from "./ExploreThread";
 import { buildExplorePrompt, buildExploreFollowUp, EXPLORE_SCHEMA } from "./explorePrompt";
 
 // What the partner already knows of them: everything they have dumped, and what is on the shelf.
@@ -38,6 +39,9 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
       const res = await invokeAI("note_explore", {
         prompt: buildExplorePrompt({ partnerName: who, subject, context, ...kb, laps: earlier }),
         response_json_schema: EXPLORE_SCHEMA,
+        // So a source they have read can be looked up, not just quoted from memory.
+        add_context_from_internet: true,
+        model: "gemini_3_flash",
       });
       if (!res?.read) {
         setFailed(true);
@@ -72,6 +76,8 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
           thread,
           question,
         }),
+        add_context_from_internet: true,
+        model: "gemini_3_flash",
       });
       setThread((prev) => [
         ...prev,
@@ -125,10 +131,7 @@ export default function NoteExploreView({ subject, context, partnerName, backLab
                   </div>
                   <ul className="tw-threads">
                     {lap.threads.map((item, i) => (
-                      <li key={i} className="tw-thread">
-                        <p className="tw-thread-label">{item.label}</p>
-                        <p className="tw-thread-detail">{item.detail}</p>
-                      </li>
+                      <ExploreThread key={i} label={item.label} detail={item.detail} />
                     ))}
                   </ul>
                 </div>
